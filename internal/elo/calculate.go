@@ -6,8 +6,8 @@ type Points float64
 
 const (
 	Win  Points = 1
-	Draw        = 0.5
-	Lose        = 0
+	Draw Points = 0.5
+	Lose Points = 0
 )
 
 // Calculate new rating.

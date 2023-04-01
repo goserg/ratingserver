@@ -25,6 +25,9 @@ func run() error {
 	}
 	db.SetMaxOpenConns(1)
 	err = db.Ping()
+	if err != nil {
+		return err
+	}
 	playerService := service.New(db)
 	players, err := playerService.List()
 	if err != nil {
