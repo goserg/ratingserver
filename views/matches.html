@@ -1,0 +1,24 @@
+{{template "partials/header" .}}
+<table class="striped">
+  <tr>
+    <th>Игрок 1</th>
+    <th>Игрок 2</th>
+    <th>Дата</th>
+  </tr>
+
+  {{ range .Matches }}
+  <tr>
+    <td>
+      {{ if .PlayerAWin }}<b>{{ end }}{{.PlayerA}}{{ if .PlayerAWin }}</b>{{ end }}
+    </td>
+
+    <td>
+      {{ if not .PlayerAWin }}<b>{{ end }}{{.PlayerB}}{{ if not .PlayerAWin }}</b>{{ end }}
+    </td>
+    <td>
+      {{ .Date }}
+    </td>
+  </tr>
+  {{ end }}
+</table>
+{{template "partials/footer" .}}
