@@ -12,8 +12,3 @@ type Player struct {
 	RegisteredAt time.Time
 	EloRating    int
 }
-
-type Rating struct {
-	Player *Player
-	Value  int
-}

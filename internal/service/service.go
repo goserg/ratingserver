@@ -2,11 +2,11 @@ package service
 
 import (
 	"database/sql"
-	"fmt"
 	"ratingserver/gen/model"
 	"ratingserver/gen/table"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/elo"
+	"sort"
 )
 
 type PlayerService struct {
@@ -31,7 +31,7 @@ func (s *PlayerService) List() ([]domain.Player, error) {
 	return convertPlayers(players), err
 }
 
-func (s *PlayerService) GetRatings() ([]domain.Rating, error) {
+func (s *PlayerService) GetRatings() ([]domain.Player, error) {
 	var matches []model.Matches
 	err := table.Matches.
 		SELECT(table.Matches.AllColumns).
@@ -63,8 +63,10 @@ func (s *PlayerService) GetRatings() ([]domain.Rating, error) {
 	for i := range players {
 		players[i].EloRating = playerMap[players[i].ID.String()]
 	}
-	fmt.Println(players)
-	return nil, nil
+	sort.SliceStable(players, func(i, j int) bool {
+		return players[i].EloRating > players[j].EloRating
+	})
+	return players, nil
 }
 
 func calculatePlayerGameCount() int {

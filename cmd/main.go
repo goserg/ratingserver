@@ -29,10 +29,7 @@ func run() error {
 		return err
 	}
 	playerService := service.New(db)
-	players, err := playerService.List()
-	if err != nil {
-		return err
-	}
+
 	globalRating, err := playerService.GetRatings()
 	if err != nil {
 		return err
@@ -50,7 +47,7 @@ func run() error {
 	app.Get("/", func(c *fiber.Ctx) error {
 		return c.Render("index", fiber.Map{
 			"Title":   "Hellow, World!",
-			"Players": players,
+			"Players": globalRating,
 		}, "layouts/main")
 	})
 
