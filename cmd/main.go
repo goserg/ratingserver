@@ -27,6 +27,14 @@ func run() error {
 	err = db.Ping()
 	playerService := service.New(db)
 	players, err := playerService.List()
+	if err != nil {
+		return err
+	}
+	globalRating, err := playerService.GetRatings()
+	if err != nil {
+		return err
+	}
+	fmt.Println(globalRating)
 
 	engine := html.New("./views", ".html")
 	engine.Reload(true)
