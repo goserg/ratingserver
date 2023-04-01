@@ -5,8 +5,6 @@ import (
 	"ratingserver/gen/model"
 	"ratingserver/gen/table"
 	"ratingserver/internal/domain"
-
-	"github.com/google/uuid"
 )
 
 type PlayerService struct {
@@ -29,21 +27,4 @@ func (s *PlayerService) List() ([]domain.Player, error) {
 		return nil, err
 	}
 	return convertPlayers(players), err
-}
-
-func convertPlayers(players []model.Players) []domain.Player {
-	converted := make([]domain.Player, 0, len(players))
-	for _, player := range players {
-		id, err := uuid.Parse(player.ID)
-		if err != nil {
-			return nil
-		}
-		converted = append(converted, domain.Player{
-			ID:           id,
-			Name:         player.Name,
-			RegisteredAt: player.CreatedAt,
-			EloRating:    777,
-		})
-	}
-	return converted
 }
