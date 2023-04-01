@@ -1,13 +1,12 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"os"
 	"ratingserver/internal/service"
+	"ratingserver/internal/storage"
+	"ratingserver/internal/web"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/template/html"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -19,41 +18,11 @@ func main() {
 }
 
 func run() error {
-	db, err := sql.Open("sqlite3", "file:rating.sqlite?cache=shared")
-	if err != nil {
-		return err
-	}
-	db.SetMaxOpenConns(1)
-	err = db.Ping()
+	db, err := storage.New()
 	if err != nil {
 		return err
 	}
 	playerService := service.New(db)
-
-	globalRating, err := playerService.GetRatings()
-	if err != nil {
-		return err
-	}
-	fmt.Println(globalRating)
-
-	engine := html.New("./views", ".html")
-	engine.Reload(true)
-	engine.Debug(true)
-
-	app := fiber.New(fiber.Config{
-		Views: engine,
-	})
-	app.Static("/", "./public")
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.Render("index", fiber.Map{
-			"Title":   "Hellow, World!",
-			"Players": globalRating,
-		}, "layouts/main")
-	})
-
-	err = app.Listen(":3000")
-	if err != nil {
-		return err
-	}
-	return nil
+	server := web.New(playerService)
+	return server.Serve()
 }
