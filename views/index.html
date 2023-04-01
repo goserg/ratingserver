@@ -1,0 +1,15 @@
+{{template "partials/header" .}}
+<table class="striped">
+    <tr>
+        <th>Имя</th>
+        <th>Рейтинг</th>
+    </tr>
+
+    {{ range .Players }}
+    <tr>
+        <td>{{.Name}}</td>
+        <td>{{.EloRating}} (TODO)</td>
+    </tr>
+    {{ end }}
+</table>
+{{template "partials/footer" .}}
