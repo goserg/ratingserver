@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 	"ratingserver/internal/service"
-	"ratingserver/internal/storage"
+	"ratingserver/internal/storage/sqlite"
 	"ratingserver/internal/web"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -18,11 +18,11 @@ func main() {
 }
 
 func run() error {
-	db, err := storage.New()
+	storage, err := sqlite.New()
 	if err != nil {
 		return err
 	}
-	playerService := service.New(db)
+	playerService := service.New(storage, storage)
 	server := web.New(playerService)
 	return server.Serve()
 }
