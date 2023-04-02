@@ -16,7 +16,7 @@
       {{ if eq .PlayerB .Winner }}<b>{{ end }}{{ .PlayerB.Name }}{{ if eq .PlayerB .Winner }}</b>{{ end }}
     </td>
     <td>
-      {{ .Date }}
+      {{ FormatDate .Date }}
     </td>
   </tr>
   {{ end }}

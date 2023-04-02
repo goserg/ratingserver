@@ -3,6 +3,7 @@ package web
 import (
 	"fmt"
 	"ratingserver/internal/service"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html"
@@ -21,6 +22,7 @@ func New(ps *service.PlayerService) *Server {
 	engine := html.New("./views", ".html")
 	engine.Reload(true)
 	engine.Debug(true)
+	engine.AddFunc("FormatDate", formatDate)
 
 	app := fiber.New(fiber.Config{
 		Views: engine,
@@ -56,4 +58,8 @@ func (s *Server) handleMatches(c *fiber.Ctx) error {
 	return c.Render("matches", fiber.Map{
 		"Matches": matches,
 	}, "layouts/main")
+}
+
+func formatDate(t time.Time) string {
+	return t.Format("02.01.2006г.")
 }
