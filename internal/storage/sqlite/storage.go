@@ -6,6 +6,8 @@ import (
 	"ratingserver/gen/table"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/storage"
+
+	"github.com/google/uuid"
 )
 
 type Storage struct {
@@ -49,5 +51,26 @@ func (s *Storage) ListMatches() ([]domain.Match, error) {
 	if err != nil {
 		return nil, err
 	}
-	return convertMatches(matches), nil
+	players, err := s.ListPlayers()
+	if err != nil {
+		return nil, err
+	}
+	playerMap := convertPlayersToMap(players)
+	domainMatches := convertMatches(matches)
+	for i := range domainMatches {
+		domainMatches[i].PlayerA = playerMap[domainMatches[i].PlayerA.ID]
+		domainMatches[i].PlayerB = playerMap[domainMatches[i].PlayerB.ID]
+		if domainMatches[i].Winner != nil {
+			domainMatches[i].Winner = playerMap[domainMatches[i].Winner.ID]
+		}
+	}
+	return domainMatches, nil
+}
+
+func convertPlayersToMap(players []domain.Player) map[uuid.UUID]*domain.Player {
+	m := make(map[uuid.UUID]*domain.Player)
+	for i := range players {
+		m[players[i].ID] = &players[i]
+	}
+	return m
 }
