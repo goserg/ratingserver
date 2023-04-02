@@ -1,6 +1,7 @@
 package service
 
 import (
+	"encoding/json"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/elo"
 	"ratingserver/internal/storage"
@@ -88,4 +89,33 @@ func (s *PlayerService) GetMatches() ([]domain.Match, error) {
 		return nil, err
 	}
 	return matches, nil
+}
+
+const exportVersion = 1
+
+type export struct {
+	Version int
+	Players []domain.Player
+	Matches []domain.Match
+}
+
+func (s *PlayerService) Export() ([]byte, error) {
+	players, err := s.GetRatings()
+	if err != nil {
+		return nil, err
+	}
+	matches, err := s.GetMatches()
+	if err != nil {
+		return nil, err
+	}
+	exportData := export{
+		Version: exportVersion,
+		Players: players,
+		Matches: matches,
+	}
+	data, err := json.Marshal(exportData)
+	if err != nil {
+		return nil, err
+	}
+	return data, nil
 }

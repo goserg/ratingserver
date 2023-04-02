@@ -18,7 +18,6 @@ func convertPlayers(players []model.Players) []domain.Player {
 			ID:           id,
 			Name:         player.Name,
 			RegisteredAt: player.CreatedAt,
-			EloRating:    777,
 		})
 	}
 	return converted
