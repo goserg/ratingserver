@@ -3,7 +3,6 @@ package web
 import (
 	"fmt"
 	"ratingserver/internal/service"
-	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html"
@@ -48,26 +47,6 @@ func (s *Server) handleMain(c *fiber.Ctx) error {
 }
 
 func (s *Server) handleMatches(c *fiber.Ctx) error {
-	m := []struct {
-		PlayerA    string
-		PlayerAWin bool
-		PlayerB    string
-		Date       string
-	}{
-		{
-			PlayerA:    "Lol",
-			PlayerAWin: true,
-			PlayerB:    "kek",
-			Date:       time.Now().Format("02.01.2006г"),
-		},
-		{
-			PlayerA:    "Lol",
-			PlayerAWin: false,
-			PlayerB:    "kek",
-			Date:       time.Now().Add(time.Hour * 24).Format("02.01.2006г"),
-		},
-	}
-
 	matches, err := s.playerService.GetMatches()
 	if err != nil {
 		return err
@@ -75,6 +54,6 @@ func (s *Server) handleMatches(c *fiber.Ctx) error {
 	fmt.Println(matches)
 
 	return c.Render("matches", fiber.Map{
-		"Matches": m,
+		"Matches": matches,
 	}, "layouts/main")
 }
