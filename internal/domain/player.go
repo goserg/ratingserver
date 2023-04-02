@@ -12,3 +12,10 @@ type Player struct {
 	RegisteredAt time.Time
 	EloRating    int
 }
+
+type Match struct {
+	PlayerA *Player
+	PlayerB *Player
+	Winner  *Player
+	Date    time.Time
+}

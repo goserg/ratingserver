@@ -93,3 +93,16 @@ func calculatePoints(a string, winner *string) (elo.Points, elo.Points) {
 	}
 	return elo.Lose, elo.Win
 }
+
+func (s *PlayerService) GetMatches() ([]domain.Match, error) {
+	var ms []model.Matches
+	err := table.Matches.
+		SELECT(table.Matches.AllColumns).
+		Query(s.db, &ms)
+	if err != nil {
+		return nil, err
+	}
+	matches := make([]domain.Match, 0, len(ms))
+	// TODO
+	return matches, nil
+}

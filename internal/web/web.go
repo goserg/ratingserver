@@ -1,6 +1,7 @@
 package web
 
 import (
+	"fmt"
 	"ratingserver/internal/service"
 	"time"
 
@@ -47,7 +48,7 @@ func (s *Server) handleMain(c *fiber.Ctx) error {
 }
 
 func (s *Server) handleMatches(c *fiber.Ctx) error {
-	matches := []struct {
+	m := []struct {
 		PlayerA    string
 		PlayerAWin bool
 		PlayerB    string
@@ -66,7 +67,14 @@ func (s *Server) handleMatches(c *fiber.Ctx) error {
 			Date:       time.Now().Add(time.Hour * 24).Format("02.01.2006г"),
 		},
 	}
+
+	matches, err := s.playerService.GetMatches()
+	if err != nil {
+		return err
+	}
+	fmt.Println(matches)
+
 	return c.Render("matches", fiber.Map{
-		"Matches": matches,
+		"Matches": m,
 	}, "layouts/main")
 }
