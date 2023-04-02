@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"errors"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/elo"
 	"ratingserver/internal/storage"
@@ -118,4 +119,24 @@ func (s *PlayerService) Export() ([]byte, error) {
 		return nil, err
 	}
 	return data, nil
+}
+
+func (s *PlayerService) Import(data []byte) error {
+	var importData export
+	err := json.Unmarshal(data, &importData)
+	if err != nil {
+		return err
+	}
+	if importData.Version != exportVersion {
+		return errors.New("invalid export file version")
+	}
+	err = s.playerStorage.ImportPlayers(importData.Players)
+	if err != nil {
+		return err
+	}
+	err = s.matchStorage.ImportMatches(importData.Matches)
+	if err != nil {
+		return err
+	}
+	return nil
 }

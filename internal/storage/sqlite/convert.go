@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func convertPlayers(players []model.Players) []domain.Player {
+func convertPlayersToDomain(players []model.Players) []domain.Player {
 	converted := make([]domain.Player, 0, len(players))
 	for _, player := range players {
 		id, err := uuid.Parse(player.ID)
@@ -23,7 +23,15 @@ func convertPlayers(players []model.Players) []domain.Player {
 	return converted
 }
 
-func convertMatches(matches []model.Matches) []domain.Match {
+func convertPlayerFromDomain(player domain.Player) model.Players {
+	return model.Players{
+		ID:        player.ID.String(),
+		Name:      player.Name,
+		CreatedAt: player.RegisteredAt,
+	}
+}
+
+func convertMatchesToDomain(matches []model.Matches) []domain.Match {
 	converted := make([]domain.Match, 0, len(matches))
 	for _, match := range matches {
 		idA, err := uuid.Parse(match.PlayerA)
@@ -45,6 +53,7 @@ func convertMatches(matches []model.Matches) []domain.Match {
 			}
 		}
 		converted = append(converted, domain.Match{
+			ID:      int(match.ID),
 			PlayerA: &playerA,
 			PlayerB: &playerB,
 			Winner:  winner,

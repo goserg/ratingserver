@@ -39,7 +39,7 @@ func (s *Storage) ListPlayers() ([]domain.Player, error) {
 	if err != nil {
 		return nil, err
 	}
-	return convertPlayers(players), err
+	return convertPlayersToDomain(players), err
 }
 
 func (s *Storage) ListMatches() ([]domain.Match, error) {
@@ -56,7 +56,7 @@ func (s *Storage) ListMatches() ([]domain.Match, error) {
 		return nil, err
 	}
 	playerMap := convertPlayersToMap(players)
-	domainMatches := convertMatches(matches)
+	domainMatches := convertMatchesToDomain(matches)
 	for i := range domainMatches {
 		domainMatches[i].PlayerA = playerMap[domainMatches[i].PlayerA.ID]
 		domainMatches[i].PlayerB = playerMap[domainMatches[i].PlayerB.ID]
@@ -72,5 +72,42 @@ func convertPlayersToMap(players []domain.Player) map[uuid.UUID]*domain.Player {
 	for i := range players {
 		m[players[i].ID] = &players[i]
 	}
+	return m
+}
+
+func (s *Storage) ImportPlayers(players []domain.Player) error {
+	var mPlayers []model.Players
+	for i := range players {
+		mPlayers = append(mPlayers, convertPlayerFromDomain(players[i]))
+	}
+	_, err := table.Players.INSERT(table.Players.AllColumns).MODELS(mPlayers).Exec(s.db)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) ImportMatches(matches []domain.Match) error {
+	var mMatches []model.Matches
+	for i := range matches {
+		mMatches = append(mMatches, convertMatchesFromDomain(matches[i]))
+	}
+	_, err := table.Matches.INSERT(table.Matches.AllColumns).MODELS(mMatches).Exec(s.db)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func convertMatchesFromDomain(match domain.Match) model.Matches {
+	var m model.Matches
+	m.ID = int32(match.ID)
+	m.PlayerA = match.PlayerA.ID.String()
+	m.PlayerB = match.PlayerB.ID.String()
+	if match.Winner.ID.String() != "" {
+		id := match.Winner.ID.String()
+		m.Winner = &id
+	}
+	m.CreatedAt = match.Date
 	return m
 }

@@ -14,6 +14,7 @@ type Player struct {
 }
 
 type Match struct {
+	ID      int
 	PlayerA *Player
 	PlayerB *Player
 	Winner  *Player

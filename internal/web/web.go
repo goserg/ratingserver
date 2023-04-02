@@ -32,6 +32,7 @@ func New(ps *service.PlayerService) *Server {
 	app.Get("/", server.handleMain)
 	app.Get("/matches", server.handleMatches)
 	app.Get("/export", server.HandleExport)
+	app.Post("/import", server.HandleImport)
 	server.app = app
 	return &server
 }
@@ -77,6 +78,14 @@ func (s *Server) HandleExport(c *fiber.Ctx) error {
 	}
 	defer os.Remove(f.Name())
 	return c.SendFile(f.Name())
+}
+
+func (s *Server) HandleImport(c *fiber.Ctx) error {
+	err := s.playerService.Import(c.Body())
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 func formatDate(t time.Time) string {
