@@ -10,7 +10,9 @@ type Player struct {
 	ID           uuid.UUID
 	Name         string
 	RegisteredAt time.Time
-	EloRating    int
+
+	EloRating   int
+	GamesPlayed int
 }
 
 type Match struct {

@@ -30,28 +30,33 @@ func (s *PlayerService) GetRatings() ([]domain.Player, error) {
 	if err != nil {
 		return nil, err
 	}
-	playerMap := make(map[string]int)
+	playerRatings := make(map[string]int)
+	playerGamesPlayed := make(map[string]int)
 	for _, match := range matches {
-		playerRatingA, ok := playerMap[match.PlayerA.ID.String()]
+		playerRatingA, ok := playerRatings[match.PlayerA.ID.String()]
 		if !ok {
 			playerRatingA = 1000
 		}
-		playerRatingB, ok := playerMap[match.PlayerB.ID.String()]
+		playerRatingB, ok := playerRatings[match.PlayerB.ID.String()]
 		if !ok {
 			playerRatingB = 1000
 		}
 		pointsA, pointsB := calculatePoints(match.PlayerA, match.Winner)
-		playerCoefficientA := calculatePlayerCoefficient(calculatePlayerGameCount(), playerRatingA)
-		playerCoefficientB := calculatePlayerCoefficient(calculatePlayerGameCount(), playerRatingB)
-		playerMap[match.PlayerA.ID.String()] = elo.Calculate(playerRatingA, playerRatingB, playerCoefficientA, pointsA)
-		playerMap[match.PlayerB.ID.String()] = elo.Calculate(playerRatingB, playerRatingA, playerCoefficientB, pointsB)
+		playerCoefficientA := calculatePlayerCoefficient(playerGamesPlayed[match.PlayerA.ID.String()], playerRatingA)
+		playerCoefficientB := calculatePlayerCoefficient(playerGamesPlayed[match.PlayerB.ID.String()], playerRatingB)
+		playerRatings[match.PlayerA.ID.String()] = elo.Calculate(playerRatingA, playerRatingB, playerCoefficientA, pointsA)
+		playerRatings[match.PlayerB.ID.String()] = elo.Calculate(playerRatingB, playerRatingA, playerCoefficientB, pointsB)
+
+		playerGamesPlayed[match.PlayerA.ID.String()]++
+		playerGamesPlayed[match.PlayerB.ID.String()]++
 	}
 	players, err := s.ListPlayers()
 	if err != nil {
 		return nil, err
 	}
 	for i := range players {
-		players[i].EloRating = playerMap[players[i].ID.String()]
+		players[i].EloRating = playerRatings[players[i].ID.String()]
+		players[i].GamesPlayed = playerGamesPlayed[players[i].ID.String()]
 	}
 	sort.SliceStable(players, func(i, j int) bool {
 		return players[i].EloRating > players[j].EloRating

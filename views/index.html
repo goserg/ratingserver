@@ -2,12 +2,14 @@
 <table class="striped">
     <tr>
         <th>Имя</th>
+        <th>Всего игр</th>
         <th>Рейтинг</th>
     </tr>
 
     {{ range .Players }}
     <tr>
         <td>{{.Name}}</td>
+        <td>{{.GamesPlayed}}</td>
         <td>{{.EloRating}}</td>
     </tr>
     {{ end }}
