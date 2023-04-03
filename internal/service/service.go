@@ -64,11 +64,6 @@ func (s *PlayerService) GetRatings() ([]domain.Player, error) {
 	return players, nil
 }
 
-func calculatePlayerGameCount() int {
-	// TODO not implemented
-	return 0
-}
-
 func calculatePlayerCoefficient(n int, rating int) int {
 	if n <= 30 {
 		return 40
