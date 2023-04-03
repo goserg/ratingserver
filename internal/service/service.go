@@ -42,7 +42,7 @@ func (s *PlayerService) GetRatings() ([]domain.Player, error) {
 		}
 		pointsA, pointsB := calculatePoints(match.PlayerA, match.Winner)
 		playerCoefficientA := calculatePlayerCoefficient(calculatePlayerGameCount(), playerRatingA)
-		playerCoefficientB := calculatePlayerCoefficient(calculatePlayerGameCount(), playerRatingA)
+		playerCoefficientB := calculatePlayerCoefficient(calculatePlayerGameCount(), playerRatingB)
 		playerMap[match.PlayerA.ID.String()] = elo.Calculate(playerRatingA, playerRatingB, playerCoefficientA, pointsA)
 		playerMap[match.PlayerB.ID.String()] = elo.Calculate(playerRatingB, playerRatingA, playerCoefficientB, pointsB)
 	}

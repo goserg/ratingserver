@@ -45,7 +45,7 @@ func convertMatchesToDomain(matches []model.Matches) []domain.Match {
 		}
 		var winner *domain.Player
 		playerB := domain.Player{ID: idB}
-		if match.Winner != nil {
+		if match.Winner != nil && *match.Winner != uuid.Nil.String() {
 			if *match.Winner == playerA.ID.String() {
 				winner = &playerA
 			} else {
