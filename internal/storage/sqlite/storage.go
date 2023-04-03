@@ -111,3 +111,20 @@ func convertMatchesFromDomain(match domain.Match) model.Matches {
 	m.CreatedAt = match.Date
 	return m
 }
+
+func (s *Storage) Create(match domain.Match) error {
+	dMatch := convertMatchesFromDomain(match)
+	_, err := table.Matches.
+		INSERT(
+			table.Matches.PlayerA,
+			table.Matches.PlayerB,
+			table.Matches.Winner,
+			table.Matches.CreatedAt,
+		).
+		MODEL(dMatch).
+		Exec(s.db)
+	if err != nil {
+		return err
+	}
+	return nil
+}

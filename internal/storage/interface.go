@@ -10,6 +10,7 @@ type PlayerStorage interface {
 
 type MatchStorage interface {
 	ListMatches() ([]domain.Match, error)
+	Create(domain.Match) error
 
 	ImportMatches([]domain.Match) error
 }

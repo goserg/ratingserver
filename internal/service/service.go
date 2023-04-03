@@ -140,3 +140,11 @@ func (s *PlayerService) Import(data []byte) error {
 	}
 	return nil
 }
+
+func (s *PlayerService) CreateMatch(match domain.Match) error {
+	err := s.matchStorage.Create(match)
+	if err != nil {
+		return err
+	}
+	return nil
+}

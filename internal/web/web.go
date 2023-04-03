@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"ratingserver/internal/service"
@@ -31,6 +32,7 @@ func New(ps *service.PlayerService) *Server {
 	app.Static("/", "./public")
 	app.Get("/", server.handleMain)
 	app.Get("/matches", server.handleMatches)
+	app.Post("/matches", server.handleCreateMatch)
 	app.Get("/export", server.HandleExport)
 	app.Post("/import", server.HandleImport)
 	server.app = app
@@ -82,6 +84,31 @@ func (s *Server) HandleExport(c *fiber.Ctx) error {
 
 func (s *Server) HandleImport(c *fiber.Ctx) error {
 	err := s.playerService.Import(c.Body())
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) handleCreateMatch(c *fiber.Ctx) error {
+	var newMatch createMatch
+	err := json.Unmarshal(c.Body(), &newMatch)
+	if err != nil {
+		return err
+	}
+	err = newMatch.Validate()
+	if err != nil {
+		return err
+	}
+	dMatch, err := newMatch.convertToDomainMatch()
+	if err != nil {
+		return err
+	}
+	err = s.playerService.CreateMatch(dMatch)
+	if err != nil {
+		return err
+	}
+	err = c.Redirect("/")
 	if err != nil {
 		return err
 	}
