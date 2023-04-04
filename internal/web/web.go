@@ -2,7 +2,6 @@ package web
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
 	"ratingserver/internal/service"
 	"time"
@@ -49,6 +48,7 @@ func (s *Server) handleMain(c *fiber.Ctx) error {
 		return err
 	}
 	return c.Render("index", fiber.Map{
+		"Title":   "Рейтинг",
 		"Players": globalRating,
 	}, "layouts/main")
 }
@@ -58,9 +58,9 @@ func (s *Server) handleMatches(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(matches)
 
 	return c.Render("matches", fiber.Map{
+		"Title":   "Список матчей",
 		"Matches": matches,
 	}, "layouts/main")
 }
