@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"github.com/google/uuid"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/elo"
 	"ratingserver/internal/storage"
@@ -74,8 +75,8 @@ func calculatePlayerCoefficient(n int, rating int) int {
 	return 20
 }
 
-func calculatePoints(a *domain.Player, winner *domain.Player) (elo.Points, elo.Points) {
-	if winner == nil {
+func calculatePoints(a domain.Player, winner domain.Player) (elo.Points, elo.Points) {
+	if winner.ID == uuid.Nil {
 		return elo.Draw, elo.Draw
 	}
 	if winner.ID == a.ID {

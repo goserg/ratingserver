@@ -11,14 +11,15 @@ type Player struct {
 	Name         string
 	RegisteredAt time.Time
 
-	EloRating   int
-	GamesPlayed int
+	EloRating    int
+	GamesPlayed  int
+	RatingChange int
 }
 
 type Match struct {
 	ID      int
-	PlayerA *Player
-	PlayerB *Player
-	Winner  *Player
+	PlayerA Player
+	PlayerB Player
+	Winner  Player
 	Date    time.Time
 }

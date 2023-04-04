@@ -43,19 +43,19 @@ func convertMatchesToDomain(matches []model.Matches) []domain.Match {
 		if err != nil {
 			return nil
 		}
-		var winner *domain.Player
+		var winner domain.Player
 		playerB := domain.Player{ID: idB}
 		if match.Winner != nil && *match.Winner != uuid.Nil.String() {
 			if *match.Winner == playerA.ID.String() {
-				winner = &playerA
+				winner = playerA
 			} else {
-				winner = &playerB
+				winner = playerB
 			}
 		}
 		converted = append(converted, domain.Match{
 			ID:      int(match.ID),
-			PlayerA: &playerA,
-			PlayerB: &playerB,
+			PlayerA: playerA,
+			PlayerB: playerB,
 			Winner:  winner,
 			Date:    match.CreatedAt,
 		})

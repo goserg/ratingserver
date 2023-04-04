@@ -26,9 +26,9 @@ func (c createMatch) Validate() error {
 
 func (c createMatch) convertToDomainMatch() (domain.Match, error) {
 	return domain.Match{
-		PlayerA: &domain.Player{ID: c.PlayerA},
-		PlayerB: &domain.Player{ID: c.PlayerB},
-		Winner:  &domain.Player{ID: c.Winner},
+		PlayerA: domain.Player{ID: c.PlayerA},
+		PlayerB: domain.Player{ID: c.PlayerB},
+		Winner:  domain.Player{ID: c.Winner},
 		Date:    time.Now(),
 	}, nil
 }

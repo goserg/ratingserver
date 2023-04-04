@@ -60,17 +60,17 @@ func (s *Storage) ListMatches() ([]domain.Match, error) {
 	for i := range domainMatches {
 		domainMatches[i].PlayerA = playerMap[domainMatches[i].PlayerA.ID]
 		domainMatches[i].PlayerB = playerMap[domainMatches[i].PlayerB.ID]
-		if domainMatches[i].Winner != nil {
+		if domainMatches[i].Winner.ID != uuid.Nil {
 			domainMatches[i].Winner = playerMap[domainMatches[i].Winner.ID]
 		}
 	}
 	return domainMatches, nil
 }
 
-func convertPlayersToMap(players []domain.Player) map[uuid.UUID]*domain.Player {
-	m := make(map[uuid.UUID]*domain.Player)
+func convertPlayersToMap(players []domain.Player) map[uuid.UUID]domain.Player {
+	m := make(map[uuid.UUID]domain.Player)
 	for i := range players {
-		m[players[i].ID] = &players[i]
+		m[players[i].ID] = players[i]
 	}
 	return m
 }
