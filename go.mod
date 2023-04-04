@@ -6,13 +6,13 @@ require (
 	github.com/go-jet/jet/v2 v2.9.0
 	github.com/gofiber/fiber/v2 v2.43.0
 	github.com/gofiber/template v1.8.0
+	github.com/google/uuid v1.3.0
 	github.com/mattn/go-sqlite3 v1.14.16
 )
 
 require (
 	github.com/andybalholm/brotli v1.0.5 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/google/uuid v1.3.0 // indirect
 	github.com/klauspost/compress v1.16.3 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect
