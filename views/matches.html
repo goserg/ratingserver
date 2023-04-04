@@ -11,11 +11,15 @@
     {{ range .Matches }}
     <tr>
       <td>
-        {{ if eq .PlayerA .Winner }}<b>{{ end }}{{ .PlayerA.Name }}{{ if eq .PlayerA .Winner }}</b>{{ end }}
+        {{ if eq .PlayerA .Winner }}<b>{{ end }}{{ .PlayerA.Name }}
+        <span class="{{ if gt .PlayerA.RatingChange 0 }} green-text {{end}}{{ if lt .PlayerA.RatingChange 0 }} red-text text-accent-4 {{end}}">{{ .PlayerA.RatingChange }}</span>
+        {{ if eq .PlayerA .Winner }}</b>{{ end }}
       </td>
 
       <td>
-        {{ if eq .PlayerB .Winner }}<b>{{ end }}{{ .PlayerB.Name }}{{ if eq .PlayerB .Winner }}</b>{{ end }}
+        {{ if eq .PlayerB .Winner }}<b>{{ end }}{{ .PlayerB.Name }}
+        <span class="{{ if gt .PlayerB.RatingChange 0 }} green-text {{end}}{{ if lt .PlayerB.RatingChange 0 }} red-text text-accent-4 {{end}}">{{ .PlayerB.RatingChange }}</span>
+        {{ if eq .PlayerB .Winner }}</b>{{ end }}
       </td>
       <td>
         {{ FormatDate .Date }}

@@ -90,6 +90,31 @@ func (s *PlayerService) GetMatches() ([]domain.Match, error) {
 	if err != nil {
 		return nil, err
 	}
+	playerRatings := make(map[string]int)
+	playerGamesPlayed := make(map[string]int)
+	for i := range matches {
+		playerRatingA, ok := playerRatings[matches[i].PlayerA.ID.String()]
+		if !ok {
+			playerRatingA = 1000
+		}
+		playerRatingB, ok := playerRatings[matches[i].PlayerB.ID.String()]
+		if !ok {
+			playerRatingB = 1000
+		}
+		pointsA, pointsB := calculatePoints(matches[i].PlayerA, matches[i].Winner)
+		playerCoefficientA := calculatePlayerCoefficient(playerGamesPlayed[matches[i].PlayerA.ID.String()], playerRatingA)
+		playerCoefficientB := calculatePlayerCoefficient(playerGamesPlayed[matches[i].PlayerB.ID.String()], playerRatingB)
+
+		newRatingA := elo.Calculate(playerRatingA, playerRatingB, playerCoefficientA, pointsA)
+		matches[i].PlayerA.RatingChange = newRatingA - playerRatingA
+		playerRatings[matches[i].PlayerA.ID.String()] = newRatingA
+		newRatingB := elo.Calculate(playerRatingB, playerRatingA, playerCoefficientB, pointsB)
+		matches[i].PlayerB.RatingChange = newRatingB - playerRatingB
+		playerRatings[matches[i].PlayerB.ID.String()] = newRatingB
+
+		playerGamesPlayed[matches[i].PlayerA.ID.String()]++
+		playerGamesPlayed[matches[i].PlayerB.ID.String()]++
+	}
 	return matches, nil
 }
 
