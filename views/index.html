@@ -1,17 +1,21 @@
 {{template "partials/header" .}}
-<table class="striped">
-    <tr>
-        <th>Имя</th>
-        <th>Всего игр</th>
-        <th>Рейтинг</th>
-    </tr>
+<div class="container">
 
-    {{ range .Players }}
-    <tr>
-        <td>{{.Name}}</td>
-        <td>{{.GamesPlayed}}</td>
-        <td>{{.EloRating}}</td>
-    </tr>
-    {{ end }}
-</table>
+    <table class="striped">
+        <tr>
+            <th>Имя</th>
+            <th>Всего игр</th>
+            <th>Рейтинг</th>
+        </tr>
+
+        {{ range .Players }}
+        <tr>
+            <td>{{.Name}}</td>
+            <td>{{.GamesPlayed}}</td>
+            <td>{{.EloRating}}</td>
+        </tr>
+        {{ end }}
+    </table>
+
+</div>
 {{template "partials/footer" .}}

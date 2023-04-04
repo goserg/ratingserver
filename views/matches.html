@@ -1,24 +1,28 @@
 {{template "partials/header" .}}
-<table class="striped">
-  <tr>
-    <th>Игрок 1</th>
-    <th>Игрок 2</th>
-    <th>Дата</th>
-  </tr>
+<div class="container">
 
-  {{ range .Matches }}
-  <tr>
-    <td>
-      {{ if eq .PlayerA .Winner }}<b>{{ end }}{{ .PlayerA.Name }}{{ if eq .PlayerA .Winner }}</b>{{ end }}
-    </td>
+  <table class="striped">
+    <tr>
+      <th>Игрок 1</th>
+      <th>Игрок 2</th>
+      <th>Дата</th>
+    </tr>
 
-    <td>
-      {{ if eq .PlayerB .Winner }}<b>{{ end }}{{ .PlayerB.Name }}{{ if eq .PlayerB .Winner }}</b>{{ end }}
-    </td>
-    <td>
-      {{ FormatDate .Date }}
-    </td>
-  </tr>
-  {{ end }}
-</table>
+    {{ range .Matches }}
+    <tr>
+      <td>
+        {{ if eq .PlayerA .Winner }}<b>{{ end }}{{ .PlayerA.Name }}{{ if eq .PlayerA .Winner }}</b>{{ end }}
+      </td>
+
+      <td>
+        {{ if eq .PlayerB .Winner }}<b>{{ end }}{{ .PlayerB.Name }}{{ if eq .PlayerB .Winner }}</b>{{ end }}
+      </td>
+      <td>
+        {{ FormatDate .Date }}
+      </td>
+    </tr>
+    {{ end }}
+  </table>
+
+</div>
 {{template "partials/footer" .}}
