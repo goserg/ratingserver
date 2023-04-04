@@ -48,6 +48,7 @@ func (s *Server) handleMain(c *fiber.Ctx) error {
 		return err
 	}
 	return c.Render("index", fiber.Map{
+		"Button":  1,
 		"Title":   "Рейтинг",
 		"Players": globalRating,
 	}, "layouts/main")
@@ -60,6 +61,7 @@ func (s *Server) handleMatches(c *fiber.Ctx) error {
 	}
 
 	return c.Render("matches", fiber.Map{
+		"Button":  2,
 		"Title":   "Список матчей",
 		"Matches": matches,
 	}, "layouts/main")
