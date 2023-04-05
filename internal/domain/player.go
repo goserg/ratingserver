@@ -23,6 +23,11 @@ type PlayerStats struct {
 	Loses  int
 }
 
+type PlayerCardData struct {
+	Player  Player
+	Results map[uuid.UUID]PlayerStats
+}
+
 type Match struct {
 	ID      int
 	PlayerA Player

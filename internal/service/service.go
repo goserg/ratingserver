@@ -186,17 +186,23 @@ func (s *PlayerService) Get(id uuid.UUID) (domain.Player, error) {
 	return s.playerStorage.Get(id)
 }
 
-func (s *PlayerService) GetPlayerGames(id uuid.UUID) (map[uuid.UUID]domain.PlayerStats, error) {
+func (s *PlayerService) GetPlayerData(id uuid.UUID) (domain.PlayerCardData, error) {
+	var data domain.PlayerCardData
+
 	matches, err := s.matchStorage.ListMatches()
 	if err != nil {
-		return nil, err
+		return domain.PlayerCardData{}, err
 	}
 	results := make(map[uuid.UUID]domain.PlayerStats)
 	players, err := s.GetRatings()
 	if err != nil {
-		return nil, err
+		return domain.PlayerCardData{}, err
 	}
 	for _, player := range players {
+		if player.ID == id {
+			data.Player = player
+			continue
+		}
 		results[player.ID] = domain.PlayerStats{Player: player}
 	}
 	for i := range matches {
@@ -208,8 +214,8 @@ func (s *PlayerService) GetPlayerGames(id uuid.UUID) (map[uuid.UUID]domain.Playe
 			this = &matches[i].PlayerA
 			other = &matches[i].PlayerB
 		} else {
-			this = &matches[i].PlayerA
-			other = &matches[i].PlayerB
+			this = &matches[i].PlayerB
+			other = &matches[i].PlayerA
 		}
 		r := results[other.ID]
 		switch {
@@ -222,5 +228,6 @@ func (s *PlayerService) GetPlayerGames(id uuid.UUID) (map[uuid.UUID]domain.Playe
 		}
 		results[other.ID] = r
 	}
-	return results, nil
+	data.Results = results
+	return data, nil
 }
