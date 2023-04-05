@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/google/uuid"
 	"os"
+	"ratingserver/internal/domain"
 	"ratingserver/internal/service"
 	"time"
 
@@ -119,6 +120,11 @@ func (s *Server) handleCreateMatch(c *fiber.Ctx) error {
 	return nil
 }
 
+type PlayerCardData struct {
+	Player  domain.Player
+	Results map[uuid.UUID]domain.PlayerStats
+}
+
 func (s *Server) HandlePlayerInfo(c *fiber.Ctx) error {
 	strID := c.Params("id")
 	id, err := uuid.Parse(strID)
@@ -129,15 +135,19 @@ func (s *Server) HandlePlayerInfo(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	b, err := json.Marshal(player)
+	playerGames, err := s.playerService.GetPlayerGames(id)
 	if err != nil {
 		return err
 	}
-	_, err = c.Write(b)
-	if err != nil {
-		return err
+	data := PlayerCardData{
+		Player:  player,
+		Results: playerGames,
 	}
-	return nil
+	return c.Render("playerCard", fiber.Map{
+		"Button": 3,
+		"Title":  data.Player.Name,
+		"Data":   data,
+	}, "layouts/main")
 }
 
 func formatDate(t time.Time) string {

@@ -16,6 +16,13 @@ type Player struct {
 	RatingChange int
 }
 
+type PlayerStats struct {
+	Player Player
+	Wins   int
+	Draws  int
+	Loses  int
+}
+
 type Match struct {
 	ID      int
 	PlayerA Player

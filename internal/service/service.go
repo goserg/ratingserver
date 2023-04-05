@@ -185,3 +185,42 @@ func (s *PlayerService) CreateMatch(match domain.Match) error {
 func (s *PlayerService) Get(id uuid.UUID) (domain.Player, error) {
 	return s.playerStorage.Get(id)
 }
+
+func (s *PlayerService) GetPlayerGames(id uuid.UUID) (map[uuid.UUID]domain.PlayerStats, error) {
+	matches, err := s.matchStorage.ListMatches()
+	if err != nil {
+		return nil, err
+	}
+	results := make(map[uuid.UUID]domain.PlayerStats)
+	players, err := s.GetRatings()
+	if err != nil {
+		return nil, err
+	}
+	for _, player := range players {
+		results[player.ID] = domain.PlayerStats{Player: player}
+	}
+	for i := range matches {
+		var this, other *domain.Player
+		if matches[i].PlayerA.ID != id && matches[i].PlayerB.ID != id {
+			continue
+		}
+		if matches[i].PlayerA.ID == id {
+			this = &matches[i].PlayerA
+			other = &matches[i].PlayerB
+		} else {
+			this = &matches[i].PlayerA
+			other = &matches[i].PlayerB
+		}
+		r := results[other.ID]
+		switch {
+		case this.ID == matches[i].Winner.ID:
+			r.Wins++
+		case other.ID == matches[i].Winner.ID:
+			r.Loses++
+		default:
+			r.Draws++
+		}
+		results[other.ID] = r
+	}
+	return results, nil
+}

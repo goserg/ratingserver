@@ -1,0 +1,34 @@
+{{template "partials/header" .}}
+<div class="container">
+
+    <div class="container">
+        <h4>{{ .Data.Player.Name }}</h4>
+        <p>
+            Рейтинг: {{ .Data.Player.EloRating }}<br>
+            Зарегистрирован: {{ FormatDate .Data.Player.RegisteredAt }}<br>
+            Игр сыграно: {{ .Data.Player.GamesPlayed }}<br>
+        </p>
+        <h5>Игры:</h5>
+    </div>
+
+    <div class="container">
+        <table class="striped">
+            <tr>
+                <th>Имя</th>
+                <th>Рейтинг</th>
+                <th>Побед</th>
+                <th>Поражений</th>
+            </tr>
+            {{ range $key, $value := .Data.Results }}
+            <tr>
+                <td><a href="/players/{{ $key }}">{{$value.Player.Name}}</a></td>
+                <td>{{$value.Player.EloRating}}</td>
+                <td>{{$value.Wins}}</td>
+                <td>{{$value.Loses}}</td>
+            </tr>
+            {{ end }}
+        </table>
+    </div>
+
+</div>
+{{template "partials/footer" .}}
