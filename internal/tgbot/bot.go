@@ -65,15 +65,17 @@ func (b *Bot) Run() {
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 
 			// Extract the command from the Message.
-			switch {
-			case update.Message.Command() == "help":
+			switch update.Message.Command() {
+			case "help":
 				msg.Text = `Доступные команды "/sayhi" "/status" и "/info имя".`
-			case update.Message.Command() == "sayhi":
+			case "sayhi":
 				msg.Text = "Привет :)"
-			case update.Message.Command() == "status":
+			case "status":
 				msg.Text = "Всё норм."
-			case strings.HasPrefix(update.Message.Command(), "info"):
+			case "info":
 				msg.Text = b.processInfo(update.Message.CommandArguments())
+			case "game":
+				msg.Text = b.processAddMatch(update.Message.CommandArguments())
 			default:
 				msg.Text = "I don't know that command"
 			}
@@ -122,4 +124,44 @@ func (b *Bot) Stop() {
 	if b.cancel != nil {
 		b.cancel()
 	}
+}
+
+const (
+	playerAIndex int = iota
+	playerBIndex
+	winnerIndex
+)
+
+func (b *Bot) processAddMatch(arguments string) string {
+	fields := strings.Fields(arguments)
+	if len(fields) < 3 {
+		return `Неверный запрос. Пример: "Вася петя вася" - играли вася и петя, победил вася`
+	}
+	playerAName := fields[playerAIndex]
+	playerA, err := b.playerService.GetByName(playerAName)
+	if err != nil {
+		return playerAName + " не найден"
+	}
+	playerBName := fields[playerBIndex]
+	playerB, err := b.playerService.GetByName(playerBName)
+	if err != nil {
+		return playerBName + " не найден"
+	}
+
+	newMatch := domain.Match{
+		PlayerA: playerA,
+		PlayerB: playerB,
+		Date:    time.Now(),
+	}
+	switch fields[winnerIndex] {
+	case playerAName:
+		newMatch.Winner = playerA
+	case playerBName:
+		newMatch.Winner = playerB
+	}
+	err = b.playerService.CreateMatch(newMatch)
+	if err != nil {
+		return "ошибка создания матча"
+	}
+	return "матч успешно создан"
 }
