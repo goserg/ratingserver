@@ -3,11 +3,13 @@ package service
 import (
 	"encoding/json"
 	"errors"
-	"github.com/google/uuid"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/elo"
 	"ratingserver/internal/storage"
 	"sort"
+	"strings"
+
+	"github.com/google/uuid"
 )
 
 type PlayerService struct {
@@ -230,4 +232,17 @@ func (s *PlayerService) GetPlayerData(id uuid.UUID) (domain.PlayerCardData, erro
 	}
 	data.Results = results
 	return data, nil
+}
+
+func (s *PlayerService) GetByName(name string) (domain.Player, error) {
+	rating, err := s.GetRatings()
+	if err != nil {
+		return domain.Player{}, err
+	}
+	for i := range rating {
+		if strings.EqualFold(rating[i].Name, name) {
+			return rating[i], nil
+		}
+	}
+	return domain.Player{}, errors.New("not found")
 }

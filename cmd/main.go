@@ -5,6 +5,7 @@ import (
 	"os"
 	"ratingserver/internal/service"
 	"ratingserver/internal/storage/sqlite"
+	"ratingserver/internal/tgbot"
 	"ratingserver/internal/web"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -22,7 +23,16 @@ func run() error {
 	if err != nil {
 		return err
 	}
+
 	playerService := service.New(storage, storage)
+
+	bot, err := tgbot.New(playerService)
+	if err != nil {
+		return err
+	}
+	go bot.Run()
+	defer bot.Stop()
+
 	server := web.New(playerService)
 	return server.Serve()
 }
