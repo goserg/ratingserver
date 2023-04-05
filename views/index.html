@@ -10,7 +10,7 @@
 
         {{ range .Players }}
         <tr>
-            <td>{{.Name}}</td>
+            <td><a href="/players/{{ .ID }}">{{.Name}}</a></td>
             <td>{{.GamesPlayed}}</td>
             <td>{{.EloRating}}</td>
         </tr>
