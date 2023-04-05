@@ -115,7 +115,14 @@ func (s *PlayerService) GetMatches() ([]domain.Match, error) {
 		playerGamesPlayed[matches[i].PlayerA.ID.String()]++
 		playerGamesPlayed[matches[i].PlayerB.ID.String()]++
 	}
+	reverse(matches)
 	return matches, nil
+}
+
+func reverse(m []domain.Match) {
+	for i, j := 0, len(m)-1; i < j; i, j = i+1, j-1 {
+		m[i], m[j] = m[j], m[i]
+	}
 }
 
 const exportVersion = 1
