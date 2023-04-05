@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"github.com/google/uuid"
 	"os"
 	"ratingserver/internal/service"
 	"time"
@@ -34,6 +35,7 @@ func New(ps *service.PlayerService) *Server {
 	app.Post("/matches", server.handleCreateMatch)
 	app.Get("/export", server.HandleExport)
 	app.Post("/import", server.HandleImport)
+	app.Get("/players/:id", server.HandlePlayerInfo)
 	server.app = app
 	return &server
 }
@@ -111,6 +113,27 @@ func (s *Server) handleCreateMatch(c *fiber.Ctx) error {
 		return err
 	}
 	err = c.Redirect("/")
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Server) HandlePlayerInfo(c *fiber.Ctx) error {
+	strID := c.Params("id")
+	id, err := uuid.Parse(strID)
+	if err != nil {
+		return err
+	}
+	player, err := s.playerService.Get(id)
+	if err != nil {
+		return err
+	}
+	b, err := json.Marshal(player)
+	if err != nil {
+		return err
+	}
+	_, err = c.Write(b)
 	if err != nil {
 		return err
 	}

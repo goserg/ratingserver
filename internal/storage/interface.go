@@ -1,9 +1,13 @@
 package storage
 
-import "ratingserver/internal/domain"
+import (
+	"github.com/google/uuid"
+	"ratingserver/internal/domain"
+)
 
 type PlayerStorage interface {
 	ListPlayers() ([]domain.Player, error)
+	Get(uuid uuid.UUID) (domain.Player, error)
 
 	ImportPlayers([]domain.Player) error
 }

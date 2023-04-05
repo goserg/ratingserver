@@ -181,3 +181,7 @@ func (s *PlayerService) CreateMatch(match domain.Match) error {
 	}
 	return nil
 }
+
+func (s *PlayerService) Get(id uuid.UUID) (domain.Player, error) {
+	return s.playerStorage.Get(id)
+}

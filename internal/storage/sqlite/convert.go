@@ -10,17 +10,25 @@ import (
 func convertPlayersToDomain(players []model.Players) []domain.Player {
 	converted := make([]domain.Player, 0, len(players))
 	for _, player := range players {
-		id, err := uuid.Parse(player.ID)
+		p, err := convertPlayerToDomain(player)
 		if err != nil {
 			return nil
 		}
-		converted = append(converted, domain.Player{
-			ID:           id,
-			Name:         player.Name,
-			RegisteredAt: player.CreatedAt,
-		})
+		converted = append(converted, p)
 	}
 	return converted
+}
+
+func convertPlayerToDomain(player model.Players) (domain.Player, error) {
+	id, err := uuid.Parse(player.ID)
+	if err != nil {
+		return domain.Player{}, nil
+	}
+	return domain.Player{
+		ID:           id,
+		Name:         player.Name,
+		RegisteredAt: player.CreatedAt,
+	}, nil
 }
 
 func convertPlayerFromDomain(player domain.Player) model.Players {

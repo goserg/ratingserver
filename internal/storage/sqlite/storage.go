@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
+	"github.com/go-jet/jet/v2/postgres"
 	"ratingserver/gen/model"
 	"ratingserver/gen/table"
 	"ratingserver/internal/domain"
@@ -127,4 +128,17 @@ func (s *Storage) Create(match domain.Match) error {
 		return err
 	}
 	return nil
+}
+
+func (s *Storage) Get(uuid uuid.UUID) (domain.Player, error) {
+	var p model.Players
+	err := table.Players.
+		SELECT(table.Players.AllColumns).
+		FROM(table.Players).
+		WHERE(table.Players.ID.EQ(postgres.String(uuid.String()))).
+		Query(s.db, &p)
+	if err != nil {
+		return domain.Player{}, err
+	}
+	return convertPlayerToDomain(p)
 }
