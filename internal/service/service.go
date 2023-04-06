@@ -64,6 +64,9 @@ func (s *PlayerService) GetRatings() ([]domain.Player, error) {
 	sort.SliceStable(players, func(i, j int) bool {
 		return players[i].EloRating > players[j].EloRating
 	})
+	for i := range players {
+		players[i].RatingRank = i + 1
+	}
 	return players, nil
 }
 

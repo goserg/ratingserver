@@ -11,6 +11,7 @@ type Player struct {
 	Name         string
 	RegisteredAt time.Time
 
+	RatingRank   int
 	EloRating    int
 	GamesPlayed  int
 	RatingChange int

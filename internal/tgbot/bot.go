@@ -66,12 +66,17 @@ func (b *Bot) Run() {
 
 			// Extract the command from the Message.
 			switch update.Message.Command() {
-			case "help":
+			case "help", "start":
 				msg.Text = `Доступные команды "/sayhi" "/status" и "/info имя".`
 			case "sayhi":
-				msg.Text = "Привет :)"
+				msg.Text = `Привет :)`
 			case "status":
-				msg.Text = "Всё норм."
+				sticker := tgbotapi.NewSticker(msg.ChatID, tgbotapi.FileID("CAACAgIAAxkBAAEIek5kLqgKrk6cRxw0uUy2CNY-VYdyBQACdxEAAjyzxQdiXqFFBrRFjy8E"))
+				_, err := b.bot.Send(sticker)
+				if err != nil {
+					log.Println(err.Error())
+				}
+				continue
 			case "info":
 				msg.Text = b.processInfo(update.Message.CommandArguments())
 			case "game":
@@ -109,6 +114,9 @@ func printPlayer(player domain.Player) string {
 	buf.WriteString("Имя: ")
 	buf.WriteString(player.Name)
 	buf.WriteString("\n")
+	buf.WriteString("Место в рейтинге: ")
+	buf.WriteString(prettifyRank(player))
+	buf.WriteString("\n")
 	buf.WriteString("Рейтинг: ")
 	buf.WriteString(strconv.Itoa(player.EloRating))
 	buf.WriteString("\n")
@@ -118,6 +126,19 @@ func printPlayer(player domain.Player) string {
 	buf.WriteString("Зарегистрирован: ")
 	buf.WriteString(player.RegisteredAt.Format(time.RFC1123))
 	return buf.String()
+}
+
+func prettifyRank(player domain.Player) string {
+	if player.RatingRank == 1 {
+		return "🥇"
+	}
+	if player.RatingRank == 2 {
+		return "🥈"
+	}
+	if player.RatingRank == 3 {
+		return "🥉"
+	}
+	return strconv.Itoa(player.RatingRank)
 }
 
 func (b *Bot) Stop() {
@@ -153,10 +174,10 @@ func (b *Bot) processAddMatch(arguments string) string {
 		PlayerB: playerB,
 		Date:    time.Now(),
 	}
-	switch fields[winnerIndex] {
-	case playerAName:
+	switch strings.ToLower(fields[winnerIndex]) {
+	case strings.ToLower(playerAName):
 		newMatch.Winner = playerA
-	case playerBName:
+	case strings.ToLower(playerBName):
 		newMatch.Winner = playerB
 	}
 	err = b.playerService.CreateMatch(newMatch)
