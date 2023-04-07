@@ -104,6 +104,16 @@ func TestCalculate(t *testing.T) {
 			},
 			want: 986,
 		},
+		{
+			name: "close rating draw",
+			args: args{
+				Ra: 944,
+				Rb: 938,
+				K:  40,
+				Sa: Draw,
+			},
+			want: 944,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
