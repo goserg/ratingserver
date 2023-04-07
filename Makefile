@@ -8,6 +8,9 @@ gen-jet:
 	jet -source=sqlite -dsn=${SQLITE_RATINGS_FILE_LOCATION} -path=${JET_OUTPUT}
 	jet -source=sqlite -dsn=${SQLITE_BOT_FILE_LOCATION} -path=${JET_BOT_OUTPUT}
 
+lint:
+	golangci-lint run ./...
+
 build:
 	go build -o ${SERVER_BIN} cmd/main.go
 
