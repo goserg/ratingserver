@@ -2,9 +2,13 @@ package tgbot
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 	"log"
 	"os"
+	"ratingserver/bot/botstorage"
+	botmodel "ratingserver/bot/model"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/service"
 	"strconv"
@@ -15,12 +19,17 @@ import (
 )
 
 type Bot struct {
-	bot           *tgbotapi.BotAPI
+	bot *tgbotapi.BotAPI
+
+	botStorage botstorage.BotStorage
+
 	playerService *service.PlayerService
-	cancel        func()
+
+	// cancel func to stop the bot
+	cancel func()
 }
 
-func New(playerService *service.PlayerService) (Bot, error) {
+func New(ps *service.PlayerService, bs botstorage.BotStorage) (Bot, error) {
 	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_APITOKEN"))
 	if err != nil {
 		return Bot{}, fmt.Errorf("env TELEGRAM_APITOKEN: %w", err)
@@ -34,7 +43,8 @@ func New(playerService *service.PlayerService) (Bot, error) {
 	fmt.Println(user)
 	return Bot{
 		bot:           bot,
-		playerService: playerService,
+		playerService: ps,
+		botStorage:    bs,
 	}, nil
 }
 
@@ -52,6 +62,35 @@ func (b *Bot) Run() {
 		case <-ctx.Done():
 			return
 		case update := <-updates:
+			user, err := b.botStorage.GetUser()
+			if err != nil {
+				if !errors.Is(err, sql.ErrNoRows) {
+					fmt.Println("ERRRRRR", err)
+					continue
+				}
+				err := b.botStorage.NewUser(botmodel.User{
+					ID:        int(update.Message.From.ID),
+					FirstName: update.Message.From.FirstName,
+					Username:  update.Message.From.UserName,
+					CreatedAt: time.Now(),
+					UpdatedAt: time.Now(),
+				})
+				if err != nil {
+					fmt.Println("ERRRRRR", err)
+					continue
+				}
+				user, err = b.botStorage.GetUser()
+				if err != nil {
+					fmt.Println("ERRRRRR", err)
+					continue
+				}
+			}
+
+			err = b.botStorage.Log(user, update.Message.Text)
+			if err != nil {
+				fmt.Println("CAN'T LOG TO DB", err)
+			}
+
 			if update.Message == nil { // ignore any non-Message updates
 				continue
 			}

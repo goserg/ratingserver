@@ -2,4 +2,5 @@
 bin
 
 rating.sqlite
+bot.sqlite
 export.json

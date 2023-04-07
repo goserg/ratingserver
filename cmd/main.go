@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	botstorage "ratingserver/bot/botstorage/sqlite"
 	"ratingserver/internal/service"
 	"ratingserver/internal/storage/sqlite"
 	"ratingserver/internal/tgbot"
@@ -24,9 +25,14 @@ func run() error {
 		return err
 	}
 
+	botStorage, err := botstorage.New()
+	if err != nil {
+		return err
+	}
+
 	playerService := service.New(storage, storage)
 
-	bot, err := tgbot.New(playerService)
+	bot, err := tgbot.New(playerService, botStorage)
 	if err != nil {
 		return err
 	}
