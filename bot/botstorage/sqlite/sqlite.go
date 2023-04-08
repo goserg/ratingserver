@@ -36,7 +36,8 @@ func New(l *logrus.Logger) (*Storage, error) {
 	}
 	log.Info("bot storage connected")
 	return &Storage{
-		db: db,
+		db:  db,
+		log: log,
 	}, nil
 }
 
