@@ -274,7 +274,7 @@ func (b *Bot) processAddMatch(arguments string) string {
 
 func (b *Bot) sendMatchNotification(userIDs []int, arguments string) {
 	for _, userID := range userIDs {
-		msg := tgbotapi.NewMessage(int64(userID), "матч создан: "+arguments)
+		msg := tgbotapi.NewMessage(int64(userID), "добавлены результаты матча: "+arguments)
 		if _, err := b.bot.Send(msg); err != nil {
 			log.Println("BOT ERROR", err.Error())
 			return
