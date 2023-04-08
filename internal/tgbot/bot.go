@@ -294,30 +294,33 @@ func (b *Bot) sendMatchNotification(userIDs []int, match domain.Match) {
 
 func formatMatchResult(match domain.Match) string {
 	var buf strings.Builder
-	buf.WriteString("добавлены результаты:\n")
+	if match.Winner.ID == match.PlayerA.ID {
+		buf.WriteString("🏆")
+	} else if match.Winner.ID == match.PlayerB.ID {
+		buf.WriteString("😖")
+	}
 	buf.WriteString(match.PlayerA.Name)
 	buf.WriteString(" vs ")
 	buf.WriteString(match.PlayerB.Name)
-	buf.WriteString("\n")
-	if match.Winner.ID == match.PlayerA.ID {
-		buf.WriteString("Победил ")
-		buf.WriteString(match.PlayerA.Name)
-	} else if match.Winner.ID == match.PlayerB.ID {
-		buf.WriteString("Победил ")
-		buf.WriteString(match.PlayerB.Name)
-	} else {
-		buf.WriteString("Ничья")
+	if match.Winner.ID == match.PlayerB.ID {
+		buf.WriteString("🏆")
+	} else if match.Winner.ID == match.PlayerA.ID {
+		buf.WriteString("😖")
 	}
-	buf.WriteString("\nРейтинг:\n")
+	buf.WriteString("\n")
+	if match.Winner.ID != match.PlayerA.ID && match.Winner.ID != match.PlayerB.ID {
+		buf.WriteString("Ничья\n")
+	}
+	buf.WriteString("Рейтинг:\n")
 
 	buf.WriteString(match.PlayerA.Name)
-	buf.WriteString(" - ")
+	buf.WriteString(": ")
 	buf.WriteString(strconv.Itoa(match.PlayerA.EloRating))
 	buf.WriteString("(")
 	buf.WriteString(strconv.Itoa(match.PlayerA.RatingChange))
 	buf.WriteString(")\n")
 	buf.WriteString(match.PlayerB.Name)
-	buf.WriteString(" - ")
+	buf.WriteString(": ")
 	buf.WriteString(strconv.Itoa(match.PlayerB.EloRating))
 	buf.WriteString("(")
 	buf.WriteString(strconv.Itoa(match.PlayerB.RatingChange))
