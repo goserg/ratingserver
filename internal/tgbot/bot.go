@@ -62,16 +62,20 @@ func (b *Bot) Run() {
 		case <-ctx.Done():
 			return
 		case update := <-updates:
-			user, err := b.botStorage.GetUser()
+			tgUser := update.SentFrom()
+			if tgUser == nil {
+				continue
+			}
+			user, err := b.botStorage.GetUser(int(tgUser.ID))
 			if err != nil {
 				if !errors.Is(err, sql.ErrNoRows) {
 					fmt.Println("ERRRRRR", err)
 					continue
 				}
 				err := b.botStorage.NewUser(botmodel.User{
-					ID:        int(update.Message.From.ID),
-					FirstName: update.Message.From.FirstName,
-					Username:  update.Message.From.UserName,
+					ID:        int(tgUser.ID),
+					FirstName: tgUser.FirstName,
+					Username:  tgUser.UserName,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 				})
@@ -79,7 +83,7 @@ func (b *Bot) Run() {
 					fmt.Println("ERRRRRR", err)
 					continue
 				}
-				user, err = b.botStorage.GetUser()
+				user, err = b.botStorage.GetUser(int(tgUser.ID))
 				if err != nil {
 					fmt.Println("ERRRRRR", err)
 					continue

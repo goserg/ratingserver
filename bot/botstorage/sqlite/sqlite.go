@@ -7,6 +7,8 @@ import (
 	"ratingserver/bot/gen/table"
 	"ratingserver/bot/model"
 	"time"
+
+	"github.com/go-jet/jet/v2/sqlite"
 )
 
 type Storage struct {
@@ -49,10 +51,11 @@ func convertUserFromDomain(user model.User) dbmodel.Users {
 	}
 }
 
-func (s *Storage) GetUser() (model.User, error) {
+func (s *Storage) GetUser(id int) (model.User, error) {
 	var dbUser dbmodel.Users
 	err := table.Users.
 		SELECT(table.Users.AllColumns).
+		WHERE(table.Users.ID.EQ(sqlite.Int(int64(id)))).
 		Query(s.db, &dbUser)
 	if err != nil {
 		return model.User{}, err
