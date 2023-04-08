@@ -39,15 +39,16 @@ func New(l *logrus.Logger) (*Storage, error) {
 	}, nil
 }
 
-func (s *Storage) NewUser(user model.User) error {
-	_, err := table.Users.
+func (s *Storage) NewUser(user model.User) (model.User, error) {
+	var dbuser dbmodel.Users
+	err := table.Users.
 		INSERT(table.Users.AllColumns).
-		MODEL(convertUserFromDomain(user)).
-		Exec(s.db)
+		MODEL(convertUserFromDomain(user)).RETURNING(table.Users.AllColumns).
+		Query(s.db, &dbuser)
 	if err != nil {
-		return err
+		return model.User{}, err
 	}
-	return nil
+	return convertUserToDomain(dbuser), nil
 }
 
 func convertUserFromDomain(user model.User) dbmodel.Users {

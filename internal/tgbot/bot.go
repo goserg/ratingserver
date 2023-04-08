@@ -65,18 +65,13 @@ func (b *Bot) Run() {
 			}
 			user, err := b.botStorage.GetUser(int(tgUser.ID))
 			if err != nil {
-				err := b.botStorage.NewUser(botmodel.User{
+				user, err = b.botStorage.NewUser(botmodel.User{
 					ID:        int(tgUser.ID),
 					FirstName: tgUser.FirstName,
 					Username:  tgUser.UserName,
 					CreatedAt: time.Now(),
 					UpdatedAt: time.Now(),
 				})
-				if err != nil {
-					fmt.Println("ERRRRRR", err)
-					continue
-				}
-				user, err = b.botStorage.GetUser(int(tgUser.ID))
 				if err != nil {
 					fmt.Println("ERRRRRR", err)
 					continue
