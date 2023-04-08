@@ -39,34 +39,42 @@ func convertPlayerFromDomain(player domain.Player) model.Players {
 	}
 }
 
-func convertMatchesToDomain(matches []model.Matches) []domain.Match {
+func convertMatchesToDomain(matches []model.Matches) ([]domain.Match, error) {
 	converted := make([]domain.Match, 0, len(matches))
 	for _, match := range matches {
-		idA, err := uuid.Parse(match.PlayerA)
+		m, err := convertMatchToDomain(match)
 		if err != nil {
-			return nil
+			return nil, err
 		}
-		playerA := domain.Player{ID: idA}
-		idB, err := uuid.Parse(match.PlayerB)
-		if err != nil {
-			return nil
-		}
-		var winner domain.Player
-		playerB := domain.Player{ID: idB}
-		if match.Winner != nil && *match.Winner != uuid.Nil.String() {
-			if *match.Winner == playerA.ID.String() {
-				winner = playerA
-			} else {
-				winner = playerB
-			}
-		}
-		converted = append(converted, domain.Match{
-			ID:      int(match.ID),
-			PlayerA: playerA,
-			PlayerB: playerB,
-			Winner:  winner,
-			Date:    match.CreatedAt,
-		})
+		converted = append(converted, m)
 	}
-	return converted
+	return converted, nil
+}
+
+func convertMatchToDomain(match model.Matches) (domain.Match, error) {
+	idA, err := uuid.Parse(match.PlayerA)
+	if err != nil {
+		return domain.Match{}, err
+	}
+	playerA := domain.Player{ID: idA}
+	idB, err := uuid.Parse(match.PlayerB)
+	if err != nil {
+		return domain.Match{}, err
+	}
+	var winner domain.Player
+	playerB := domain.Player{ID: idB}
+	if match.Winner != nil && *match.Winner != uuid.Nil.String() {
+		if *match.Winner == playerA.ID.String() {
+			winner = playerA
+		} else {
+			winner = playerB
+		}
+	}
+	return domain.Match{
+		ID:      int(match.ID),
+		PlayerA: playerA,
+		PlayerB: playerB,
+		Winner:  winner,
+		Date:    match.CreatedAt,
+	}, nil
 }

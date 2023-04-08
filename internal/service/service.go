@@ -112,9 +112,11 @@ func (s *PlayerService) GetMatches() ([]domain.Match, error) {
 
 		newRatingA := elo.Calculate(playerRatingA, playerRatingB, playerCoefficientA, pointsA)
 		matches[i].PlayerA.RatingChange = newRatingA - playerRatingA
+		matches[i].PlayerA.EloRating = newRatingA
 		playerRatings[matches[i].PlayerA.ID.String()] = newRatingA
 		newRatingB := elo.Calculate(playerRatingB, playerRatingA, playerCoefficientB, pointsB)
 		matches[i].PlayerB.RatingChange = newRatingB - playerRatingB
+		matches[i].PlayerB.EloRating = newRatingB
 		playerRatings[matches[i].PlayerB.ID.String()] = newRatingB
 
 		playerGamesPlayed[matches[i].PlayerA.ID.String()]++
@@ -179,12 +181,8 @@ func (s *PlayerService) Import(data []byte) error {
 	return nil
 }
 
-func (s *PlayerService) CreateMatch(match domain.Match) error {
-	err := s.matchStorage.Create(match)
-	if err != nil {
-		return err
-	}
-	return nil
+func (s *PlayerService) CreateMatch(match domain.Match) (domain.Match, error) {
+	return s.matchStorage.Create(match)
 }
 
 func (s *PlayerService) Get(id uuid.UUID) (domain.Player, error) {

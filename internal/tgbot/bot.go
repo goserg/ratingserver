@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -76,6 +77,9 @@ func (b *Bot) Run() {
 		case <-ctx.Done():
 			return
 		case update := <-updates:
+			if update.Message == nil { // ignore any non-Message updates
+				continue
+			}
 			tgUser := update.SentFrom()
 			if tgUser == nil {
 				continue
@@ -98,10 +102,6 @@ func (b *Bot) Run() {
 			err = b.botStorage.Log(user, update.Message.Text)
 			if err != nil {
 				fmt.Println("CAN'T LOG TO DB", err)
-			}
-
-			if update.Message == nil { // ignore any non-Message updates
-				continue
 			}
 
 			if !update.Message.IsCommand() { // ignore any non-command Messages
@@ -127,9 +127,13 @@ func (b *Bot) Run() {
 			case "info":
 				msg.Text = b.processInfo(update.Message.CommandArguments())
 			case "game":
-				msg.Text = b.processAddMatch(update.Message.CommandArguments())
+				newMatch, err := b.processAddMatch(update.Message.CommandArguments())
+				msg.Text = "матч создан"
+				if err != nil {
+					msg.Text = err.Error()
+				}
 				for _, userIDs := range b.subscriptions {
-					b.sendMatchNotification(userIDs.ToSlice(), update.Message.CommandArguments())
+					b.sendMatchNotification(userIDs.ToSlice(), newMatch)
 				}
 			case "top":
 				ratings, err := b.playerService.GetRatings()
@@ -238,20 +242,20 @@ const (
 	winnerIndex
 )
 
-func (b *Bot) processAddMatch(arguments string) string {
+func (b *Bot) processAddMatch(arguments string) (domain.Match, error) {
 	fields := strings.Fields(arguments)
 	if len(fields) < 3 {
-		return `Неверный запрос. Пример: "Вася петя вася" - играли вася и петя, победил вася`
+		return domain.Match{}, errors.New(`неверный запрос. Пример: "Вася петя вася" - играли вася и петя, победил вася`)
 	}
 	playerAName := fields[playerAIndex]
 	playerA, err := b.playerService.GetByName(playerAName)
 	if err != nil {
-		return playerAName + " не найден"
+		return domain.Match{}, errors.New(playerAName + " не найден")
 	}
 	playerBName := fields[playerBIndex]
 	playerB, err := b.playerService.GetByName(playerBName)
 	if err != nil {
-		return playerBName + " не найден"
+		return domain.Match{}, errors.New(playerBName + " не найден")
 	}
 
 	newMatch := domain.Match{
@@ -265,19 +269,59 @@ func (b *Bot) processAddMatch(arguments string) string {
 	case strings.ToLower(playerBName):
 		newMatch.Winner = playerB
 	}
-	err = b.playerService.CreateMatch(newMatch)
-	if err != nil {
-		return "ошибка создания матча"
-	}
-	return "матч успешно создан"
+	return b.playerService.CreateMatch(newMatch)
 }
 
-func (b *Bot) sendMatchNotification(userIDs []int, arguments string) {
-	for _, userID := range userIDs {
-		msg := tgbotapi.NewMessage(int64(userID), "добавлены результаты матча: "+arguments)
-		if _, err := b.bot.Send(msg); err != nil {
-			log.Println("BOT ERROR", err.Error())
-			return
+func (b *Bot) sendMatchNotification(userIDs []int, match domain.Match) {
+	matches, err := b.playerService.GetMatches()
+	if err != nil {
+		log.Println("ERRRRRR", err.Error())
+		return
+	}
+	for i := range matches {
+		if matches[i].ID == match.ID {
+			match := matches[i]
+			for _, userID := range userIDs {
+				msg := tgbotapi.NewMessage(int64(userID), formatMatchResult(match))
+				if _, err := b.bot.Send(msg); err != nil {
+					log.Println("BOT ERROR", err.Error())
+					return
+				}
+			}
 		}
 	}
+}
+
+func formatMatchResult(match domain.Match) string {
+	var buf strings.Builder
+	buf.WriteString("добавлены результаты:\n")
+	buf.WriteString(match.PlayerA.Name)
+	buf.WriteString(" vs ")
+	buf.WriteString(match.PlayerB.Name)
+	buf.WriteString("\n")
+	if match.Winner.ID == match.PlayerA.ID {
+		buf.WriteString("Победил ")
+		buf.WriteString(match.PlayerA.Name)
+	} else if match.Winner.ID == match.PlayerB.ID {
+		buf.WriteString("Победил ")
+		buf.WriteString(match.PlayerB.Name)
+	} else {
+		buf.WriteString("Ничья")
+	}
+	buf.WriteString("\nРейтинг:\n")
+
+	buf.WriteString(match.PlayerA.Name)
+	buf.WriteString(" - ")
+	buf.WriteString(strconv.Itoa(match.PlayerA.EloRating))
+	buf.WriteString("(")
+	buf.WriteString(strconv.Itoa(match.PlayerA.RatingChange))
+	buf.WriteString(")\n")
+	buf.WriteString(match.PlayerB.Name)
+	buf.WriteString(" - ")
+	buf.WriteString(strconv.Itoa(match.PlayerB.EloRating))
+	buf.WriteString("(")
+	buf.WriteString(strconv.Itoa(match.PlayerB.RatingChange))
+	buf.WriteString(")\n")
+
+	return buf.String()
 }

@@ -2,10 +2,11 @@ package web
 
 import (
 	"encoding/json"
-	"github.com/google/uuid"
 	"os"
 	"ratingserver/internal/service"
 	"time"
+
+	"github.com/google/uuid"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html"
@@ -108,7 +109,7 @@ func (s *Server) handleCreateMatch(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	err = s.playerService.CreateMatch(dMatch)
+	_, err = s.playerService.CreateMatch(dMatch)
 	if err != nil {
 		return err
 	}

@@ -1,8 +1,9 @@
 package storage
 
 import (
-	"github.com/google/uuid"
 	"ratingserver/internal/domain"
+
+	"github.com/google/uuid"
 )
 
 type PlayerStorage interface {
@@ -14,7 +15,7 @@ type PlayerStorage interface {
 
 type MatchStorage interface {
 	ListMatches() ([]domain.Match, error)
-	Create(domain.Match) error
+	Create(domain.Match) (domain.Match, error)
 
 	ImportMatches([]domain.Match) error
 }

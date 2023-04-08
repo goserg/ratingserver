@@ -68,7 +68,10 @@ func (s *Storage) ListMatches() ([]domain.Match, error) {
 		return nil, err
 	}
 	playerMap := convertPlayersToMap(players)
-	domainMatches := convertMatchesToDomain(matches)
+	domainMatches, err := convertMatchesToDomain(matches)
+	if err != nil {
+		return nil, err
+	}
 	for i := range domainMatches {
 		domainMatches[i].PlayerA = playerMap[domainMatches[i].PlayerA.ID]
 		domainMatches[i].PlayerB = playerMap[domainMatches[i].PlayerB.ID]
@@ -124,9 +127,9 @@ func convertMatchesFromDomain(match domain.Match) model.Matches {
 	return m
 }
 
-func (s *Storage) Create(match domain.Match) error {
+func (s *Storage) Create(match domain.Match) (domain.Match, error) {
 	dMatch := convertMatchesFromDomain(match)
-	_, err := table.Matches.
+	err := table.Matches.
 		INSERT(
 			table.Matches.PlayerA,
 			table.Matches.PlayerB,
@@ -134,11 +137,12 @@ func (s *Storage) Create(match domain.Match) error {
 			table.Matches.CreatedAt,
 		).
 		MODEL(dMatch).
-		Exec(s.db)
+		RETURNING(table.Matches.AllColumns).
+		Query(s.db, &dMatch)
 	if err != nil {
-		return err
+		return domain.Match{}, err
 	}
-	return nil
+	return convertMatchToDomain(dMatch)
 }
 
 func (s *Storage) Get(uuid uuid.UUID) (domain.Player, error) {
