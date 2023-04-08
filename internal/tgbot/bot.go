@@ -104,6 +104,7 @@ func (b *Bot) Run() {
 				_, err := b.bot.Send(sticker)
 				if err != nil {
 					log.Println(err.Error())
+					continue
 				}
 				continue
 			case "info":
@@ -114,6 +115,7 @@ func (b *Bot) Run() {
 				ratings, err := b.playerService.GetRatings()
 				if err != nil {
 					log.Println(err.Error())
+					continue
 				}
 				var buffer strings.Builder
 				for i := range ratings {
@@ -128,6 +130,20 @@ func (b *Bot) Run() {
 					buffer.WriteString(")\n")
 				}
 				msg.Text = buffer.String()
+			case "sub":
+				msg.Text = "Подписка оформленна, чтобы отписаться от уведомлений: /unsub"
+				err := b.botStorage.Subscribe(user)
+				if err != nil {
+					log.Println(err.Error())
+					msg.Text = err.Error()
+				}
+			case "unsub":
+				msg.Text = "Подписка отменена, чтобы подписаться на уведомления: /sub"
+				err := b.botStorage.Unsubscribe(user)
+				if err != nil {
+					log.Println(err.Error())
+					msg.Text = err.Error()
+				}
 			default:
 				msg.Text = "I don't know that command"
 			}

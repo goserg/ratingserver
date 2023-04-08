@@ -1,3 +1,10 @@
+create table event_types
+(
+    name text not null
+        constraint event_types_pk
+            primary key
+);
+
 create table roles
 (
     id   integer not null
@@ -19,13 +26,26 @@ create table users
 
 create table log
 (
-    id      integer not null
+    id         integer   not null
         constraint log_pk
             primary key autoincrement,
-    user_id integer not null
+    user_id    integer   not null
         constraint log_users_id_fk
             references users,
-    message integer
+    message    text      not null,
+    created_at timestamp not null
+);
+
+create table user_events
+(
+    user_id integer not null
+        constraint user_events_users_id_fk
+            references users,
+    event   text    not null
+        constraint user_events_event_types_name_fk
+            references event_types,
+    constraint user_events_pk
+        primary key (event, user_id)
 );
 
 create table user_roles
@@ -39,3 +59,4 @@ create table user_roles
     constraint user_roles_pk
         primary key (role_id, user_id)
 );
+

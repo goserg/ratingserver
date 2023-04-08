@@ -6,6 +6,7 @@ import (
 	dbmodel "ratingserver/bot/gen/model"
 	"ratingserver/bot/gen/table"
 	"ratingserver/bot/model"
+	"strings"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -93,6 +94,43 @@ func (s *Storage) Log(user model.User, msg string) error {
 		INSERT(table.Log.UserID, table.Log.Message, table.Log.CreatedAt).
 		MODEL(message).
 		Exec(s.db)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type EventType string
+
+const (
+	NewMatch = "new_match"
+)
+
+func (s *Storage) Subscribe(user model.User) error {
+	userEvents := dbmodel.UserEvents{
+		UserID: int32(user.ID),
+		Event:  NewMatch,
+	}
+	_, err := table.UserEvents.
+		INSERT(table.UserEvents.AllColumns).
+		MODEL(userEvents).
+		Exec(s.db)
+	if err != nil {
+		if strings.HasPrefix(err.Error(), "UNIQUE constraint failed") {
+			return nil
+		}
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) Unsubscribe(user model.User) error {
+	_, err := table.UserEvents.
+		DELETE().
+		WHERE(
+			table.UserEvents.UserID.EQ(sqlite.Int(int64(user.ID))).
+				AND(table.UserEvents.Event.EQ(sqlite.String(NewMatch))),
+		).Exec(s.db)
 	if err != nil {
 		return err
 	}
