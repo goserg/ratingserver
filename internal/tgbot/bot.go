@@ -2,8 +2,6 @@ package tgbot
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -68,10 +66,6 @@ func (b *Bot) Run() {
 			}
 			user, err := b.botStorage.GetUser(int(tgUser.ID))
 			if err != nil {
-				if !errors.Is(err, sql.ErrNoRows) {
-					fmt.Println("ERRRRRR", err)
-					continue
-				}
 				err := b.botStorage.NewUser(botmodel.User{
 					ID:        int(tgUser.ID),
 					FirstName: tgUser.FirstName,
