@@ -62,16 +62,34 @@ func convertUserFromDomain(user model.User) dbmodel.Users {
 	}
 }
 
+type GetUserModel struct {
+	dbmodel.Users
+	UserEvents []struct {
+		dbmodel.UserEvents
+	}
+}
+
 func (s *Storage) GetUser(id int) (model.User, error) {
-	var dbUser dbmodel.Users
+	var dest GetUserModel
 	err := table.Users.
-		SELECT(table.Users.AllColumns).
+		SELECT(table.Users.AllColumns, table.UserEvents.AllColumns).
+		FROM(table.Users.
+			FULL_JOIN(table.UserEvents, table.UserEvents.UserID.EQ(sqlite.Int(int64(id)))),
+		).
 		WHERE(table.Users.ID.EQ(sqlite.Int(int64(id)))).
-		Query(s.db, &dbUser)
+		Query(s.db, &dest)
 	if err != nil {
 		return model.User{}, err
 	}
-	return convertUserToDomain(dbUser), nil
+	return convertGetUserModelToDomain(dest), nil
+}
+
+func convertGetUserModelToDomain(user GetUserModel) model.User {
+	converted := convertUserToDomain(user.Users)
+	for i := range user.UserEvents {
+		converted.Subscriptions = append(converted.Subscriptions, model.EventType(user.UserEvents[i].Event))
+	}
+	return converted
 }
 
 func convertUserToDomain(user dbmodel.Users) model.User {
@@ -100,16 +118,10 @@ func (s *Storage) Log(user model.User, msg string) error {
 	return nil
 }
 
-type EventType string
-
-const (
-	NewMatch = "new_match"
-)
-
 func (s *Storage) Subscribe(user model.User) error {
 	userEvents := dbmodel.UserEvents{
 		UserID: int32(user.ID),
-		Event:  NewMatch,
+		Event:  string(model.NewMatch),
 	}
 	_, err := table.UserEvents.
 		INSERT(table.UserEvents.AllColumns).
@@ -129,7 +141,7 @@ func (s *Storage) Unsubscribe(user model.User) error {
 		DELETE().
 		WHERE(
 			table.UserEvents.UserID.EQ(sqlite.Int(int64(user.ID))).
-				AND(table.UserEvents.Event.EQ(sqlite.String(NewMatch))),
+				AND(table.UserEvents.Event.EQ(sqlite.String(string(model.NewMatch)))),
 		).Exec(s.db)
 	if err != nil {
 		return err

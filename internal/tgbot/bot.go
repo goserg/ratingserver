@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	mapset "github.com/deckarep/golang-set/v2"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -25,6 +26,8 @@ type Bot struct {
 
 	// cancel func to stop the bot
 	cancel func()
+
+	subscriptions map[botmodel.EventType]mapset.Set[int]
 }
 
 func New(ps *service.PlayerService, bs botstorage.BotStorage) (Bot, error) {
@@ -38,10 +41,13 @@ func New(ps *service.PlayerService, bs botstorage.BotStorage) (Bot, error) {
 	if err != nil {
 		return Bot{}, err
 	}
+	subs := make(map[botmodel.EventType]mapset.Set[int])
+
 	return Bot{
 		bot:           bot,
 		playerService: ps,
 		botStorage:    bs,
+		subscriptions: subs,
 	}, nil
 }
 
@@ -111,6 +117,9 @@ func (b *Bot) Run() {
 				msg.Text = b.processInfo(update.Message.CommandArguments())
 			case "game":
 				msg.Text = b.processAddMatch(update.Message.CommandArguments())
+				for _, userIDs := range b.subscriptions {
+					b.sendMatchNotification(userIDs.ToSlice(), update.Message.CommandArguments())
+				}
 			case "top":
 				ratings, err := b.playerService.GetRatings()
 				if err != nil {
@@ -137,6 +146,7 @@ func (b *Bot) Run() {
 					log.Println(err.Error())
 					msg.Text = err.Error()
 				}
+				b.subscriptions[botmodel.NewMatch].Add(user.ID)
 			case "unsub":
 				msg.Text = "Подписка отменена, чтобы подписаться на уведомления: /sub"
 				err := b.botStorage.Unsubscribe(user)
@@ -144,6 +154,7 @@ func (b *Bot) Run() {
 					log.Println(err.Error())
 					msg.Text = err.Error()
 				}
+				b.subscriptions[botmodel.NewMatch].Remove(user.ID)
 			default:
 				msg.Text = "I don't know that command"
 			}
@@ -248,4 +259,14 @@ func (b *Bot) processAddMatch(arguments string) string {
 		return "ошибка создания матча"
 	}
 	return "матч успешно создан"
+}
+
+func (b *Bot) sendMatchNotification(userIDs []int, arguments string) {
+	for _, userID := range userIDs {
+		msg := tgbotapi.NewMessage(int64(userID), "матч создан: "+arguments)
+		if _, err := b.bot.Send(msg); err != nil {
+			log.Println("BOT ERROR", err.Error())
+			return
+		}
+	}
 }
