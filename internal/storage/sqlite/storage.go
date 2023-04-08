@@ -7,19 +7,25 @@ import (
 	"ratingserver/internal/domain"
 	"ratingserver/internal/storage"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/go-jet/jet/v2/sqlite"
 
 	"github.com/google/uuid"
 )
 
 type Storage struct {
-	db *sql.DB
+	db  *sql.DB
+	log *logrus.Entry
 }
 
 var _ storage.PlayerStorage = (*Storage)(nil)
 var _ storage.MatchStorage = (*Storage)(nil)
 
-func New() (*Storage, error) {
+func New(l *logrus.Logger) (*Storage, error) {
+	log := l.WithFields(map[string]interface{}{
+		"from": "sqlite",
+	})
 	db, err := sql.Open("sqlite3", "file:rating.sqlite?cache=shared")
 	if err != nil {
 		return nil, err
@@ -29,7 +35,11 @@ func New() (*Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Storage{db: db}, nil
+	log.Info("db connected")
+	return &Storage{
+		db:  db,
+		log: log,
+	}, nil
 }
 
 func (s *Storage) ListPlayers() ([]domain.Player, error) {

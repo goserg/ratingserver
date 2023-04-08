@@ -34,11 +34,10 @@ func New(ps *service.PlayerService, bs botstorage.BotStorage) (Bot, error) {
 	}
 
 	bot.Debug = true
-	user, err := bot.GetMe()
+	_, err = bot.GetMe()
 	if err != nil {
 		return Bot{}, err
 	}
-	fmt.Println(user)
 	return Bot{
 		bot:           bot,
 		playerService: ps,

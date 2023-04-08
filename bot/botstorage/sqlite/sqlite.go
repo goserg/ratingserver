@@ -8,16 +8,22 @@ import (
 	"ratingserver/bot/model"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	"github.com/go-jet/jet/v2/sqlite"
 )
 
 type Storage struct {
-	db *sql.DB
+	db  *sql.DB
+	log *logrus.Entry
 }
 
 var _ botstorage.BotStorage = (*Storage)(nil)
 
-func New() (*Storage, error) {
+func New(l *logrus.Logger) (*Storage, error) {
+	log := l.WithFields(map[string]interface{}{
+		"from": "bot-storage",
+	})
 	db, err := sql.Open("sqlite3", "file:bot.sqlite?cache=shared")
 	if err != nil {
 		return nil, err
@@ -27,7 +33,10 @@ func New() (*Storage, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Storage{db: db}, nil
+	log.Info("bot storage connected")
+	return &Storage{
+		db: db,
+	}, nil
 }
 
 func (s *Storage) NewUser(user model.User) error {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	botstorage "ratingserver/bot/botstorage/sqlite"
+	"ratingserver/internal/logger"
 	"ratingserver/internal/service"
 	"ratingserver/internal/storage/sqlite"
 	"ratingserver/internal/tgbot"
@@ -20,12 +21,14 @@ func main() {
 }
 
 func run() error {
-	storage, err := sqlite.New()
+	log := logger.New()
+
+	storage, err := sqlite.New(log)
 	if err != nil {
 		return err
 	}
 
-	botStorage, err := botstorage.New()
+	botStorage, err := botstorage.New(log)
 	if err != nil {
 		return err
 	}
