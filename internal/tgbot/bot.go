@@ -103,9 +103,7 @@ func (b *Bot) Run() {
 			// Extract the command from the Message.
 			switch update.Message.Command() {
 			case "help", "start":
-				msg.Text = `Доступные команды "/sayhi" "/status" и "/info имя".`
-			case "sayhi":
-				msg.Text = `Привет :)`
+				msg.Text = `Доступные команды "/top", "/help", "/status" и "/info имя".`
 			case "status":
 				sticker := tgbotapi.NewSticker(msg.ChatID, tgbotapi.FileID("CAACAgIAAxkBAAEIek5kLqgKrk6cRxw0uUy2CNY-VYdyBQACdxEAAjyzxQdiXqFFBrRFjy8E"))
 				_, err := b.bot.Send(sticker)
@@ -117,6 +115,24 @@ func (b *Bot) Run() {
 				msg.Text = b.processInfo(update.Message.CommandArguments())
 			case "game":
 				msg.Text = b.processAddMatch(update.Message.CommandArguments())
+			case "top":
+				ratings, err := b.playerService.GetRatings()
+				if err != nil {
+					log.Println(err.Error())
+				}
+				var buffer strings.Builder
+				for i := range ratings {
+					if i > 9 {
+						break
+					}
+					buffer.WriteString(strconv.Itoa(ratings[i].RatingRank))
+					buffer.WriteString(". ")
+					buffer.WriteString(ratings[i].Name)
+					buffer.WriteString("(")
+					buffer.WriteString(strconv.Itoa(ratings[i].EloRating))
+					buffer.WriteString(")\n")
+				}
+				msg.Text = buffer.String()
 			default:
 				msg.Text = "I don't know that command"
 			}
