@@ -148,3 +148,25 @@ func (s *Storage) Unsubscribe(user model.User) error {
 	}
 	return nil
 }
+
+func (s *Storage) ListUsers() ([]model.User, error) {
+	var dest []GetUserModel
+	err := table.Users.
+		SELECT(table.Users.AllColumns, table.UserEvents.AllColumns).
+		FROM(table.Users.
+			FULL_JOIN(table.UserEvents, table.UserEvents.UserID.EQ(table.Users.ID)),
+		).
+		Query(s.db, &dest)
+	if err != nil {
+		return nil, err
+	}
+	return convertGetUsersModelToDomain(dest), nil
+}
+
+func convertGetUsersModelToDomain(dest []GetUserModel) []model.User {
+	var converted []model.User
+	for i := range dest {
+		converted = append(converted, convertGetUserModelToDomain(dest[i]))
+	}
+	return converted
+}

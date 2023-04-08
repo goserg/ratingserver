@@ -8,4 +8,5 @@ type BotStorage interface {
 	Log(model.User, string) error
 	Subscribe(user model.User) error
 	Unsubscribe(user model.User) error
+	ListUsers() ([]model.User, error)
 }

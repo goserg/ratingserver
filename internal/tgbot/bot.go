@@ -42,7 +42,18 @@ func New(ps *service.PlayerService, bs botstorage.BotStorage) (Bot, error) {
 		return Bot{}, err
 	}
 	subs := make(map[botmodel.EventType]mapset.Set[int])
-
+	users, err := bs.ListUsers()
+	if err != nil {
+		return Bot{}, err
+	}
+	for i := range users {
+		for _, subscription := range users[i].Subscriptions {
+			if subs[subscription] == nil {
+				subs[subscription] = mapset.NewSet[int]()
+			}
+			subs[subscription].Add(users[i].ID)
+		}
+	}
 	return Bot{
 		bot:           bot,
 		playerService: ps,
