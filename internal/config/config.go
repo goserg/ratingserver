@@ -2,18 +2,23 @@ package config
 
 import (
 	"errors"
+	"io"
 	"os"
+	configsdefault "ratingserver/configs_default"
 
 	"github.com/BurntSushi/toml"
 )
 
-const botCfgPath = "configs/bot.toml"
+const (
+	botCfgName       = "bot.toml"
+	serverCftName    = "server.toml"
+	defaultEmbedPath = "default/"
+	cftFolder        = "configs/"
+)
 
 type TgBot struct {
 	TelegramApiToken string `toml:"telegream_atitoken"`
 }
-
-const serverCftPath = "configs/server.toml"
 
 type Server struct {
 	TgBotDisable bool `toml:"disable_tg_bot"`
@@ -47,34 +52,62 @@ func New() (Config, error) {
 
 func serverConfig() (Server, error) {
 	var serverCfg Server
-	_, err := toml.DecodeFile(serverCftPath, &serverCfg)
+	_, err := os.Stat(cftFolder + serverCftName)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			if err != nil {
 				return Server{}, err
 			}
 		}
-		_, err := os.Create(serverCftPath)
+		defaultCfg, err := configsdefault.Files.Open(defaultEmbedPath + serverCftName)
 		if err != nil {
 			return Server{}, err
 		}
+		defer defaultCfg.Close()
+		newCfg, err := os.Create(cftFolder + serverCftName)
+		if err != nil {
+			return Server{}, err
+		}
+		defer newCfg.Close()
+		_, err = io.Copy(newCfg, defaultCfg)
+		if err != nil {
+			return Server{}, err
+		}
+	}
+	_, err = toml.DecodeFile(cftFolder+serverCftName, &serverCfg)
+	if err != nil {
+		return Server{}, err
 	}
 	return serverCfg, nil
 }
 
 func tgBotConfig() (TgBot, error) {
 	var tgBotCfg TgBot
-	_, err := toml.DecodeFile(botCfgPath, &tgBotCfg)
+	_, err := os.Stat(cftFolder + botCfgName)
 	if err != nil {
 		if !errors.Is(err, os.ErrNotExist) {
 			if err != nil {
 				return TgBot{}, err
 			}
 		}
-		_, err := os.Create(botCfgPath)
+		defaultCfg, err := configsdefault.Files.Open(defaultEmbedPath + botCfgName)
 		if err != nil {
 			return TgBot{}, err
 		}
+		defer defaultCfg.Close()
+		newCfg, err := os.Create(cftFolder + botCfgName)
+		if err != nil {
+			return TgBot{}, err
+		}
+		defer newCfg.Close()
+		_, err = io.Copy(newCfg, defaultCfg)
+		if err != nil {
+			return TgBot{}, err
+		}
+	}
+	_, err = toml.DecodeFile(cftFolder+botCfgName, &tgBotCfg)
+	if err != nil {
+		return TgBot{}, err
 	}
 	token := os.Getenv("TELEGRAM_APITOKEN")
 	if token != "" {
