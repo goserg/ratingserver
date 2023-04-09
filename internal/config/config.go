@@ -1,14 +1,19 @@
 package config
 
 import (
+	"errors"
 	"os"
 
 	"github.com/BurntSushi/toml"
 )
 
+const botCfgPath = "configs/bot2.toml"
+
 type TgBot struct {
 	TelegramApiToken string `toml:"telegream_atitoken"`
 }
+
+const serverCftPath = "configs/server.toml"
 
 type Server struct {
 	TgBotEnabled bool `toml:"tg_bot_enabled"`
@@ -22,9 +27,17 @@ type Config struct {
 
 func New() (Config, error) {
 	var tgBotCfg TgBot
-	_, err := toml.DecodeFile("configs/bot.toml", &tgBotCfg)
+	_, err := toml.DecodeFile(botCfgPath, &tgBotCfg)
 	if err != nil {
-		return Config{}, err
+		if !errors.Is(err, os.ErrNotExist) {
+			if err != nil {
+				return Config{}, err
+			}
+		}
+		_, err := os.Create(botCfgPath)
+		if err != nil {
+			return Config{}, err
+		}
 	}
 	token := os.Getenv("TELEGRAM_APITOKEN")
 	if token != "" {
@@ -32,9 +45,17 @@ func New() (Config, error) {
 	}
 
 	var serverCfg Server
-	_, err = toml.DecodeFile("configs/server.toml", &serverCfg)
+	_, err = toml.DecodeFile(serverCftPath, &serverCfg)
 	if err != nil {
-		return Config{}, err
+		if !errors.Is(err, os.ErrNotExist) {
+			if err != nil {
+				return Config{}, err
+			}
+		}
+		_, err := os.Create(serverCftPath)
+		if err != nil {
+			return Config{}, err
+		}
 	}
 
 	return Config{
