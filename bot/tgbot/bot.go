@@ -14,7 +14,6 @@ import (
 	"strings"
 	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -28,7 +27,7 @@ type Bot struct {
 	// cancel func to stop the bot
 	cancel func()
 
-	subscriptions map[botmodel.EventType]mapset.Set[int]
+	subs subscriptions
 }
 
 func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config) (Bot, error) {
@@ -42,24 +41,21 @@ func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config)
 	if err != nil {
 		return Bot{}, err
 	}
-	subs := make(map[botmodel.EventType]mapset.Set[int])
+	subs := newSubs()
 	users, err := bs.ListUsers()
 	if err != nil {
 		return Bot{}, err
 	}
 	for i := range users {
-		for _, subscription := range users[i].Subscriptions {
-			if subs[subscription] == nil {
-				subs[subscription] = mapset.NewSet[int]()
-			}
-			subs[subscription].Add(users[i].ID)
+		for _, subType := range users[i].Subscriptions {
+			subs.Add(subType, users[i].ID)
 		}
 	}
 	return Bot{
 		bot:           bot,
 		playerService: ps,
 		botStorage:    bs,
-		subscriptions: subs,
+		subs:          subs,
 	}, nil
 }
 
@@ -126,15 +122,13 @@ func (b *Bot) Run() {
 				continue
 			case "info":
 				msg.Text = b.processInfo(update.Message.CommandArguments())
-			case "game":
+			case "game", "match":
 				newMatch, err := b.processAddMatch(update.Message.CommandArguments())
 				msg.Text = "матч создан"
 				if err != nil {
 					msg.Text = err.Error()
 				}
-				for _, userIDs := range b.subscriptions {
-					b.sendMatchNotification(userIDs.ToSlice(), newMatch)
-				}
+				b.sendMatchNotification(b.subs.GetUserIDs(botmodel.NewMatch), newMatch)
 			case "top":
 				ratings, err := b.playerService.GetRatings()
 				if err != nil {
@@ -161,7 +155,7 @@ func (b *Bot) Run() {
 					log.Println(err.Error())
 					msg.Text = err.Error()
 				}
-				b.subscriptions[botmodel.NewMatch].Add(user.ID)
+				b.subs.Add(botmodel.NewMatch, user.ID)
 			case "unsub":
 				msg.Text = "Подписка отменена, чтобы подписаться на уведомления: /sub"
 				err := b.botStorage.Unsubscribe(user)
@@ -169,7 +163,7 @@ func (b *Bot) Run() {
 					log.Println(err.Error())
 					msg.Text = err.Error()
 				}
-				b.subscriptions[botmodel.NewMatch].Remove(user.ID)
+				b.subs.Remove(botmodel.NewMatch, user.ID)
 			default:
 				msg.Text = "I don't know that command"
 			}
