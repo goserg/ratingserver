@@ -2,7 +2,10 @@ package web
 
 import (
 	"encoding/json"
+	"io/fs"
+	"net/http"
 	"os"
+	embedded "ratingserver"
 	"ratingserver/internal/service"
 	"time"
 
@@ -22,7 +25,11 @@ func New(ps *service.PlayerService) *Server {
 		playerService: ps,
 	}
 
-	engine := html.New("./views", ".html")
+	fsFS, err := fs.Sub(embedded.Views, "views")
+	if err != nil {
+		return nil
+	}
+	engine := html.NewFileSystem(http.FS(fsFS), ".html")
 	engine.Reload(true)
 	engine.Debug(true)
 	engine.AddFunc("FormatDate", formatDate)

@@ -13,5 +13,4 @@ services:
       - ./configs/:/app/server/configs/
       - ./bot.sqlite:/app/server/bot.sqlite
       - ./rating.sqlite:/app/server/rating.sqlite
-      - ./views:/app/server/views
 
