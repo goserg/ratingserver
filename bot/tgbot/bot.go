@@ -115,7 +115,7 @@ func (b *Bot) Run() {
 			// Extract the command from the Message.
 			switch update.Message.Command() {
 			case "help", "start":
-				msg.Text = `Доступные команды "/top", "/help", "/status" и "/info имя".`
+				msg.Text = `Доступные команды /top, /help, /sub, /unsub, /status и /info.`
 			case "status":
 				sticker := tgbotapi.NewSticker(msg.ChatID, tgbotapi.FileID("CAACAgIAAxkBAAEIek5kLqgKrk6cRxw0uUy2CNY-VYdyBQACdxEAAjyzxQdiXqFFBrRFjy8E"))
 				_, err := b.bot.Send(sticker)
@@ -186,7 +186,7 @@ func (b *Bot) Run() {
 func (b *Bot) processInfo(command string) string {
 	fields := strings.Fields(command)
 	if len(fields) < 1 {
-		return "Укажите имя"
+		return `После /info имя игрока необходимо указывать в этом же соощении. Например "/info джон"`
 	}
 	player, err := b.playerService.GetByName(fields[0])
 	if err != nil {
