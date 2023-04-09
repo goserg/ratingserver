@@ -5,9 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"os"
 	"ratingserver/bot/botstorage"
 	botmodel "ratingserver/bot/model"
+	"ratingserver/internal/config"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/service"
 	"strconv"
@@ -31,8 +31,8 @@ type Bot struct {
 	subscriptions map[botmodel.EventType]mapset.Set[int]
 }
 
-func New(ps *service.PlayerService, bs botstorage.BotStorage) (Bot, error) {
-	bot, err := tgbotapi.NewBotAPI(os.Getenv("TELEGRAM_APITOKEN"))
+func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.TgBot) (Bot, error) {
+	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
 	if err != nil {
 		return Bot{}, fmt.Errorf("env TELEGRAM_APITOKEN: %w", err)
 	}

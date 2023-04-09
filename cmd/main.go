@@ -4,10 +4,11 @@ import (
 	"fmt"
 	"os"
 	botstorage "ratingserver/bot/botstorage/sqlite"
+	"ratingserver/bot/tgbot"
+	"ratingserver/internal/config"
 	"ratingserver/internal/logger"
 	"ratingserver/internal/service"
 	"ratingserver/internal/storage/sqlite"
-	"ratingserver/internal/tgbot"
 	"ratingserver/internal/web"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -21,6 +22,7 @@ func main() {
 }
 
 func run() error {
+	cfg := config.New()
 	log := logger.New()
 
 	storage, err := sqlite.New(log)
@@ -35,7 +37,7 @@ func run() error {
 
 	playerService := service.New(storage, storage)
 
-	bot, err := tgbot.New(playerService, botStorage)
+	bot, err := tgbot.New(playerService, botStorage, cfg)
 	if err != nil {
 		return err
 	}

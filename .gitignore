@@ -1,6 +1,8 @@
 .idea
 bin
 
+configs/
+
 rating.sqlite
 bot.sqlite
 export.json
