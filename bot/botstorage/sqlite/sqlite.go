@@ -6,6 +6,7 @@ import (
 	dbmodel "ratingserver/bot/gen/model"
 	"ratingserver/bot/gen/table"
 	"ratingserver/bot/model"
+	sqlite3 "ratingserver/internal/migrate"
 	"strings"
 	"time"
 
@@ -30,6 +31,12 @@ func New(l *logrus.Logger) (*Storage, error) {
 		return nil, err
 	}
 	db.SetMaxOpenConns(1)
+
+	err = sqlite3.UpBotDB(db)
+	if err != nil {
+		return nil, err
+	}
+
 	err = db.Ping()
 	if err != nil {
 		return nil, err

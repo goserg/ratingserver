@@ -2,16 +2,16 @@ package sqlite
 
 import (
 	"database/sql"
+
 	"ratingserver/gen/model"
 	"ratingserver/gen/table"
 	"ratingserver/internal/domain"
+	mig "ratingserver/internal/migrate"
 	"ratingserver/internal/storage"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/go-jet/jet/v2/sqlite"
-
 	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type Storage struct {
@@ -31,11 +31,17 @@ func New(l *logrus.Logger) (*Storage, error) {
 		return nil, err
 	}
 	db.SetMaxOpenConns(1)
+
+	err = mig.UpServerDB(db)
+	if err != nil {
+		return nil, err
+	}
 	err = db.Ping()
 	if err != nil {
 		return nil, err
 	}
 	log.Info("db connected")
+
 	return &Storage{
 		db:  db,
 		log: log,
