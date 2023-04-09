@@ -26,33 +26,14 @@ type Config struct {
 }
 
 func New() (Config, error) {
-	var tgBotCfg TgBot
-	_, err := toml.DecodeFile(botCfgPath, &tgBotCfg)
+	serverCfg, err := serverConfig()
 	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			if err != nil {
-				return Config{}, err
-			}
-		}
-		_, err := os.Create(botCfgPath)
-		if err != nil {
-			return Config{}, err
-		}
-	}
-	token := os.Getenv("TELEGRAM_APITOKEN")
-	if token != "" {
-		tgBotCfg.TelegramApiToken = token
+		return Config{}, err
 	}
 
-	var serverCfg Server
-	_, err = toml.DecodeFile(serverCftPath, &serverCfg)
-	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			if err != nil {
-				return Config{}, err
-			}
-		}
-		_, err := os.Create(serverCftPath)
+	var tgBotCfg TgBot
+	if serverCfg.TgBotEnabled {
+		tgBotCfg, err = tgBotConfig()
 		if err != nil {
 			return Config{}, err
 		}
@@ -62,4 +43,42 @@ func New() (Config, error) {
 		TgBot:  tgBotCfg,
 		Server: serverCfg,
 	}, nil
+}
+
+func serverConfig() (Server, error) {
+	var serverCfg Server
+	_, err := toml.DecodeFile(serverCftPath, &serverCfg)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			if err != nil {
+				return Server{}, err
+			}
+		}
+		_, err := os.Create(serverCftPath)
+		if err != nil {
+			return Server{}, err
+		}
+	}
+	return serverCfg, nil
+}
+
+func tgBotConfig() (TgBot, error) {
+	var tgBotCfg TgBot
+	_, err := toml.DecodeFile(botCfgPath, &tgBotCfg)
+	if err != nil {
+		if !errors.Is(err, os.ErrNotExist) {
+			if err != nil {
+				return TgBot{}, err
+			}
+		}
+		_, err := os.Create(botCfgPath)
+		if err != nil {
+			return TgBot{}, err
+		}
+	}
+	token := os.Getenv("TELEGRAM_APITOKEN")
+	if token != "" {
+		tgBotCfg.TelegramApiToken = token
+	}
+	return tgBotCfg, err
 }
