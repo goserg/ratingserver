@@ -49,6 +49,9 @@ func run() error {
 		defer bot.Stop()
 	}
 
-	server := web.New(playerService)
+	server, err := web.New(playerService)
+	if err != nil {
+		return err
+	}
 	return server.Serve()
 }

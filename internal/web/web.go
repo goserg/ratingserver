@@ -20,14 +20,14 @@ type Server struct {
 	app           *fiber.App
 }
 
-func New(ps *service.PlayerService) *Server {
+func New(ps *service.PlayerService) (*Server, error) {
 	server := Server{
 		playerService: ps,
 	}
 
 	fsFS, err := fs.Sub(embedded.Views, "views")
 	if err != nil {
-		return nil
+		return nil, err
 	}
 	engine := html.NewFileSystem(http.FS(fsFS), ".html")
 	engine.Reload(true)
@@ -44,7 +44,7 @@ func New(ps *service.PlayerService) *Server {
 	app.Post("/import", server.HandleImport)
 	app.Get("/players/:id", server.HandlePlayerInfo)
 	server.app = app
-	return &server
+	return &server, nil
 }
 
 func (s *Server) Serve() error {
