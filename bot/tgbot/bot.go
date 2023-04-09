@@ -14,15 +14,17 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sirupsen/logrus"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type Bot struct {
 	bot *tgbotapi.BotAPI
 
-	botStorage botstorage.BotStorage
-
+	botStorage    botstorage.BotStorage
 	playerService *service.PlayerService
+	log           *logrus.Entry
 
 	// cancel func to stop the bot
 	cancel func()
@@ -30,7 +32,7 @@ type Bot struct {
 	subs subscriptions
 }
 
-func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config) (Bot, error) {
+func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config, log *logrus.Logger) (Bot, error) {
 	bot, err := tgbotapi.NewBotAPI(cfg.TgBot.TelegramApiToken)
 	if err != nil {
 		return Bot{}, fmt.Errorf("env TELEGRAM_APITOKEN: %w", err)
@@ -56,6 +58,7 @@ func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config)
 		playerService: ps,
 		botStorage:    bs,
 		subs:          subs,
+		log:           log.WithField("name", "tg_bot"),
 	}, nil
 }
 
@@ -80,6 +83,10 @@ func (b *Bot) Run() {
 			if tgUser == nil {
 				continue
 			}
+			log := b.log.WithFields(map[string]interface{}{
+				"user_id": tgUser.ID,
+				"text":    update.Message.Text,
+			})
 			user, err := b.botStorage.GetUser(int(tgUser.ID))
 			if err != nil {
 				user, err = b.botStorage.NewUser(botmodel.User{
@@ -90,14 +97,14 @@ func (b *Bot) Run() {
 					UpdatedAt: time.Now(),
 				})
 				if err != nil {
-					fmt.Println("ERRRRRR", err)
+					log.WithError(err).Error("unable to get user from db")
 					continue
 				}
 			}
 
 			err = b.botStorage.Log(user, update.Message.Text)
 			if err != nil {
-				fmt.Println("CAN'T LOG TO DB", err)
+				log.WithError(err).Error("Can't log to db")
 			}
 
 			if !update.Message.IsCommand() { // ignore any non-command Messages
@@ -116,7 +123,7 @@ func (b *Bot) Run() {
 				sticker := tgbotapi.NewSticker(msg.ChatID, tgbotapi.FileID("CAACAgIAAxkBAAEIek5kLqgKrk6cRxw0uUy2CNY-VYdyBQACdxEAAjyzxQdiXqFFBrRFjy8E"))
 				_, err := b.bot.Send(sticker)
 				if err != nil {
-					log.Println(err.Error())
+					log.WithError(err).Error("send failed")
 					continue
 				}
 				continue
@@ -127,12 +134,13 @@ func (b *Bot) Run() {
 				msg.Text = "матч создан"
 				if err != nil {
 					msg.Text = err.Error()
+					log.WithError(err).Error("match creation failed")
 				}
 				b.sendMatchNotification(b.subs.GetUserIDs(botmodel.NewMatch), newMatch)
 			case "top":
 				ratings, err := b.playerService.GetRatings()
 				if err != nil {
-					log.Println(err.Error())
+					log.WithError(err).Error("/top failed")
 					continue
 				}
 				var buffer strings.Builder
@@ -152,7 +160,7 @@ func (b *Bot) Run() {
 				msg.Text = "Подписка оформленна, чтобы отписаться от уведомлений: /unsub"
 				err := b.botStorage.Subscribe(user)
 				if err != nil {
-					log.Println(err.Error())
+					log.WithError(err).Error("subscribe failed")
 					msg.Text = err.Error()
 				}
 				b.subs.Add(botmodel.NewMatch, user.ID)
@@ -160,7 +168,7 @@ func (b *Bot) Run() {
 				msg.Text = "Подписка отменена, чтобы подписаться на уведомления: /sub"
 				err := b.botStorage.Unsubscribe(user)
 				if err != nil {
-					log.Println(err.Error())
+					log.WithError(err).Error("unsubscribe failed")
 					msg.Text = err.Error()
 				}
 				b.subs.Remove(botmodel.NewMatch, user.ID)
@@ -169,7 +177,7 @@ func (b *Bot) Run() {
 			}
 
 			if _, err := b.bot.Send(msg); err != nil {
-				log.Println("BOT ERROR", err.Error())
+				log.WithError(err).Error("send error")
 				return
 			}
 		}
