@@ -22,7 +22,10 @@ func main() {
 }
 
 func run() error {
-	cfg := config.New()
+	cfg, err := config.New()
+	if err != nil {
+		return err
+	}
 	log := logger.New()
 
 	storage, err := sqlite.New(log)
@@ -37,7 +40,7 @@ func run() error {
 
 	playerService := service.New(storage, storage)
 
-	bot, err := tgbot.New(playerService, botStorage, cfg)
+	bot, err := tgbot.New(playerService, botStorage, cfg.TgBot)
 	if err != nil {
 		return err
 	}
