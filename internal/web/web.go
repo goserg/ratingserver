@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	embedded "ratingserver"
+	"ratingserver/internal/config"
 	"ratingserver/internal/service"
 	"time"
 
@@ -20,7 +21,7 @@ type Server struct {
 	app           *fiber.App
 }
 
-func New(ps *service.PlayerService) (*Server, error) {
+func New(ps *service.PlayerService, cfg config.Server) (*Server, error) {
 	server := Server{
 		playerService: ps,
 	}
@@ -30,8 +31,8 @@ func New(ps *service.PlayerService) (*Server, error) {
 		return nil, err
 	}
 	engine := html.NewFileSystem(http.FS(fsFS), ".html")
-	engine.Reload(true)
-	engine.Debug(true)
+	engine.Reload(cfg.Debug)
+	engine.Debug(cfg.Debug)
 	engine.AddFunc("FormatDate", formatDate)
 
 	app := fiber.New(fiber.Config{

@@ -31,13 +31,13 @@ type Bot struct {
 	subscriptions map[botmodel.EventType]mapset.Set[int]
 }
 
-func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.TgBot) (Bot, error) {
-	bot, err := tgbotapi.NewBotAPI(cfg.TelegramApiToken)
+func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config) (Bot, error) {
+	bot, err := tgbotapi.NewBotAPI(cfg.TgBot.TelegramApiToken)
 	if err != nil {
 		return Bot{}, fmt.Errorf("env TELEGRAM_APITOKEN: %w", err)
 	}
 
-	bot.Debug = true
+	bot.Debug = cfg.Server.Debug
 	_, err = bot.GetMe()
 	if err != nil {
 		return Bot{}, err

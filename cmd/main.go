@@ -41,7 +41,7 @@ func run() error {
 	playerService := service.New(storage, storage)
 
 	if !cfg.Server.TgBotDisable {
-		bot, err := tgbot.New(playerService, botStorage, cfg.TgBot)
+		bot, err := tgbot.New(playerService, botStorage, cfg)
 		if err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ func run() error {
 		defer bot.Stop()
 	}
 
-	server, err := web.New(playerService)
+	server, err := web.New(playerService, cfg.Server)
 	if err != nil {
 		return err
 	}
