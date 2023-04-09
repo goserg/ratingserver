@@ -17,7 +17,7 @@ const (
 )
 
 type TgBot struct {
-	TelegramApiToken string `toml:"telegream_atitoken"`
+	TelegramApiToken string `toml:"telegram_apitoken"`
 }
 
 type Server struct {
