@@ -16,7 +16,7 @@ type TgBot struct {
 const serverCftPath = "configs/server.toml"
 
 type Server struct {
-	TgBotEnabled bool `toml:"tg_bot_enabled"`
+	TgBotDisable bool `toml:"disable_tg_bot"`
 	Debug        bool `toml:"debug_mode"`
 }
 
@@ -32,7 +32,7 @@ func New() (Config, error) {
 	}
 
 	var tgBotCfg TgBot
-	if serverCfg.TgBotEnabled {
+	if !serverCfg.TgBotDisable {
 		tgBotCfg, err = tgBotConfig()
 		if err != nil {
 			return Config{}, err

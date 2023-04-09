@@ -40,7 +40,7 @@ func run() error {
 
 	playerService := service.New(storage, storage)
 
-	if cfg.Server.TgBotEnabled {
+	if !cfg.Server.TgBotDisable {
 		bot, err := tgbot.New(playerService, botStorage, cfg.TgBot)
 		if err != nil {
 			return err
