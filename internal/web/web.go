@@ -37,7 +37,6 @@ func New(ps *service.PlayerService) *Server {
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
-	app.Static("/", "./public")
 	app.Get("/", server.handleMain)
 	app.Get("/matches", server.handleMatches)
 	app.Post("/matches", server.handleCreateMatch)
