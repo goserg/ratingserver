@@ -7,7 +7,7 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-const botCfgPath = "configs/bot2.toml"
+const botCfgPath = "configs/bot.toml"
 
 type TgBot struct {
 	TelegramApiToken string `toml:"telegream_atitoken"`
