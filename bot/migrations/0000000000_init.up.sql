@@ -4,6 +4,7 @@ create table event_types
         constraint event_types_pk
             primary key
 );
+insert into event_types (name) values ('new_match');
 
 create table roles
 (
@@ -12,6 +13,7 @@ create table roles
             primary key autoincrement,
     role text    not null
 );
+insert into roles (id, role) values (1, 'admin'), (2, 'moder'), (3, 'user');
 
 create table users
 (
