@@ -31,6 +31,11 @@ type Config struct {
 }
 
 func New() (Config, error) {
+	err := createCfgFolderIfNotExists()
+	if err != nil {
+		return Config{}, err
+	}
+
 	serverCfg, err := serverConfig()
 	if err != nil {
 		return Config{}, err
@@ -48,6 +53,17 @@ func New() (Config, error) {
 		TgBot:  tgBotCfg,
 		Server: serverCfg,
 	}, nil
+}
+
+func createCfgFolderIfNotExists() error {
+	_, err := os.Stat(cftFolder)
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return os.Mkdir(cftFolder, 0750)
 }
 
 func serverConfig() (Server, error) {
