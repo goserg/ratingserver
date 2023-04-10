@@ -67,29 +67,11 @@ func createCfgFolderIfNotExists() error {
 }
 
 func serverConfig() (Server, error) {
-	var serverCfg Server
-	_, err := os.Stat(cftFolder + serverCftName)
+	err := createConfigFileIfNotExists(serverCftName)
 	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			if err != nil {
-				return Server{}, err
-			}
-		}
-		defaultCfg, err := configsdefault.Files.Open(defaultEmbedPath + serverCftName)
-		if err != nil {
-			return Server{}, err
-		}
-		defer defaultCfg.Close()
-		newCfg, err := os.Create(cftFolder + serverCftName)
-		if err != nil {
-			return Server{}, err
-		}
-		defer newCfg.Close()
-		_, err = io.Copy(newCfg, defaultCfg)
-		if err != nil {
-			return Server{}, err
-		}
+		return Server{}, err
 	}
+	var serverCfg Server
 	_, err = toml.DecodeFile(cftFolder+serverCftName, &serverCfg)
 	if err != nil {
 		return Server{}, err
@@ -98,29 +80,11 @@ func serverConfig() (Server, error) {
 }
 
 func tgBotConfig() (TgBot, error) {
-	var tgBotCfg TgBot
-	_, err := os.Stat(cftFolder + botCfgName)
+	err := createConfigFileIfNotExists(botCfgName)
 	if err != nil {
-		if !errors.Is(err, os.ErrNotExist) {
-			if err != nil {
-				return TgBot{}, err
-			}
-		}
-		defaultCfg, err := configsdefault.Files.Open(defaultEmbedPath + botCfgName)
-		if err != nil {
-			return TgBot{}, err
-		}
-		defer defaultCfg.Close()
-		newCfg, err := os.Create(cftFolder + botCfgName)
-		if err != nil {
-			return TgBot{}, err
-		}
-		defer newCfg.Close()
-		_, err = io.Copy(newCfg, defaultCfg)
-		if err != nil {
-			return TgBot{}, err
-		}
+		return TgBot{}, err
 	}
+	var tgBotCfg TgBot
 	_, err = toml.DecodeFile(cftFolder+botCfgName, &tgBotCfg)
 	if err != nil {
 		return TgBot{}, err
@@ -130,4 +94,29 @@ func tgBotConfig() (TgBot, error) {
 		tgBotCfg.TelegramApiToken = token
 	}
 	return tgBotCfg, err
+}
+
+func createConfigFileIfNotExists(filename string) error {
+	_, err := os.Stat(cftFolder + filename)
+	if err == nil {
+		return nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	defaultCfg, err := configsdefault.Files.Open(defaultEmbedPath + filename)
+	if err != nil {
+		return err
+	}
+	defer defaultCfg.Close()
+	newCfg, err := os.Create(cftFolder + filename)
+	if err != nil {
+		return err
+	}
+	defer newCfg.Close()
+	_, err = io.Copy(newCfg, defaultCfg)
+	if err != nil {
+		return err
+	}
+	return nil
 }
