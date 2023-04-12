@@ -107,10 +107,10 @@ func calculateMatches(matches []domain.Match) []domain.Match {
 		playerCoefficientB := calculatePlayerCoefficient(playerB.GamesPlayed, playerB.EloRating)
 
 		newRatingA := elo.Calculate(playerA.EloRating, playerB.EloRating, playerCoefficientA, pointsA)
+		newRatingB := elo.Calculate(playerB.EloRating, playerA.EloRating, playerCoefficientB, pointsB)
+
 		playerA.RatingChange = newRatingA - playerA.EloRating
 		playerA.EloRating = newRatingA
-
-		newRatingB := elo.Calculate(playerB.EloRating, playerA.EloRating, playerCoefficientB, pointsB)
 		playerB.RatingChange = newRatingB - playerB.EloRating
 		playerB.EloRating = newRatingB
 
