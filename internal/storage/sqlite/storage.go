@@ -163,3 +163,15 @@ func (s *Storage) Get(uuid uuid.UUID) (domain.Player, error) {
 	}
 	return convertPlayerToDomain(p)
 }
+
+func (s *Storage) Add(player domain.Player) (domain.Player, error) {
+	dbPlayer := convertPlayerFromDomain(player)
+	err := table.Players.
+		INSERT(table.Players.AllColumns).
+		MODEL(dbPlayer).
+		Query(s.db, &dbPlayer)
+	if err != nil {
+		return domain.Player{}, err
+	}
+	return convertPlayerToDomain(dbPlayer)
+}

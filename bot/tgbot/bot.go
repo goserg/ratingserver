@@ -172,6 +172,13 @@ func (b *Bot) Run() {
 					msg.Text = err.Error()
 				}
 				b.subs.Remove(botmodel.NewMatch, user.ID)
+			case "new_player":
+				p, err := b.playerService.CreatePlayer(update.Message.CommandArguments())
+				if err != nil {
+					log.WithError(err).Error("can't create new player")
+					msg.Text = err.Error()
+				}
+				msg.Text = "Добавлен игрок " + p.Name + "(ID " + p.ID.String() + ")"
 			default:
 				msg.Text = "I don't know that command"
 			}

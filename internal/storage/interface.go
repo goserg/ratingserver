@@ -8,7 +8,8 @@ import (
 
 type PlayerStorage interface {
 	ListPlayers() ([]domain.Player, error)
-	Get(uuid uuid.UUID) (domain.Player, error)
+	Get(uuid.UUID) (domain.Player, error)
+	Add(domain.Player) (domain.Player, error)
 
 	ImportPlayers([]domain.Player) error
 }

@@ -8,6 +8,7 @@ import (
 	"ratingserver/internal/storage"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -245,4 +246,17 @@ func (s *PlayerService) GetByName(name string) (domain.Player, error) {
 		}
 	}
 	return domain.Player{}, errors.New("not found")
+}
+
+func (s *PlayerService) CreatePlayer(name string) (domain.Player, error) {
+	newPlayer := domain.Player{
+		ID:           uuid.New(),
+		Name:         name,
+		RegisteredAt: time.Now(),
+	}
+	player, err := s.playerStorage.Add(newPlayer)
+	if err != nil {
+		return domain.Player{}, err
+	}
+	return player, nil
 }
