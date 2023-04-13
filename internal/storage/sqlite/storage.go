@@ -169,6 +169,7 @@ func (s *Storage) Add(player domain.Player) (domain.Player, error) {
 	err := table.Players.
 		INSERT(table.Players.AllColumns).
 		MODEL(dbPlayer).
+		RETURNING(table.Players.AllColumns).
 		Query(s.db, &dbPlayer)
 	if err != nil {
 		return domain.Player{}, err
