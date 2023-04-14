@@ -80,14 +80,18 @@ type GetUserModel struct {
 	UserEvents []struct {
 		dbmodel.UserEvents
 	}
+	UserRole struct {
+		dbmodel.UserRoles
+	}
 }
 
 func (s *Storage) GetUser(id int) (model.User, error) {
 	var dest GetUserModel
 	err := table.Users.
-		SELECT(table.Users.AllColumns, table.UserEvents.AllColumns).
+		SELECT(table.Users.AllColumns, table.UserEvents.AllColumns, table.UserRoles.AllColumns).
 		FROM(table.Users.
-			FULL_JOIN(table.UserEvents, table.UserEvents.UserID.EQ(sqlite.Int(int64(id)))),
+			FULL_JOIN(table.UserEvents, table.UserEvents.UserID.EQ(sqlite.Int(int64(id)))).
+			FULL_JOIN(table.UserRoles, table.UserRoles.UserID.EQ(sqlite.Int(int64(id)))),
 		).
 		WHERE(table.Users.ID.EQ(sqlite.Int(int64(id)))).
 		Query(s.db, &dest)
@@ -102,6 +106,7 @@ func convertGetUserModelToDomain(user GetUserModel) model.User {
 	for i := range user.UserEvents {
 		converted.Subscriptions = append(converted.Subscriptions, model.EventType(user.UserEvents[i].Event))
 	}
+	converted.Role = model.UserRole(user.UserRole.RoleID)
 	return converted
 }
 
@@ -182,4 +187,16 @@ func convertGetUsersModelToDomain(dest []GetUserModel) []model.User {
 		converted = append(converted, convertGetUserModelToDomain(dest[i]))
 	}
 	return converted
+}
+
+func (s *Storage) UpdateUserRole(user model.User) error {
+	_, err := table.UserRoles.
+		UPDATE(table.UserRoles.RoleID).
+		SET(user.Role).
+		WHERE(table.UserRoles.UserID.EQ(sqlite.Int(int64(user.ID)))).
+		Exec(s.db)
+	if err != nil {
+		return err
+	}
+	return nil
 }

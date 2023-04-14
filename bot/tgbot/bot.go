@@ -22,6 +22,8 @@ import (
 type Bot struct {
 	bot *tgbotapi.BotAPI
 
+	adminPassword string
+
 	botStorage    botstorage.BotStorage
 	playerService *service.PlayerService
 	log           *logrus.Entry
@@ -31,6 +33,8 @@ type Bot struct {
 
 	subs subscriptions
 }
+
+var ErrBadRequest = errors.New("bad request")
 
 func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config, log *logrus.Logger) (Bot, error) {
 	bot, err := tgbotapi.NewBotAPI(cfg.TgBot.TelegramApiToken)
@@ -59,6 +63,7 @@ func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config,
 		botStorage:    bs,
 		subs:          subs,
 		log:           log.WithField("name", "tg_bot"),
+		adminPassword: cfg.TgBot.AdminPass,
 	}, nil
 }
 
@@ -130,6 +135,10 @@ func (b *Bot) Run() {
 			case "info":
 				msg.Text = b.processInfo(update.Message.CommandArguments())
 			case "game", "match":
+				if user.Role != botmodel.RoleAdmin && user.Role != botmodel.RoleModerator {
+					msg.Text = ErrBadRequest.Error()
+					break
+				}
 				newMatch, err := b.processAddMatch(update.Message.CommandArguments())
 				msg.Text = "матч создан"
 				if err != nil {
@@ -173,12 +182,23 @@ func (b *Bot) Run() {
 				}
 				b.subs.Remove(botmodel.NewMatch, user.ID)
 			case "new_player":
+				if user.Role != botmodel.RoleAdmin {
+					msg.Text = ErrBadRequest.Error()
+					break
+				}
 				p, err := b.playerService.CreatePlayer(update.Message.CommandArguments())
 				msg.Text = "Добавлен игрок " + p.Name + " (ID " + p.ID.String() + ")"
 				if err != nil {
 					log.WithError(err).Error("can't create new player")
 					msg.Text = err.Error()
 				}
+			case "role":
+				text, err := b.handleRole(user, update.Message.CommandArguments())
+				if err != nil {
+					msg.Text = err.Error()
+					break
+				}
+				msg.Text = text
 			default:
 				msg.Text = "I don't know that command"
 			}
@@ -190,6 +210,35 @@ func (b *Bot) Run() {
 		}
 
 	}
+}
+
+func (b *Bot) handleRole(user botmodel.User, args string) (string, error) {
+	a := strings.SplitN(args, " ", 2)
+	switch a[0] {
+	case "admin":
+		if user.Role == botmodel.RoleAdmin {
+			return "", errors.New("эта роль уже задана")
+		}
+		if len(a) != 2 {
+			return "", ErrBadRequest
+		}
+		if a[1] != b.adminPassword { // wrong admin password
+			return "", ErrBadRequest
+		}
+		user.Role = botmodel.RoleAdmin
+	case "user":
+		if user.Role == botmodel.RoleUser {
+			return "", errors.New("эта роль уже задана")
+		}
+		user.Role = botmodel.RoleUser
+	default:
+		return "", ErrBadRequest
+	}
+	err := b.botStorage.UpdateUserRole(user)
+	if err != nil {
+		return "", err
+	}
+	return "role updated", nil
 }
 
 func (b *Bot) processInfo(command string) string {

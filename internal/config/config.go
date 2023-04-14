@@ -19,6 +19,7 @@ const (
 type TgBot struct {
 	TelegramApiToken string `toml:"telegram_apitoken"`
 	SqliteFile       string `toml:"sqlite_file"`
+	AdminPass        string `toml:"admin_pass"`
 }
 
 type Server struct {

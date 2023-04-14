@@ -9,4 +9,5 @@ type BotStorage interface {
 	Subscribe(user model.User) error
 	Unsubscribe(user model.User) error
 	ListUsers() ([]model.User, error)
+	UpdateUserRole(user model.User) error
 }
