@@ -2,6 +2,7 @@ package sqlite
 
 import (
 	"database/sql"
+	"ratingserver/internal/config"
 
 	"ratingserver/gen/model"
 	"ratingserver/gen/table"
@@ -22,11 +23,11 @@ type Storage struct {
 var _ storage.PlayerStorage = (*Storage)(nil)
 var _ storage.MatchStorage = (*Storage)(nil)
 
-func New(l *logrus.Logger) (*Storage, error) {
+func New(l *logrus.Logger, cfg config.Server) (*Storage, error) {
 	log := l.WithFields(map[string]interface{}{
 		"from": "sqlite",
 	})
-	db, err := sql.Open("sqlite3", "file:rating.sqlite?cache=shared")
+	db, err := sql.Open("sqlite3", buildSource(cfg.SqliteFile))
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +47,10 @@ func New(l *logrus.Logger) (*Storage, error) {
 		db:  db,
 		log: log,
 	}, nil
+}
+
+func buildSource(fileName string) string {
+	return "file:" + fileName + "?cache=shared"
 }
 
 func (s *Storage) ListPlayers() ([]domain.Player, error) {

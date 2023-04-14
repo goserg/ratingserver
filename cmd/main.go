@@ -28,12 +28,12 @@ func run() error {
 	}
 	log := logger.New()
 
-	storage, err := sqlite.New(log)
+	storage, err := sqlite.New(log, cfg.Server)
 	if err != nil {
 		return err
 	}
 
-	botStorage, err := botstorage.New(log)
+	botStorage, err := botstorage.New(log, cfg.TgBot)
 	if err != nil {
 		return err
 	}

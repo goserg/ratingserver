@@ -18,11 +18,13 @@ const (
 
 type TgBot struct {
 	TelegramApiToken string `toml:"telegram_apitoken"`
+	SqliteFile       string `toml:"sqlite_file"`
 }
 
 type Server struct {
-	TgBotDisable bool `toml:"disable_tg_bot"`
-	Debug        bool `toml:"debug_mode"`
+	TgBotDisable bool   `toml:"disable_tg_bot"`
+	Debug        bool   `toml:"debug_mode"`
+	SqliteFile   string `toml:"sqlite_file"`
 }
 
 type Config struct {

@@ -1,1 +1,2 @@
 telegram_apitoken = "MY TOKEN"
+sqlite_file = "bot.sqlite"

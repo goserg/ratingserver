@@ -6,6 +6,7 @@ import (
 	dbmodel "ratingserver/bot/gen/model"
 	"ratingserver/bot/gen/table"
 	"ratingserver/bot/model"
+	"ratingserver/internal/config"
 	sqlite3 "ratingserver/internal/migrate"
 	"strings"
 	"time"
@@ -22,11 +23,11 @@ type Storage struct {
 
 var _ botstorage.BotStorage = (*Storage)(nil)
 
-func New(l *logrus.Logger) (*Storage, error) {
+func New(l *logrus.Logger, cfg config.TgBot) (*Storage, error) {
 	log := l.WithFields(map[string]interface{}{
 		"from": "bot-storage",
 	})
-	db, err := sql.Open("sqlite3", "file:bot.sqlite?cache=shared")
+	db, err := sql.Open("sqlite3", buildSource(cfg.SqliteFile))
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +47,10 @@ func New(l *logrus.Logger) (*Storage, error) {
 		db:  db,
 		log: log,
 	}, nil
+}
+
+func buildSource(fileName string) string {
+	return "file:" + fileName + "?cache=shared"
 }
 
 func (s *Storage) NewUser(user model.User) (model.User, error) {
