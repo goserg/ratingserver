@@ -11,9 +11,9 @@ const (
 type UserRole int
 
 const (
-	RoleAdmin     = 1
-	RoleModerator = 2
-	RoleUser      = 3
+	RoleAdmin     UserRole = 1
+	RoleModerator          = 2
+	RoleUser               = 3
 )
 
 type User struct {
