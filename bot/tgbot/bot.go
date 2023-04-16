@@ -67,7 +67,8 @@ func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config,
 
 	hc := &HelpCommand{}
 	uc := Commands(map[string]Command{
-		"help": hc,
+		"help":  hc,
+		"start": hc,
 		"top": &TopCommand{
 			playerService: ps,
 		},
