@@ -34,6 +34,8 @@ type Bot struct {
 	subs subscriptions
 }
 
+const draw = "ничья"
+
 var ErrBadRequest = errors.New("bad request")
 
 func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config, log *logrus.Logger) (Bot, error) {
@@ -186,6 +188,10 @@ func (b *Bot) Run() {
 					msg.Text = ErrBadRequest.Error()
 					break
 				}
+				if strings.ToLower(update.Message.CommandArguments()) == draw {
+					msg.Text = "имя " + draw + " запрещено"
+					break
+				}
 				p, err := b.playerService.CreatePlayer(update.Message.CommandArguments())
 				msg.Text = "Добавлен игрок " + p.Name + " (ID " + p.ID.String() + ")"
 				if err != nil {
@@ -234,6 +240,7 @@ func (b *Bot) handleRole(user botmodel.User, args string) (string, error) {
 	default:
 		return "", ErrBadRequest
 	}
+	fmt.Println("USER: ", user)
 	err := b.botStorage.UpdateUserRole(user)
 	if err != nil {
 		return "", err
@@ -326,6 +333,10 @@ func (b *Bot) processAddMatch(arguments string) (domain.Match, error) {
 		newMatch.Winner = playerA
 	case strings.ToLower(playerBName):
 		newMatch.Winner = playerB
+	case draw:
+		newMatch.Winner = domain.Player{}
+	default:
+		return domain.Match{}, errors.New("winner unknown")
 	}
 	return b.playerService.CreateMatch(newMatch)
 }

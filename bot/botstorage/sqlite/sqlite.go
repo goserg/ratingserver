@@ -98,6 +98,19 @@ func (s *Storage) GetUser(id int) (model.User, error) {
 	if err != nil {
 		return model.User{}, err
 	}
+	if dest.UserRole.RoleID == 0 {
+		dest.UserRole.RoleID = 3
+		_, err = table.UserRoles.
+			INSERT(table.UserRoles.AllColumns).
+			MODEL(dbmodel.UserRoles{
+				UserID: int32(id),
+				RoleID: 3,
+			}).
+			Exec(s.db)
+		if err != nil {
+			return model.User{}, err
+		}
+	}
 	return convertGetUserModelToDomain(dest), nil
 }
 

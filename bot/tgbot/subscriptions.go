@@ -32,5 +32,8 @@ func (s *subscriptions) Remove(t botmodel.EventType, userID int) {
 }
 
 func (s *subscriptions) GetUserIDs(t botmodel.EventType) []int {
+	if s.m[t] == nil {
+		return nil
+	}
 	return s.m[t].ToSlice()
 }

@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
@@ -35,4 +36,11 @@ type Match struct {
 	PlayerB Player
 	Winner  Player
 	Date    time.Time
+}
+
+func (m Match) Validate() error {
+	if m.Winner.ID != uuid.Nil && m.Winner.ID != m.PlayerA.ID && m.Winner.ID != m.PlayerB.ID {
+		return errors.New("winner must be empty or one of the players")
+	}
+	return nil
 }
