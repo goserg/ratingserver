@@ -16,7 +16,7 @@ var Users = newUsersTable("", "users", "")
 type usersTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	ID        sqlite.ColumnInteger
 	FirstName sqlite.ColumnString
 	Username  sqlite.ColumnString

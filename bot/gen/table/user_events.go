@@ -16,7 +16,7 @@ var UserEvents = newUserEventsTable("", "user_events", "")
 type userEventsTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	UserID sqlite.ColumnInteger
 	Event  sqlite.ColumnString
 

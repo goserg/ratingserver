@@ -16,7 +16,7 @@ var Roles = newRolesTable("", "roles", "")
 type rolesTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	ID   sqlite.ColumnInteger
 	Role sqlite.ColumnString
 

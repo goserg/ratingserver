@@ -16,7 +16,7 @@ var Players = newPlayersTable("", "players", "")
 type playersTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	ID        sqlite.ColumnString
 	Name      sqlite.ColumnString
 	CreatedAt sqlite.ColumnTimestamp

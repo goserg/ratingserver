@@ -186,7 +186,16 @@ func (s *PlayerService) CreateMatch(match domain.Match) (domain.Match, error) {
 }
 
 func (s *PlayerService) Get(id uuid.UUID) (domain.Player, error) {
-	return s.playerStorage.Get(id)
+	rating, err := s.GetRatings()
+	if err != nil {
+		return domain.Player{}, err
+	}
+	for i := range rating {
+		if rating[i].ID == id {
+			return rating[i], nil
+		}
+	}
+	return domain.Player{}, errors.New("not found")
 }
 
 func (s *PlayerService) GetPlayerData(id uuid.UUID) (domain.PlayerCardData, error) {

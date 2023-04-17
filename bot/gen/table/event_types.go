@@ -16,7 +16,7 @@ var EventTypes = newEventTypesTable("", "event_types", "")
 type eventTypesTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	Name sqlite.ColumnString
 
 	AllColumns     sqlite.ColumnList

@@ -2,11 +2,13 @@ package sqlite
 
 import (
 	"database/sql"
+	"github.com/google/uuid"
 	"ratingserver/bot/botstorage"
 	dbmodel "ratingserver/bot/gen/model"
 	"ratingserver/bot/gen/table"
 	"ratingserver/bot/model"
 	"ratingserver/internal/config"
+	"ratingserver/internal/domain"
 	sqlite3 "ratingserver/internal/migrate"
 	"strings"
 	"time"
@@ -207,6 +209,39 @@ func (s *Storage) UpdateUserRole(user model.User) error {
 		UPDATE(table.UserRoles.RoleID).
 		SET(user.Role).
 		WHERE(table.UserRoles.UserID.EQ(sqlite.Int(int64(user.ID)))).
+		Exec(s.db)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *Storage) GetMyPlayer(user model.User) (uuid.UUID, error) {
+	var up dbmodel.UserPlayers
+	err := table.UserPlayers.
+		SELECT(table.UserPlayers.AllColumns).
+		WHERE(table.UserPlayers.UserID.EQ(sqlite.Int(int64(user.ID)))).
+		Query(s.db, &up)
+	if err != nil {
+		return uuid.Nil, err
+	}
+	id, err := uuid.Parse(up.PlayerID)
+	if err != nil {
+		return [16]byte{}, err
+	}
+	return id, nil
+}
+
+func (s *Storage) LinkPlayer(user model.User, player domain.Player) error {
+	up := dbmodel.UserPlayers{
+		UserID:   int32(user.ID),
+		PlayerID: player.ID.String(),
+	}
+	_, err := table.UserPlayers.
+		INSERT(table.UserPlayers.AllColumns).
+		MODEL(up).
+		ON_CONFLICT(table.UserPlayers.UserID).
+		DO_UPDATE(sqlite.SET(table.UserPlayers.PlayerID.SET(sqlite.String(player.ID.String())))).
 		Exec(s.db)
 	if err != nil {
 		return err

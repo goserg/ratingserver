@@ -72,6 +72,10 @@ func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config,
 		"top": &TopCommand{
 			playerService: ps,
 		},
+		"me": &MeCommand{
+			playerService: ps,
+			botStorage:    bs,
+		},
 		"info": &InfoCommand{
 			playerService: ps,
 		},

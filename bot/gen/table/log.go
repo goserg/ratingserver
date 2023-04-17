@@ -16,7 +16,7 @@ var Log = newLogTable("", "log", "")
 type logTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	ID        sqlite.ColumnInteger
 	UserID    sqlite.ColumnInteger
 	Message   sqlite.ColumnString

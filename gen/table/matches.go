@@ -16,7 +16,7 @@ var Matches = newMatchesTable("", "matches", "")
 type matchesTable struct {
 	sqlite.Table
 
-	//Columns
+	// Columns
 	ID        sqlite.ColumnInteger
 	PlayerA   sqlite.ColumnString
 	PlayerB   sqlite.ColumnString
