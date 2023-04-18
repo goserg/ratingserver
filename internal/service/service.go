@@ -5,9 +5,9 @@ import (
 	"errors"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/elo"
+	"ratingserver/internal/normalize"
 	"ratingserver/internal/storage"
 	"sort"
-	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -250,7 +250,7 @@ func (s *PlayerService) GetByName(name string) (domain.Player, error) {
 		return domain.Player{}, err
 	}
 	for i := range rating {
-		if strings.EqualFold(rating[i].Name, name) {
+		if normalize.Name(rating[i].Name) == normalize.Name(name) {
 			return rating[i], nil
 		}
 	}
@@ -258,6 +258,16 @@ func (s *PlayerService) GetByName(name string) (domain.Player, error) {
 }
 
 func (s *PlayerService) CreatePlayer(name string) (domain.Player, error) {
+	players, err := s.playerStorage.ListPlayers()
+	if err != nil {
+		return domain.Player{}, err
+	}
+	normName := normalize.Name(name)
+	for _, player := range players {
+		if normalize.Name(player.Name) == normName {
+			return domain.Player{}, errors.New("player " + player.Name + " already exists")
+		}
+	}
 	newPlayer := domain.Player{
 		ID:           uuid.New(),
 		Name:         name,

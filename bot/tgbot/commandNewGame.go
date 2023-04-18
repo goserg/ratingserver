@@ -6,6 +6,7 @@ import (
 	"log"
 	"ratingserver/bot/model"
 	"ratingserver/internal/domain"
+	"ratingserver/internal/normalize"
 	"ratingserver/internal/service"
 	"strconv"
 	"strings"
@@ -64,10 +65,10 @@ func (c *NewGameCommand) processAddMatch(arguments string) (domain.Match, error)
 		PlayerB: playerB,
 		Date:    time.Now(),
 	}
-	switch strings.ToLower(fields[winnerIndex]) {
-	case strings.ToLower(playerAName):
+	switch normalize.Name(fields[winnerIndex]) {
+	case normalize.Name(playerAName):
 		newMatch.Winner = playerA
-	case strings.ToLower(playerBName):
+	case normalize.Name(playerBName):
 		newMatch.Winner = playerB
 	case draw:
 		newMatch.Winner = domain.Player{}
