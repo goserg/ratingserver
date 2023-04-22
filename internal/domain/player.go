@@ -12,10 +12,22 @@ type Player struct {
 	Name         string
 	RegisteredAt time.Time
 
-	RatingRank   int
-	EloRating    int
-	GamesPlayed  int
-	RatingChange int
+	RatingRank    int
+	EloRating     int
+	GamesPlayed   int
+	RatingChange  int
+	Glicko2Rating Glicko2Rating
+}
+
+type Glicko2Rating struct {
+	Rating          float64
+	RatingDeviation float64
+	Sigma           float64
+	Interval        Glicko2Interval
+}
+
+type Glicko2Interval struct {
+	Max, Min float64
 }
 
 type PlayerStats struct {

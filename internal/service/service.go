@@ -3,6 +3,8 @@ package service
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
+	glicko "github.com/zelenin/go-glicko2"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/elo"
 	"ratingserver/internal/normalize"
@@ -27,6 +29,62 @@ func New(playerStorage storage.PlayerStorage, matchStorage storage.MatchStorage)
 
 func (s *PlayerService) ListPlayers() ([]domain.Player, error) {
 	return s.playerStorage.ListPlayers()
+}
+
+func (s *PlayerService) GetGlicko2() ([]domain.Player, error) {
+	matches, err := s.matchStorage.ListMatches()
+	if err != nil {
+		return nil, err
+	}
+	ps, err := s.playerStorage.ListPlayers()
+	if err != nil {
+		return nil, err
+	}
+	players := make(map[uuid.UUID]*glicko.Player)
+	for i := range ps {
+		players[ps[i].ID] = glicko.NewDefaultPlayer()
+	}
+	period := glicko.NewRatingPeriod()
+	for _, player := range players {
+		period.AddPlayer(player)
+	}
+	start := matches[0].Date
+	for i := range matches {
+		if matches[i].Date.After(start.Add(time.Hour * 24)) {
+			start = matches[i].Date
+			period.Calculate()
+			period = glicko.NewRatingPeriod()
+			for _, player := range players {
+				period.AddPlayer(player)
+			}
+		}
+		w := glicko.MATCH_RESULT_DRAW
+		pA := matches[i].PlayerA
+		pB := matches[i].PlayerB
+		switch matches[i].Winner.ID {
+		case pA.ID:
+			w = glicko.MATCH_RESULT_WIN
+		case pB.ID:
+			w = glicko.MATCH_RESULT_LOSS
+		}
+		period.AddMatch(players[pA.ID], players[pB.ID], w)
+		s := players[uuid.MustParse("8e4efb9c-290a-491b-84c1-121d8eb4e38c")]
+		fmt.Println(s)
+	}
+	period.Calculate()
+	for i := range ps {
+		ps[i].Glicko2Rating.Rating = players[ps[i].ID].Rating().R()
+		ps[i].Glicko2Rating.RatingDeviation = players[ps[i].ID].Rating().Rd()
+		ps[i].Glicko2Rating.Sigma = players[ps[i].ID].Rating().Sigma()
+		ps[i].Glicko2Rating.Interval.Min, ps[i].Glicko2Rating.Interval.Max = players[ps[i].ID].Rating().ConfidenceInterval()
+	}
+	sort.SliceStable(ps, func(i, j int) bool {
+		return ps[i].Glicko2Rating.Rating > ps[j].Glicko2Rating.Rating
+	})
+	for i := range ps {
+		ps[i].RatingRank = i + 1
+	}
+	return ps, nil
 }
 
 func (s *PlayerService) GetRatings() ([]domain.Player, error) {
