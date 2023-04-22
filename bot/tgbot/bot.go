@@ -19,16 +19,15 @@ import (
 type Bot struct {
 	bot *tgbotapi.BotAPI
 
-	botStorage    botstorage.BotStorage
-	playerService *service.PlayerService
-	log           *logrus.Entry
+	botStorage botstorage.BotStorage
+	log        *logrus.Entry
 
 	// cancel func to stop the bot
 	cancel func()
 
 	subs subscriptions
 
-	commands Commands
+	commands *Commands
 }
 
 const draw = "ничья"
@@ -58,60 +57,26 @@ func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config,
 	}
 
 	b := Bot{
-		bot:           bot,
-		playerService: ps,
-		botStorage:    bs,
-		subs:          subs,
-		log:           log.WithField("name", "tg_bot"),
+		bot:        bot,
+		botStorage: bs,
+		log:        log.WithField("name", "tg_bot"),
+		subs:       subs,
 	}
 
-	hc := &HelpCommand{}
-	uc := Commands(map[string]Command{
-		"help":  hc,
-		"start": hc,
-		"top": &TopCommand{
-			playerService: ps,
+	b.commands = NewCommands(
+		ps,
+		bs,
+		cfg.TgBot.AdminPass,
+		func(id int) {
+			b.subs.Add(botmodel.NewMatch, id)
 		},
-		"gtop": &Glicko2TopCommand{
-			playerService: ps,
+		func(id int) {
+			b.subs.Remove(botmodel.NewMatch, id)
 		},
-		"me": &MeCommand{
-			playerService: ps,
-			botStorage:    bs,
+		func(msg string) {
+			b.sendMatchNotification(botmodel.NewMatch, msg)
 		},
-		"info": &InfoCommand{
-			playerService: ps,
-		},
-		"role": &RoleCommand{
-			adminPassword: cfg.TgBot.AdminPass,
-			botStorage:    bs,
-		},
-		"game": &NewGameCommand{
-			playerService: ps,
-			notify: func(msg string) {
-				b.sendMatchNotification(botmodel.NewMatch, msg)
-			},
-		},
-		"new_player": &NewPlayerCommand{
-			playerService: ps,
-		},
-		"sub": &SubCommand{
-			botStorage: bs,
-			sub: func(id int) {
-				b.subs.Add(botmodel.NewMatch, id)
-			},
-		},
-		"unsub": &UnsubCommand{
-			botStorage: bs,
-			unsub: func(id int) {
-				b.subs.Remove(botmodel.NewMatch, id)
-			},
-		},
-	},
 	)
-	hc.commands = uc
-
-	b.commands = uc
 
 	return b, nil
 }
