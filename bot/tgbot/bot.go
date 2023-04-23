@@ -134,7 +134,7 @@ func (b *Bot) Run() {
 			// so we leave it empty.
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 
-			msg.Text, err = b.commands.RunCommand(user, update.Message)
+			err = b.commands.RunCommand(user, update.Message, &msg)
 			if err != nil {
 				msg.Text = err.Error()
 			}

@@ -3,6 +3,7 @@ package tgbot
 import (
 	"errors"
 	mapset "github.com/deckarep/golang-set/v2"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"ratingserver/bot/botstorage"
 	"ratingserver/bot/model"
 	"strings"
@@ -13,7 +14,10 @@ type RoleCommand struct {
 	botStorage    botstorage.BotStorage
 }
 
-func (c *RoleCommand) Run(user model.User, args string) (string, bool, error) {
+func (c *RoleCommand) Reset() {}
+
+func (c *RoleCommand) Run(user model.User, args string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	return c.handleRole(user, args)
 }
 

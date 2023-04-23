@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"ratingserver/bot/model"
 	"ratingserver/internal/service"
 	"strconv"
@@ -12,7 +13,10 @@ type Glicko2TopCommand struct {
 	playerService *service.PlayerService
 }
 
-func (c *Glicko2TopCommand) Run(_ model.User, _ string) (string, bool, error) {
+func (c *Glicko2TopCommand) Reset() {}
+
+func (c *Glicko2TopCommand) Run(_ model.User, _ string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	ratings, err := c.playerService.GetGlicko2()
 	if err != nil {
 		return "", false, err

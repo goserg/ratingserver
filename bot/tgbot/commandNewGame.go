@@ -3,6 +3,7 @@ package tgbot
 import (
 	"errors"
 	mapset "github.com/deckarep/golang-set/v2"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
 	"ratingserver/bot/model"
 	"ratingserver/internal/domain"
@@ -18,7 +19,10 @@ type NewGameCommand struct {
 	notify        func(msg string)
 }
 
-func (c *NewGameCommand) Run(_ model.User, args string) (string, bool, error) {
+func (c *NewGameCommand) Reset() {}
+
+func (c *NewGameCommand) Run(_ model.User, args string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	match, err := c.processAddMatch(args)
 	if err != nil {
 		return "", false, err

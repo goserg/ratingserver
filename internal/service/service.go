@@ -240,6 +240,9 @@ func (s *PlayerService) Import(data []byte) error {
 }
 
 func (s *PlayerService) CreateMatch(match domain.Match) (domain.Match, error) {
+	if match.PlayerA.ID == match.PlayerB.ID {
+		return domain.Match{}, errors.New("должно участвовать два разных игрока")
+	}
 	return s.matchStorage.Create(match)
 }
 

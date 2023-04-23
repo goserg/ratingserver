@@ -9,10 +9,12 @@ import (
 )
 
 type Command interface {
-	Run(user model.User, args string) (string, bool, error)
+	Run(user model.User, args string, resp *tgbotapi.MessageConfig) (string, bool, error)
 	Help() string
 	Permission() mapset.Set[model.UserRole]
 	Visibility() mapset.Set[model.UserRole]
+
+	Reset()
 }
 
 type Commands struct {
@@ -65,7 +67,7 @@ func NewCommands(
 				botStorage: bs,
 				unsub:      unsubFn,
 			},
-			"event": NewEventCommand(ps),
+			"event": NewEventCommand(ps, sendNotifFn),
 		},
 		userCurrentCommand: make(map[int]Command),
 	}
@@ -73,35 +75,42 @@ func NewCommands(
 	return &uc
 }
 
-func (uc *Commands) RunCommand(user model.User, msg *tgbotapi.Message) (string, error) {
+func (uc *Commands) RunCommand(
+	user model.User,
+	msg *tgbotapi.Message,
+	resp *tgbotapi.MessageConfig,
+) error {
 	for s, command := range uc.list {
 		if msg.Command() == s {
 			if command.Permission().Contains(user.Role) {
-				text, needContinue, err := command.Run(user, msg.CommandArguments())
+				command.Reset()
+				text, needContinue, err := command.Run(user, msg.CommandArguments(), resp)
 				if err != nil {
-					return "", err
+					return err
 				}
 				if needContinue {
 					uc.userCurrentCommand[user.ID] = command
 				} else {
 					uc.userCurrentCommand[user.ID] = nil
 				}
-				return text, nil
+				resp.Text = text
+				return nil
 			}
 		}
 	}
 	command := uc.userCurrentCommand[user.ID]
 	if command != nil {
-		text, needContinue, err := command.Run(user, msg.Text)
+		text, needContinue, err := command.Run(user, msg.Text, resp)
 		if err != nil {
-			return "", err
+			return err
 		}
 		if needContinue {
 			uc.userCurrentCommand[user.ID] = command
 		} else {
 			uc.userCurrentCommand[user.ID] = nil
 		}
-		return text, nil
+		resp.Text = text
+		return nil
 	}
-	return "", ErrBadRequest
+	return ErrBadRequest
 }

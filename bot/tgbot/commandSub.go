@@ -2,6 +2,7 @@ package tgbot
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"ratingserver/bot/botstorage"
 	"ratingserver/bot/model"
 )
@@ -11,7 +12,10 @@ type SubCommand struct {
 	sub        func(int)
 }
 
-func (c *SubCommand) Run(user model.User, _ string) (string, bool, error) {
+func (c *SubCommand) Reset() {}
+
+func (c *SubCommand) Run(user model.User, _ string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	err := c.botStorage.Subscribe(user)
 	if err != nil {
 		return "", false, err

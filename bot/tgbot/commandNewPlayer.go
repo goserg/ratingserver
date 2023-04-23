@@ -3,6 +3,7 @@ package tgbot
 import (
 	"errors"
 	mapset "github.com/deckarep/golang-set/v2"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"ratingserver/bot/model"
 	"ratingserver/internal/service"
 	"strings"
@@ -13,7 +14,10 @@ type NewPlayerCommand struct {
 	playerService *service.PlayerService
 }
 
-func (c *NewPlayerCommand) Run(_ model.User, args string) (string, bool, error) {
+func (c *NewPlayerCommand) Reset() {}
+
+func (c *NewPlayerCommand) Run(_ model.User, args string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	if len(args) == 0 {
 		return "", false, errors.New("имя должно быть не пустое")
 	}
