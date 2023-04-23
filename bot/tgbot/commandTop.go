@@ -12,10 +12,10 @@ type TopCommand struct {
 	playerService *service.PlayerService
 }
 
-func (c *TopCommand) Run(_ model.User, _ string) (string, error) {
+func (c *TopCommand) Run(_ model.User, _ string) (string, bool, error) {
 	ratings, err := c.playerService.GetRatings()
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	var buffer strings.Builder
 	for i := range ratings {
@@ -29,7 +29,7 @@ func (c *TopCommand) Run(_ model.User, _ string) (string, error) {
 		buffer.WriteString(strconv.Itoa(ratings[i].EloRating))
 		buffer.WriteString(")\n")
 	}
-	return buffer.String(), nil
+	return buffer.String(), false, nil
 }
 
 func (c *TopCommand) Help() string {

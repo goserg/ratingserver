@@ -15,7 +15,7 @@ type InfoCommand struct {
 	playerService *service.PlayerService
 }
 
-func (c *InfoCommand) Run(_ model.User, args string) (string, error) {
+func (c *InfoCommand) Run(_ model.User, args string) (string, bool, error) {
 	return c.processInfo(args)
 }
 
@@ -23,16 +23,16 @@ func (c *InfoCommand) Help() string {
 	return `Информация об игроке. Использование - /info и имя игрока.`
 }
 
-func (c *InfoCommand) processInfo(command string) (string, error) {
+func (c *InfoCommand) processInfo(command string) (string, bool, error) {
 	fields := strings.Fields(command)
 	if len(fields) < 1 {
-		return "", errors.New(`после /info имя игрока необходимо указывать в этом же соощении. Например "/info джон"`)
+		return "", false, errors.New(`после /info имя игрока необходимо указывать в этом же соощении. Например "/info джон"`)
 	}
 	player, err := c.playerService.GetByName(fields[0])
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
-	return printPlayer(player), nil
+	return printPlayer(player), false, nil
 }
 
 func printPlayer(player domain.Player) string {

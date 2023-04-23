@@ -2,20 +2,22 @@ package tgbot
 
 import (
 	mapset "github.com/deckarep/golang-set/v2"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"ratingserver/bot/botstorage"
 	"ratingserver/bot/model"
 	"ratingserver/internal/service"
 )
 
 type Command interface {
-	Run(user model.User, args string) (string, error)
+	Run(user model.User, args string) (string, bool, error)
 	Help() string
 	Permission() mapset.Set[model.UserRole]
 	Visibility() mapset.Set[model.UserRole]
 }
 
 type Commands struct {
-	list map[string]Command
+	list               map[string]Command
+	userCurrentCommand map[int]Command
 }
 
 func NewCommands(
@@ -63,19 +65,43 @@ func NewCommands(
 				botStorage: bs,
 				unsub:      unsubFn,
 			},
+			"event": NewEventCommand(ps),
 		},
+		userCurrentCommand: make(map[int]Command),
 	}
 	hc.commands = uc.list
 	return &uc
 }
 
-func (uc *Commands) RunCommand(user model.User, cmd string, args string) (string, error) {
+func (uc *Commands) RunCommand(user model.User, msg *tgbotapi.Message) (string, error) {
 	for s, command := range uc.list {
-		if cmd == s {
+		if msg.Command() == s {
 			if command.Permission().Contains(user.Role) {
-				return command.Run(user, args)
+				text, needContinue, err := command.Run(user, msg.CommandArguments())
+				if err != nil {
+					return "", err
+				}
+				if needContinue {
+					uc.userCurrentCommand[user.ID] = command
+				} else {
+					uc.userCurrentCommand[user.ID] = nil
+				}
+				return text, nil
 			}
 		}
+	}
+	command := uc.userCurrentCommand[user.ID]
+	if command != nil {
+		text, needContinue, err := command.Run(user, msg.Text)
+		if err != nil {
+			return "", err
+		}
+		if needContinue {
+			uc.userCurrentCommand[user.ID] = command
+		} else {
+			uc.userCurrentCommand[user.ID] = nil
+		}
+		return text, nil
 	}
 	return "", ErrBadRequest
 }

@@ -13,29 +13,29 @@ type NewPlayerCommand struct {
 	playerService *service.PlayerService
 }
 
-func (c *NewPlayerCommand) Run(_ model.User, args string) (string, error) {
+func (c *NewPlayerCommand) Run(_ model.User, args string) (string, bool, error) {
 	if len(args) == 0 {
-		return "", errors.New("имя должно быть не пустое")
+		return "", false, errors.New("имя должно быть не пустое")
 	}
 	if strings.ToLower(args) == draw {
-		return "", errors.New("имя " + draw + " запрещено")
+		return "", false, errors.New("имя " + draw + " запрещено")
 	}
 	for i, r := range args {
 		if i == 0 {
 			if !unicode.IsLetter(r) {
-				return "", errors.New("имя должно начинать с буквы")
+				return "", false, errors.New("имя должно начинать с буквы")
 			}
 			continue
 		}
 		if !unicode.IsPrint(r) || unicode.IsSpace(r) {
-			return "", errors.New("имя должно содержать только печатные символы")
+			return "", false, errors.New("имя должно содержать только печатные символы")
 		}
 	}
 	p, err := c.playerService.CreatePlayer(args)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
-	return "Добавлен игрок " + p.Name + " (ID " + p.ID.String() + ")", nil
+	return "Добавлен игрок " + p.Name + " (ID " + p.ID.String() + ")", false, nil
 }
 
 func (c *NewPlayerCommand) Help() string {

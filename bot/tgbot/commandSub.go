@@ -11,13 +11,13 @@ type SubCommand struct {
 	sub        func(int)
 }
 
-func (c *SubCommand) Run(user model.User, _ string) (string, error) {
+func (c *SubCommand) Run(user model.User, _ string) (string, bool, error) {
 	err := c.botStorage.Subscribe(user)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	c.sub(user.ID)
-	return "Подписка оформленна, чтобы отписаться от уведомлений: /unsub", nil
+	return "Подписка оформленна, чтобы отписаться от уведомлений: /unsub", false, nil
 }
 
 func (c *SubCommand) Help() string {

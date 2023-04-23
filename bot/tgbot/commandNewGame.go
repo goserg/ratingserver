@@ -18,13 +18,13 @@ type NewGameCommand struct {
 	notify        func(msg string)
 }
 
-func (c *NewGameCommand) Run(_ model.User, args string) (string, error) {
+func (c *NewGameCommand) Run(_ model.User, args string) (string, bool, error) {
 	match, err := c.processAddMatch(args)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	c.sendMatchNotification(match)
-	return "матч создан", nil
+	return "матч создан", false, nil
 }
 
 func (c *NewGameCommand) Help() string {

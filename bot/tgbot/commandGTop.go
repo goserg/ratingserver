@@ -12,10 +12,10 @@ type Glicko2TopCommand struct {
 	playerService *service.PlayerService
 }
 
-func (c *Glicko2TopCommand) Run(_ model.User, _ string) (string, error) {
+func (c *Glicko2TopCommand) Run(_ model.User, _ string) (string, bool, error) {
 	ratings, err := c.playerService.GetGlicko2()
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	var buffer strings.Builder
 	for i := range ratings {
@@ -33,7 +33,7 @@ func (c *Glicko2TopCommand) Run(_ model.User, _ string) (string, error) {
 		buffer.WriteString(strconv.Itoa(int(ratings[i].Glicko2Rating.Interval.Max)))
 		buffer.WriteString(")\n")
 	}
-	return buffer.String(), nil
+	return buffer.String(), false, nil
 }
 
 func (c *Glicko2TopCommand) Help() string {

@@ -10,13 +10,13 @@ type HelpCommand struct {
 	commands map[string]Command
 }
 
-func (c *HelpCommand) Run(user model.User, args string) (string, error) {
+func (c *HelpCommand) Run(user model.User, args string) (string, bool, error) {
 	for s, command := range c.commands {
 		if !command.Visibility().Contains(user.Role) {
 			continue
 		}
 		if args == s {
-			return command.Help(), nil
+			return command.Help(), false, nil
 		}
 	}
 	var b strings.Builder
@@ -30,7 +30,7 @@ func (c *HelpCommand) Run(user model.User, args string) (string, error) {
 		b.WriteString("\n")
 	}
 	b.WriteString("Подробная помощь по команде /help и имя команды")
-	return b.String(), nil
+	return b.String(), false, nil
 }
 
 func (c *HelpCommand) Help() string {

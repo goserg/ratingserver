@@ -13,7 +13,7 @@ type RoleCommand struct {
 	botStorage    botstorage.BotStorage
 }
 
-func (c *RoleCommand) Run(user model.User, args string) (string, error) {
+func (c *RoleCommand) Run(user model.User, args string) (string, bool, error) {
 	return c.handleRole(user, args)
 }
 
@@ -21,33 +21,33 @@ func (c *RoleCommand) Help() string {
 	return `Изменение роли. Использование: /role user или /role admin <pass>`
 }
 
-func (c *RoleCommand) handleRole(user model.User, args string) (string, error) {
+func (c *RoleCommand) handleRole(user model.User, args string) (string, bool, error) {
 	a := strings.SplitN(args, " ", 2)
 	switch a[0] {
 	case "admin":
 		if user.Role == model.RoleAdmin {
-			return "", errors.New("эта роль уже задана")
+			return "", false, errors.New("эта роль уже задана")
 		}
 		if len(a) != 2 {
-			return "", ErrBadRequest
+			return "", false, ErrBadRequest
 		}
 		if a[1] != c.adminPassword { // wrong admin password
-			return "", ErrBadRequest
+			return "", false, ErrBadRequest
 		}
 		user.Role = model.RoleAdmin
 	case "user":
 		if user.Role == model.RoleUser {
-			return "", errors.New("эта роль уже задана")
+			return "", false, errors.New("эта роль уже задана")
 		}
 		user.Role = model.RoleUser
 	default:
-		return "", ErrBadRequest
+		return "", false, ErrBadRequest
 	}
 	err := c.botStorage.UpdateUserRole(user)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
-	return "role updated", nil
+	return "role updated", false, nil
 }
 
 func (c *RoleCommand) Permission() mapset.Set[model.UserRole] {

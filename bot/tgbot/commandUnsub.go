@@ -11,13 +11,13 @@ type UnsubCommand struct {
 	unsub      func(int)
 }
 
-func (c *UnsubCommand) Run(user model.User, _ string) (string, error) {
+func (c *UnsubCommand) Run(user model.User, _ string) (string, bool, error) {
 	err := c.botStorage.Unsubscribe(user)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	c.unsub(user.ID)
-	return "Подписка отменена, чтобы подписаться на уведомления: /sub", nil
+	return "Подписка отменена, чтобы подписаться на уведомления: /sub", false, nil
 }
 
 func (c *UnsubCommand) Help() string {
