@@ -66,6 +66,10 @@ func (c *EventCommand) Run(
 			return true, nil
 		}
 		names := strings.Fields(text)
+		if len(names) <= 1 {
+			resp.Text = "need more then 1 player"
+			return true, nil
+		}
 		for _, name := range names {
 			player, err := c.playerService.GetByName(name)
 			if err != nil {
@@ -73,33 +77,7 @@ func (c *EventCommand) Run(
 			}
 			c.players.Add(player)
 		}
-		keyboard := tgbotapi.NewReplyKeyboard()
-		for i, player := range c.players.ToSlice() {
-			d := i % 3
-			if d == 0 {
-				keyboard.Keyboard = append(
-					keyboard.Keyboard,
-					tgbotapi.NewKeyboardButtonRow(
-						tgbotapi.NewKeyboardButton(player.Name),
-					),
-				)
-				continue
-			}
-			row := i / 3
-			keyboard.Keyboard[row] = append(keyboard.Keyboard[row], tgbotapi.NewKeyboardButton(player.Name))
-		}
-		if c.players.Cardinality()%3 == 0 {
-			keyboard.Keyboard = append(
-				keyboard.Keyboard,
-				tgbotapi.NewKeyboardButtonRow(
-					tgbotapi.NewKeyboardButton(draw),
-				),
-			)
-		} else {
-			row := c.players.Cardinality() / 3
-			keyboard.Keyboard[row] = append(keyboard.Keyboard[row], tgbotapi.NewKeyboardButton(draw))
-		}
-		resp.ReplyMarkup = keyboard
+		resp.ReplyMarkup = generateKeyboard(c.players)
 		c.state = EventStateWinner
 		resp.Text = "event registered\nwinner:"
 		return true, nil
@@ -180,6 +158,47 @@ func (c *EventCommand) Run(
 	}
 	resp.Text = "internal error, command aborted"
 	return false, nil
+}
+
+const rowWidth = 4
+
+func generateKeyboard(players mapset.Set[domain.Player]) tgbotapi.ReplyKeyboardMarkup {
+	keyboard := tgbotapi.NewReplyKeyboard()
+	keyboard.ResizeKeyboard = false
+	addPlayersToKeyboard(players.ToSlice(), &keyboard)
+	addDrawToKeyboard(players.Cardinality(), &keyboard)
+	return keyboard
+}
+
+func addPlayersToKeyboard(players []domain.Player, keyboard *tgbotapi.ReplyKeyboardMarkup) {
+	for i, player := range players {
+		if i%rowWidth == 0 {
+			addRowToKeyboard(keyboard)
+		}
+		addPlayerToKeyboard(i/rowWidth, keyboard, player)
+	}
+}
+
+func addRowToKeyboard(keyboard *tgbotapi.ReplyKeyboardMarkup) {
+	keyboard.Keyboard = append(
+		keyboard.Keyboard,
+		tgbotapi.NewKeyboardButtonRow(),
+	)
+}
+
+func addPlayerToKeyboard(row int, keyboard *tgbotapi.ReplyKeyboardMarkup, player domain.Player) {
+	keyboard.Keyboard[row] = append(keyboard.Keyboard[row], tgbotapi.NewKeyboardButton(player.Name))
+}
+
+func addDrawToKeyboard(playersLen int, keyboard *tgbotapi.ReplyKeyboardMarkup) {
+	if playersLen%rowWidth == 0 {
+		keyboard.Keyboard = append(
+			keyboard.Keyboard,
+			tgbotapi.NewKeyboardButtonRow(),
+		)
+	}
+	row := playersLen / rowWidth
+	keyboard.Keyboard[row] = append(keyboard.Keyboard[row], tgbotapi.NewKeyboardButton(draw))
 }
 
 func (c *EventCommand) Help() string {
