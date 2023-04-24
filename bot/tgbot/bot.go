@@ -125,11 +125,7 @@ func (b *Bot) Run() {
 			if err != nil {
 				log.WithError(err).Error("Can't log to db")
 			}
-			/*
-				if !update.Message.IsCommand() { // ignore any non-command Messages
-					continue
-				}
-			*/
+
 			// Create a new MessageConfig. We don't have text yet,
 			// so we leave it empty.
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
