@@ -21,14 +21,15 @@ type NewGameCommand struct {
 
 func (c *NewGameCommand) Reset() {}
 
-func (c *NewGameCommand) Run(_ model.User, args string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+func (c *NewGameCommand) Run(_ model.User, args string, resp *tgbotapi.MessageConfig) (bool, error) {
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	match, err := c.processAddMatch(args)
 	if err != nil {
-		return "", false, err
+		return false, err
 	}
 	c.sendMatchNotification(match)
-	return "матч создан", false, nil
+	resp.Text = "матч создан"
+	return false, nil
 }
 
 func (c *NewGameCommand) Help() string {

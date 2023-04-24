@@ -16,30 +16,31 @@ type NewPlayerCommand struct {
 
 func (c *NewPlayerCommand) Reset() {}
 
-func (c *NewPlayerCommand) Run(_ model.User, args string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+func (c *NewPlayerCommand) Run(_ model.User, args string, resp *tgbotapi.MessageConfig) (bool, error) {
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	if len(args) == 0 {
-		return "", false, errors.New("имя должно быть не пустое")
+		return false, errors.New("имя должно быть не пустое")
 	}
 	if strings.ToLower(args) == draw {
-		return "", false, errors.New("имя " + draw + " запрещено")
+		return false, errors.New("имя " + draw + " запрещено")
 	}
 	for i, r := range args {
 		if i == 0 {
 			if !unicode.IsLetter(r) {
-				return "", false, errors.New("имя должно начинать с буквы")
+				return false, errors.New("имя должно начинать с буквы")
 			}
 			continue
 		}
 		if !unicode.IsPrint(r) || unicode.IsSpace(r) {
-			return "", false, errors.New("имя должно содержать только печатные символы")
+			return false, errors.New("имя должно содержать только печатные символы")
 		}
 	}
 	p, err := c.playerService.CreatePlayer(args)
 	if err != nil {
-		return "", false, err
+		return false, err
 	}
-	return "Добавлен игрок " + p.Name + " (ID " + p.ID.String() + ")", false, nil
+	resp.Text = "Добавлен игрок " + p.Name + " (ID " + p.ID.String() + ")"
+	return false, nil
 }
 
 func (c *NewPlayerCommand) Help() string {

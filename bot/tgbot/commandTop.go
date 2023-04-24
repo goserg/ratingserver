@@ -15,11 +15,11 @@ type TopCommand struct {
 
 func (c *TopCommand) Reset() {}
 
-func (c *TopCommand) Run(_ model.User, _ string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+func (c *TopCommand) Run(_ model.User, _ string, resp *tgbotapi.MessageConfig) (bool, error) {
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	ratings, err := c.playerService.GetRatings()
 	if err != nil {
-		return "", false, err
+		return false, err
 	}
 	var buffer strings.Builder
 	for i := range ratings {
@@ -33,7 +33,8 @@ func (c *TopCommand) Run(_ model.User, _ string, resp *tgbotapi.MessageConfig) (
 		buffer.WriteString(strconv.Itoa(ratings[i].EloRating))
 		buffer.WriteString(")\n")
 	}
-	return buffer.String(), false, nil
+	resp.Text = buffer.String()
+	return false, nil
 }
 
 func (c *TopCommand) Help() string {

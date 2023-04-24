@@ -18,25 +18,30 @@ type InfoCommand struct {
 
 func (c *InfoCommand) Reset() {}
 
-func (c *InfoCommand) Run(_ model.User, args string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+func (c *InfoCommand) Run(_ model.User, args string, resp *tgbotapi.MessageConfig) (bool, error) {
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-	return c.processInfo(args)
+	text, err := c.processInfo(args)
+	if err != nil {
+		return false, err
+	}
+	resp.Text = text
+	return false, nil
 }
 
 func (c *InfoCommand) Help() string {
 	return `Информация об игроке. Использование - /info и имя игрока.`
 }
 
-func (c *InfoCommand) processInfo(command string) (string, bool, error) {
+func (c *InfoCommand) processInfo(command string) (string, error) {
 	fields := strings.Fields(command)
 	if len(fields) < 1 {
-		return "", false, errors.New(`после /info имя игрока необходимо указывать в этом же соощении. Например "/info джон"`)
+		return "", errors.New(`после /info имя игрока необходимо указывать в этом же соощении. Например "/info джон"`)
 	}
 	player, err := c.playerService.GetByName(fields[0])
 	if err != nil {
-		return "", false, err
+		return "", err
 	}
-	return printPlayer(player), false, nil
+	return printPlayer(player), nil
 }
 
 func printPlayer(player domain.Player) string {

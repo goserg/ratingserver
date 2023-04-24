@@ -16,42 +16,47 @@ type RoleCommand struct {
 
 func (c *RoleCommand) Reset() {}
 
-func (c *RoleCommand) Run(user model.User, args string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+func (c *RoleCommand) Run(user model.User, args string, resp *tgbotapi.MessageConfig) (bool, error) {
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-	return c.handleRole(user, args)
+	text, err := c.handleRole(user, args)
+	if err != nil {
+		return false, err
+	}
+	resp.Text = text
+	return false, nil
 }
 
 func (c *RoleCommand) Help() string {
 	return `Изменение роли. Использование: /role user или /role admin <pass>`
 }
 
-func (c *RoleCommand) handleRole(user model.User, args string) (string, bool, error) {
+func (c *RoleCommand) handleRole(user model.User, args string) (string, error) {
 	a := strings.SplitN(args, " ", 2)
 	switch a[0] {
 	case "admin":
 		if user.Role == model.RoleAdmin {
-			return "", false, errors.New("эта роль уже задана")
+			return "", errors.New("эта роль уже задана")
 		}
 		if len(a) != 2 {
-			return "", false, ErrBadRequest
+			return "", ErrBadRequest
 		}
 		if a[1] != c.adminPassword { // wrong admin password
-			return "", false, ErrBadRequest
+			return "", ErrBadRequest
 		}
 		user.Role = model.RoleAdmin
 	case "user":
 		if user.Role == model.RoleUser {
-			return "", false, errors.New("эта роль уже задана")
+			return "", errors.New("эта роль уже задана")
 		}
 		user.Role = model.RoleUser
 	default:
-		return "", false, ErrBadRequest
+		return "", ErrBadRequest
 	}
 	err := c.botStorage.UpdateUserRole(user)
 	if err != nil {
-		return "", false, err
+		return "", err
 	}
-	return "role updated", false, nil
+	return "role updated", nil
 }
 
 func (c *RoleCommand) Permission() mapset.Set[model.UserRole] {

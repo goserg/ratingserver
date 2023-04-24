@@ -13,14 +13,15 @@ type HelpCommand struct {
 
 func (c *HelpCommand) Reset() {}
 
-func (c *HelpCommand) Run(user model.User, args string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+func (c *HelpCommand) Run(user model.User, args string, resp *tgbotapi.MessageConfig) (bool, error) {
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	for s, command := range c.commands {
 		if !command.Visibility().Contains(user.Role) {
 			continue
 		}
 		if args == s {
-			return command.Help(), false, nil
+			resp.Text = command.Help()
+			return false, nil
 		}
 	}
 	var b strings.Builder
@@ -34,7 +35,8 @@ func (c *HelpCommand) Run(user model.User, args string, resp *tgbotapi.MessageCo
 		b.WriteString("\n")
 	}
 	b.WriteString("Подробная помощь по команде /help и имя команды")
-	return b.String(), false, nil
+	resp.Text = b.String()
+	return false, nil
 }
 
 func (c *HelpCommand) Help() string {

@@ -14,14 +14,15 @@ type UnsubCommand struct {
 
 func (c *UnsubCommand) Reset() {}
 
-func (c *UnsubCommand) Run(user model.User, _ string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+func (c *UnsubCommand) Run(user model.User, _ string, resp *tgbotapi.MessageConfig) (bool, error) {
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	err := c.botStorage.Unsubscribe(user)
 	if err != nil {
-		return "", false, err
+		return false, err
 	}
 	c.unsub(user.ID)
-	return "Подписка отменена, чтобы подписаться на уведомления: /sub", false, nil
+	resp.Text = "Подписка отменена, чтобы подписаться на уведомления: /sub"
+	return false, nil
 }
 
 func (c *UnsubCommand) Help() string {

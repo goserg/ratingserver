@@ -15,11 +15,11 @@ type Glicko2TopCommand struct {
 
 func (c *Glicko2TopCommand) Reset() {}
 
-func (c *Glicko2TopCommand) Run(_ model.User, _ string, resp *tgbotapi.MessageConfig) (string, bool, error) {
+func (c *Glicko2TopCommand) Run(_ model.User, _ string, resp *tgbotapi.MessageConfig) (bool, error) {
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	ratings, err := c.playerService.GetGlicko2()
 	if err != nil {
-		return "", false, err
+		return false, err
 	}
 	var buffer strings.Builder
 	for i := range ratings {
@@ -37,7 +37,8 @@ func (c *Glicko2TopCommand) Run(_ model.User, _ string, resp *tgbotapi.MessageCo
 		buffer.WriteString(strconv.Itoa(int(ratings[i].Glicko2Rating.Interval.Max)))
 		buffer.WriteString(")\n")
 	}
-	return buffer.String(), false, nil
+	resp.Text = buffer.String()
+	return false, nil
 }
 
 func (c *Glicko2TopCommand) Help() string {

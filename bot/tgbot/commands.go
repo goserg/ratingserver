@@ -9,7 +9,7 @@ import (
 )
 
 type Command interface {
-	Run(user model.User, args string, resp *tgbotapi.MessageConfig) (string, bool, error)
+	Run(user model.User, args string, resp *tgbotapi.MessageConfig) (bool, error)
 	Help() string
 	Permission() mapset.Set[model.UserRole]
 	Visibility() mapset.Set[model.UserRole]
@@ -84,7 +84,7 @@ func (uc *Commands) RunCommand(
 		if msg.Command() == s {
 			if command.Permission().Contains(user.Role) {
 				command.Reset()
-				text, needContinue, err := command.Run(user, msg.CommandArguments(), resp)
+				needContinue, err := command.Run(user, msg.CommandArguments(), resp)
 				if err != nil {
 					return err
 				}
@@ -93,14 +93,13 @@ func (uc *Commands) RunCommand(
 				} else {
 					uc.userCurrentCommand[user.ID] = nil
 				}
-				resp.Text = text
 				return nil
 			}
 		}
 	}
 	command := uc.userCurrentCommand[user.ID]
 	if command != nil {
-		text, needContinue, err := command.Run(user, msg.Text, resp)
+		needContinue, err := command.Run(user, msg.Text, resp)
 		if err != nil {
 			return err
 		}
@@ -109,7 +108,6 @@ func (uc *Commands) RunCommand(
 		} else {
 			uc.userCurrentCommand[user.ID] = nil
 		}
-		resp.Text = text
 		return nil
 	}
 	return ErrBadRequest

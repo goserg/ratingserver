@@ -48,7 +48,7 @@ func (c *EventCommand) Run(
 	_ model.User,
 	text string,
 	resp *tgbotapi.MessageConfig,
-) (respText string, needContinue bool, err error) {
+) (needContinue bool, err error) {
 	defer func() {
 		if err != nil {
 			c.Reset()
@@ -58,16 +58,18 @@ func (c *EventCommand) Run(
 	case EventStateStart:
 		c.state = EventStateWaitForPlayers
 		resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-		return "start event", true, nil
+		resp.Text = "start event"
+		return true, nil
 	case EventStateWaitForPlayers:
 		if text == "" {
-			return "waiting for players names", true, nil
+			resp.Text = "waiting for players names"
+			return true, nil
 		}
 		names := strings.Fields(text)
 		for _, name := range names {
 			player, err := c.playerService.GetByName(name)
 			if err != nil {
-				return "", false, err
+				return false, err
 			}
 			c.players.Add(player)
 		}
@@ -99,33 +101,39 @@ func (c *EventCommand) Run(
 		}
 		resp.ReplyMarkup = keyboard
 		c.state = EventStateWinner
-		return "event registered, winner:", true, nil
+		resp.Text = "event registered\nwinner:"
+		return true, nil
 	case EventStateWinner:
 		if text == "" {
-			return "winner:", true, nil
+			resp.Text = "winner:"
+			return true, nil
 		}
 		if text == draw {
 			c.state = EventStateDraw
-			return "first:", true, nil
+			resp.Text = "first"
+			return true, nil
 		}
 		c.winner = text
 		c.state = EventStateLooser
-		return "loser:", true, nil
+		resp.Text = "loser"
+		return true, nil
 	case EventStateLooser:
 		if text == "" {
-			return "loser:", true, nil
+			resp.Text = "loser:"
+			return true, nil
 		}
 		if text == draw {
 			c.state = EventStateDraw
-			return "second:", true, nil
+			resp.Text = "second:"
+			return true, nil
 		}
 		winner, err := c.playerService.GetByName(c.winner)
 		if err != nil {
-			return "", true, err
+			return true, err
 		}
 		loser, err := c.playerService.GetByName(text)
 		if err != nil {
-			return "", false, err
+			return false, err
 		}
 		match, err := c.playerService.CreateMatch(domain.Match{
 			PlayerA: winner,
@@ -134,24 +142,26 @@ func (c *EventCommand) Run(
 			Date:    time.Now(),
 		})
 		if err != nil {
-			return "", true, err
+			return true, err
 		}
 		c.sendMatchNotification(match)
 		c.state = EventStateWinner
 		c.winner = ""
-		return "match registered, new winner:", true, nil
+		resp.Text = "match registered\nwinner:"
+		return true, nil
 	case EventStateDraw:
 		if c.winner == "" {
 			c.winner = text
-			return "second:", true, nil
+			resp.Text = "second:"
+			return true, nil
 		}
 		winner, err := c.playerService.GetByName(c.winner)
 		if err != nil {
-			return "", true, err
+			return true, err
 		}
 		loser, err := c.playerService.GetByName(text)
 		if err != nil {
-			return "", false, err
+			return false, err
 		}
 		match, err := c.playerService.CreateMatch(domain.Match{
 			PlayerA: winner,
@@ -160,14 +170,16 @@ func (c *EventCommand) Run(
 			Date:    time.Now(),
 		})
 		if err != nil {
-			return "", true, err
+			return true, err
 		}
 		c.sendMatchNotification(match)
 		c.state = EventStateWinner
 		c.winner = ""
-		return "draw registered, new winner:", true, nil
+		resp.Text = "draw registered\nwinner:"
+		return true, nil
 	}
-	return "internal error, command aborted", false, nil
+	resp.Text = "internal error, command aborted"
+	return false, nil
 }
 
 func (c *EventCommand) Help() string {
