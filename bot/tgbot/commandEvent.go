@@ -164,7 +164,6 @@ const rowWidth = 4
 
 func generateKeyboard(players mapset.Set[domain.Player]) tgbotapi.ReplyKeyboardMarkup {
 	keyboard := tgbotapi.NewReplyKeyboard()
-	keyboard.ResizeKeyboard = false
 	addPlayersToKeyboard(players.ToSlice(), &keyboard)
 	addDrawToKeyboard(players.Cardinality(), &keyboard)
 	return keyboard
