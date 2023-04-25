@@ -40,10 +40,6 @@ func (s *PlayerService) updateCache() error {
 	return nil
 }
 
-func (s *PlayerService) ListPlayers() ([]domain.Player, error) {
-	return s.playerStorage.ListPlayers()
-}
-
 func (s *PlayerService) GetGlicko2() ([]domain.Player, error) {
 	matches, err := s.matchStorage.ListMatches()
 	if err != nil {
@@ -114,7 +110,7 @@ func (s *PlayerService) GetRatings() ([]domain.Player, error) {
 		playerGamesPlayed[matches[i].PlayerA.ID.String()] = matches[i].PlayerA.GamesPlayed
 		playerGamesPlayed[matches[i].PlayerB.ID.String()] = matches[i].PlayerB.GamesPlayed
 	}
-	players, err := s.ListPlayers()
+	players, err := s.playerStorage.ListPlayers()
 	if err != nil {
 		return nil, err
 	}
