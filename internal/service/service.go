@@ -103,22 +103,26 @@ func (s *PlayerService) getRatings() ([]domain.Player, error) {
 	if err != nil {
 		return nil, err
 	}
-	matches = calculateMatches(matches)
-	playerRatings := make(map[string]int)
-	playerGamesPlayed := make(map[string]int)
-	for i := range matches {
-		playerRatings[matches[i].PlayerA.ID.String()] = matches[i].PlayerA.EloRating
-		playerRatings[matches[i].PlayerB.ID.String()] = matches[i].PlayerB.EloRating
-		playerGamesPlayed[matches[i].PlayerA.ID.String()] = matches[i].PlayerA.GamesPlayed
-		playerGamesPlayed[matches[i].PlayerB.ID.String()] = matches[i].PlayerB.GamesPlayed
-	}
 	players, err := s.playerStorage.ListPlayers()
 	if err != nil {
 		return nil, err
 	}
+	playersMap := make(map[uuid.UUID]*domain.Player)
+	for _, player := range players {
+		p := player
+		playersMap[player.ID] = &p
+	}
+	matches = calculateMatches(matches)
+	for i := range matches {
+		playersMap[matches[i].PlayerA.ID].EloRating = matches[i].PlayerA.EloRating
+		playersMap[matches[i].PlayerB.ID].EloRating = matches[i].PlayerB.EloRating
+		playersMap[matches[i].PlayerA.ID].GamesPlayed = matches[i].PlayerA.GamesPlayed
+		playersMap[matches[i].PlayerB.ID].GamesPlayed = matches[i].PlayerB.GamesPlayed
+		playersMap[matches[i].PlayerA.ID].RatingChange = matches[i].PlayerA.RatingChange
+		playersMap[matches[i].PlayerB.ID].RatingChange = matches[i].PlayerB.RatingChange
+	}
 	for i := range players {
-		players[i].EloRating = playerRatings[players[i].ID.String()]
-		players[i].GamesPlayed = playerGamesPlayed[players[i].ID.String()]
+		players[i] = *playersMap[players[i].ID]
 	}
 	sort.SliceStable(players, func(i, j int) bool {
 		return players[i].EloRating > players[j].EloRating
