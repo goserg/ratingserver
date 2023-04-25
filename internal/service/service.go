@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	glicko "github.com/zelenin/go-glicko2"
 	"ratingserver/internal/cache/mem"
 	"ratingserver/internal/domain"
@@ -77,8 +76,6 @@ func (s *PlayerService) GetGlicko2() ([]domain.Player, error) {
 			w = glicko.MATCH_RESULT_LOSS
 		}
 		period.AddMatch(players[pA.ID], players[pB.ID], w)
-		s := players[uuid.MustParse("8e4efb9c-290a-491b-84c1-121d8eb4e38c")]
-		fmt.Println(s)
 	}
 	period.Calculate()
 	for i := range ps {
