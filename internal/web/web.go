@@ -53,10 +53,7 @@ func (s *Server) Serve() error {
 }
 
 func (s *Server) handleMain(c *fiber.Ctx) error {
-	globalRating, err := s.playerService.GetRatings()
-	if err != nil {
-		return err
-	}
+	globalRating := s.playerService.GetRatings()
 	return c.Render("index", fiber.Map{
 		"Button":  1,
 		"Title":   "Рейтинг",
