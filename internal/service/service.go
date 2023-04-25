@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	glicko "github.com/zelenin/go-glicko2"
+	"ratingserver/internal/cache/mem"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/elo"
 	"ratingserver/internal/normalize"
@@ -18,13 +19,25 @@ import (
 type PlayerService struct {
 	playerStorage storage.PlayerStorage
 	matchStorage  storage.MatchStorage
+	cache         *mem.Cache
 }
 
-func New(playerStorage storage.PlayerStorage, matchStorage storage.MatchStorage) *PlayerService {
-	return &PlayerService{
+func New(playerStorage storage.PlayerStorage, matchStorage storage.MatchStorage, cache *mem.Cache) (*PlayerService, error) {
+	p := PlayerService{
 		playerStorage: playerStorage,
 		matchStorage:  matchStorage,
+		cache:         cache,
 	}
+	return &p, p.updateCache()
+}
+
+func (s *PlayerService) updateCache() error {
+	players, err := s.GetRatings()
+	if err != nil {
+		return err
+	}
+	s.cache.Update(players)
+	return nil
 }
 
 func (s *PlayerService) ListPlayers() ([]domain.Player, error) {
@@ -239,7 +252,14 @@ func (s *PlayerService) Import(data []byte) error {
 	return nil
 }
 
-func (s *PlayerService) CreateMatch(match domain.Match) (domain.Match, error) {
+func (s *PlayerService) CreateMatch(match domain.Match) (m domain.Match, err error) {
+	defer func() {
+		if err != nil {
+			return
+		}
+		err = s.updateCache()
+	}()
+
 	if match.PlayerA.ID == match.PlayerB.ID {
 		return domain.Match{}, errors.New("должно участвовать два разных игрока")
 	}
@@ -306,16 +326,11 @@ func (s *PlayerService) GetPlayerData(id uuid.UUID) (domain.PlayerCardData, erro
 }
 
 func (s *PlayerService) GetByName(name string) (domain.Player, error) {
-	rating, err := s.GetRatings()
-	if err != nil {
-		return domain.Player{}, err
+	player, ok := s.cache.GetPlayerByName(name)
+	if !ok {
+		return domain.Player{}, errors.New("not found")
 	}
-	for i := range rating {
-		if normalize.Name(rating[i].Name) == normalize.Name(name) {
-			return rating[i], nil
-		}
-	}
-	return domain.Player{}, errors.New("not found")
+	return player, nil
 }
 
 func (s *PlayerService) CreatePlayer(name string) (domain.Player, error) {
