@@ -3,6 +3,7 @@ package mem
 import (
 	"ratingserver/internal/domain"
 	"ratingserver/internal/normalize"
+	"sort"
 	"sync"
 )
 
@@ -40,6 +41,17 @@ func (c *Cache) GetPlayerByName(name string) (domain.Player, bool) {
 		return domain.Player{}, false
 	}
 	return player, true
+}
+
+func (c *Cache) GetRatings() []domain.Player {
+	players := make([]domain.Player, 0, len(c.players))
+	for _, player := range c.players {
+		players = append(players, player)
+	}
+	sort.SliceStable(players, func(i, j int) bool {
+		return players[i].EloRating > players[j].EloRating
+	})
+	return players
 }
 
 func (c *Cache) Invalidate() {

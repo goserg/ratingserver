@@ -31,15 +31,22 @@ func New(playerStorage storage.PlayerStorage, matchStorage storage.MatchStorage,
 }
 
 func (s *PlayerService) updateCache() error {
-	players, err := s.GetRatings()
+	players, err := s.getRatings()
 	if err != nil {
 		return err
+	}
+	glicko2, err := s.getGlicko2()
+	if err != nil {
+		return err
+	}
+	for i := range players {
+		players[i].Glicko2Rating = glicko2[players[i].ID].Glicko2Rating
 	}
 	s.cache.Update(players)
 	return nil
 }
 
-func (s *PlayerService) GetGlicko2() ([]domain.Player, error) {
+func (s *PlayerService) getGlicko2() (map[uuid.UUID]domain.Player, error) {
 	matches, err := s.matchStorage.ListMatches()
 	if err != nil {
 		return nil, err
@@ -84,16 +91,14 @@ func (s *PlayerService) GetGlicko2() ([]domain.Player, error) {
 		ps[i].Glicko2Rating.Sigma = players[ps[i].ID].Rating().Sigma()
 		ps[i].Glicko2Rating.Interval.Min, ps[i].Glicko2Rating.Interval.Max = players[ps[i].ID].Rating().ConfidenceInterval()
 	}
-	sort.SliceStable(ps, func(i, j int) bool {
-		return ps[i].Glicko2Rating.Rating > ps[j].Glicko2Rating.Rating
-	})
+	playersMap := make(map[uuid.UUID]domain.Player)
 	for i := range ps {
-		ps[i].RatingRank = i + 1
+		playersMap[ps[i].ID] = ps[i]
 	}
-	return ps, nil
+	return playersMap, nil
 }
 
-func (s *PlayerService) GetRatings() ([]domain.Player, error) {
+func (s *PlayerService) getRatings() ([]domain.Player, error) {
 	matches, err := s.matchStorage.ListMatches()
 	if err != nil {
 		return nil, err
@@ -205,7 +210,7 @@ type export struct {
 }
 
 func (s *PlayerService) Export() ([]byte, error) {
-	players, err := s.GetRatings()
+	players, err := s.getRatings()
 	if err != nil {
 		return nil, err
 	}
@@ -260,7 +265,7 @@ func (s *PlayerService) CreateMatch(match domain.Match) (m domain.Match, err err
 }
 
 func (s *PlayerService) Get(id uuid.UUID) (domain.Player, error) {
-	rating, err := s.GetRatings()
+	rating, err := s.getRatings()
 	if err != nil {
 		return domain.Player{}, err
 	}
@@ -272,6 +277,10 @@ func (s *PlayerService) Get(id uuid.UUID) (domain.Player, error) {
 	return domain.Player{}, errors.New("not found")
 }
 
+func (s *PlayerService) GetRatings() []domain.Player {
+	return s.cache.GetRatings()
+}
+
 func (s *PlayerService) GetPlayerData(id uuid.UUID) (domain.PlayerCardData, error) {
 	var data domain.PlayerCardData
 
@@ -280,7 +289,7 @@ func (s *PlayerService) GetPlayerData(id uuid.UUID) (domain.PlayerCardData, erro
 		return domain.PlayerCardData{}, err
 	}
 	results := make(map[uuid.UUID]domain.PlayerStats)
-	players, err := s.GetRatings()
+	players, err := s.getRatings()
 	if err != nil {
 		return domain.PlayerCardData{}, err
 	}
@@ -326,7 +335,14 @@ func (s *PlayerService) GetByName(name string) (domain.Player, error) {
 	return player, nil
 }
 
-func (s *PlayerService) CreatePlayer(name string) (domain.Player, error) {
+func (s *PlayerService) CreatePlayer(name string) (player domain.Player, err error) {
+	defer func() {
+		if err != nil {
+			return
+		}
+		err = s.updateCache()
+	}()
+
 	players, err := s.playerStorage.ListPlayers()
 	if err != nil {
 		return domain.Player{}, err
@@ -342,7 +358,7 @@ func (s *PlayerService) CreatePlayer(name string) (domain.Player, error) {
 		Name:         name,
 		RegisteredAt: time.Now(),
 	}
-	player, err := s.playerStorage.Add(newPlayer)
+	player, err = s.playerStorage.Add(newPlayer)
 	if err != nil {
 		return domain.Player{}, err
 	}

@@ -17,10 +17,7 @@ func (c *TopCommand) Reset() {}
 
 func (c *TopCommand) Run(_ model.User, _ string, resp *tgbotapi.MessageConfig) (bool, error) {
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-	ratings, err := c.playerService.GetRatings()
-	if err != nil {
-		return false, err
-	}
+	ratings := c.playerService.GetRatings()
 	var buffer strings.Builder
 	for i := range ratings {
 		if i > 9 {
