@@ -5,6 +5,7 @@ import (
 	"os"
 	botstorage "ratingserver/bot/botstorage/sqlite"
 	"ratingserver/bot/tgbot"
+	"ratingserver/internal/cache/mem"
 	"ratingserver/internal/config"
 	"ratingserver/internal/logger"
 	"ratingserver/internal/service"
@@ -38,7 +39,10 @@ func run() error {
 		return err
 	}
 
-	playerService := service.New(storage, storage)
+	playerService, err := service.New(storage, storage, mem.New())
+	if err != nil {
+		return err
+	}
 
 	if !cfg.Server.TgBotDisable {
 		bot, err := tgbot.New(playerService, botStorage, cfg, log)
