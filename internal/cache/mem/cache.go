@@ -53,11 +53,3 @@ func (c *Cache) GetRatings() []domain.Player {
 	})
 	return players
 }
-
-func (c *Cache) Invalidate() {
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.valid = false
-	c.players = make(map[string]domain.Player)
-}
