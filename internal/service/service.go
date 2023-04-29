@@ -73,29 +73,37 @@ func (s *PlayerService) getGlicko2() (map[uuid.UUID]domain.Player, error) {
 				period.AddPlayer(player)
 			}
 		}
-		w := glicko.MATCH_RESULT_DRAW
 		pA := matches[i].PlayerA
 		pB := matches[i].PlayerB
-		switch matches[i].Winner.ID {
-		case pA.ID:
-			w = glicko.MATCH_RESULT_WIN
-		case pB.ID:
-			w = glicko.MATCH_RESULT_LOSS
-		}
-		period.AddMatch(players[pA.ID], players[pB.ID], w)
+		period.AddMatch(players[pA.ID], players[pB.ID], findResult(matches[i].Winner.ID, pA.ID, pB.ID))
 	}
 	period.Calculate()
 	for i := range ps {
-		ps[i].Glicko2Rating.Rating = players[ps[i].ID].Rating().R()
-		ps[i].Glicko2Rating.RatingDeviation = players[ps[i].ID].Rating().Rd()
-		ps[i].Glicko2Rating.Sigma = players[ps[i].ID].Rating().Sigma()
-		ps[i].Glicko2Rating.Interval.Min, ps[i].Glicko2Rating.Interval.Max = players[ps[i].ID].Rating().ConfidenceInterval()
+		fillGlickoStats(&ps[i], players[ps[i].ID])
 	}
 	playersMap := make(map[uuid.UUID]domain.Player)
 	for i := range ps {
 		playersMap[ps[i].ID] = ps[i]
 	}
 	return playersMap, nil
+}
+
+func findResult(winnerID, pAID, pBID uuid.UUID) glicko.MatchResult {
+	w := glicko.MATCH_RESULT_DRAW
+	switch winnerID {
+	case pAID:
+		w = glicko.MATCH_RESULT_WIN
+	case pBID:
+		w = glicko.MATCH_RESULT_LOSS
+	}
+	return w
+}
+
+func fillGlickoStats(player *domain.Player, gPlayer *glicko.Player) {
+	player.Glicko2Rating.Rating = gPlayer.Rating().R()
+	player.Glicko2Rating.RatingDeviation = gPlayer.Rating().Rd()
+	player.Glicko2Rating.Sigma = gPlayer.Rating().Sigma()
+	player.Glicko2Rating.Interval.Min, player.Glicko2Rating.Interval.Max = gPlayer.Rating().ConfidenceInterval()
 }
 
 func (s *PlayerService) getRatings() ([]domain.Player, error) {
@@ -309,30 +317,35 @@ func (s *PlayerService) GetPlayerData(id uuid.UUID) (domain.PlayerCardData, erro
 		results[player.ID] = domain.PlayerStats{Player: player}
 	}
 	for i := range matches {
-		var this, other *domain.Player
 		if matches[i].PlayerA.ID != id && matches[i].PlayerB.ID != id {
 			continue
 		}
-		if matches[i].PlayerA.ID == id {
-			this = &matches[i].PlayerA
-			other = &matches[i].PlayerB
-		} else {
-			this = &matches[i].PlayerB
-			other = &matches[i].PlayerA
-		}
-		r := results[other.ID]
-		switch {
-		case this.ID == matches[i].Winner.ID:
-			r.Wins++
-		case other.ID == matches[i].Winner.ID:
-			r.Loses++
-		default:
-			r.Draws++
-		}
-		results[other.ID] = r
+		other, r := s.calculateResult(id, &matches[i], results)
+		results[other] = r
 	}
 	data.Results = results
 	return data, nil
+}
+
+func (s *PlayerService) calculateResult(id uuid.UUID, match *domain.Match, results map[uuid.UUID]domain.PlayerStats) (otherID uuid.UUID, result domain.PlayerStats) {
+	var this, other *domain.Player
+	if match.PlayerA.ID == id {
+		this = &match.PlayerA
+		other = &match.PlayerB
+	} else {
+		this = &match.PlayerB
+		other = &match.PlayerA
+	}
+	r := results[other.ID]
+	switch {
+	case this.ID == match.Winner.ID:
+		r.Wins++
+	case other.ID == match.Winner.ID:
+		r.Loses++
+	default:
+		r.Draws++
+	}
+	return other.ID, r
 }
 
 func (s *PlayerService) GetByName(name string) (domain.Player, error) {

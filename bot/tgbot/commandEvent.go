@@ -56,108 +56,128 @@ func (c *EventCommand) Run(
 	}()
 	switch c.state {
 	case EventStateStart:
-		c.state = EventStateWaitForPlayers
-		resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-		resp.Text = "start event"
-		return true, nil
+		return c.handleStateStart(resp)
 	case EventStateWaitForPlayers:
-		if text == "" {
-			resp.Text = "waiting for players names"
-			return true, nil
-		}
-		names := strings.Fields(text)
-		if len(names) <= 1 {
-			resp.Text = "need more then 1 player"
-			return true, nil
-		}
-		for _, name := range names {
-			player, err := c.playerService.GetByName(name)
-			if err != nil {
-				return false, err
-			}
-			c.players.Add(player)
-		}
-		resp.ReplyMarkup = generateKeyboard(c.players)
-		c.state = EventStateWinner
-		resp.Text = "event registered\nwinner:"
-		return true, nil
+		return c.handleStateWaitForPlayers(text, resp)
 	case EventStateWinner:
-		if text == "" {
-			resp.Text = "winner:"
-			return true, nil
-		}
-		if text == draw {
-			c.state = EventStateDraw
-			resp.Text = "first"
-			return true, nil
-		}
-		c.winner = text
-		c.state = EventStateLooser
-		resp.Text = "loser"
-		return true, nil
+		return c.handleStateWinner(text, resp)
 	case EventStateLooser:
-		if text == "" {
-			resp.Text = "loser:"
-			return true, nil
-		}
-		if text == draw {
-			c.state = EventStateDraw
-			resp.Text = "second:"
-			return true, nil
-		}
-		winner, err := c.playerService.GetByName(c.winner)
-		if err != nil {
-			return true, err
-		}
-		loser, err := c.playerService.GetByName(text)
-		if err != nil {
-			return false, err
-		}
-		match, err := c.playerService.CreateMatch(domain.Match{
-			PlayerA: winner,
-			PlayerB: loser,
-			Winner:  winner,
-			Date:    time.Now(),
-		})
-		if err != nil {
-			return true, err
-		}
-		c.sendMatchNotification(match)
-		c.state = EventStateWinner
-		c.winner = ""
-		resp.Text = "match registered\nwinner:"
-		return true, nil
+		return c.handleStateLoser(text, resp)
 	case EventStateDraw:
-		if c.winner == "" {
-			c.winner = text
-			resp.Text = "second:"
-			return true, nil
-		}
-		winner, err := c.playerService.GetByName(c.winner)
-		if err != nil {
-			return true, err
-		}
-		loser, err := c.playerService.GetByName(text)
-		if err != nil {
-			return false, err
-		}
-		match, err := c.playerService.CreateMatch(domain.Match{
-			PlayerA: winner,
-			PlayerB: loser,
-			Winner:  domain.Player{},
-			Date:    time.Now(),
-		})
-		if err != nil {
-			return true, err
-		}
-		c.sendMatchNotification(match)
-		c.state = EventStateWinner
-		c.winner = ""
-		resp.Text = "draw registered\nwinner:"
-		return true, nil
+		return c.handleStateDraw(text, resp)
 	}
 	resp.Text = "internal error, command aborted"
 	return false, nil
+}
+
+func (c *EventCommand) handleStateDraw(text string, resp *tgbotapi.MessageConfig) (bool, error) {
+	if c.winner == "" {
+		c.winner = text
+		resp.Text = "second:"
+		return true, nil
+	}
+	winner, err := c.playerService.GetByName(c.winner)
+	if err != nil {
+		return true, err
+	}
+	loser, err := c.playerService.GetByName(text)
+	if err != nil {
+		return false, err
+	}
+	match, err := c.playerService.CreateMatch(domain.Match{
+		PlayerA: winner,
+		PlayerB: loser,
+		Winner:  domain.Player{},
+		Date:    time.Now(),
+	})
+	if err != nil {
+		return true, err
+	}
+	c.sendMatchNotification(match)
+	c.state = EventStateWinner
+	c.winner = ""
+	resp.Text = "draw registered\nwinner:"
+	return true, nil
+}
+
+func (c *EventCommand) handleStateLoser(text string, resp *tgbotapi.MessageConfig) (bool, error) {
+	if text == "" {
+		resp.Text = "loser:"
+		return true, nil
+	}
+	if text == draw {
+		c.state = EventStateDraw
+		resp.Text = "second:"
+		return true, nil
+	}
+	winner, err := c.playerService.GetByName(c.winner)
+	if err != nil {
+		return true, err
+	}
+	loser, err := c.playerService.GetByName(text)
+	if err != nil {
+		return false, err
+	}
+	match, err := c.playerService.CreateMatch(domain.Match{
+		PlayerA: winner,
+		PlayerB: loser,
+		Winner:  winner,
+		Date:    time.Now(),
+	})
+	if err != nil {
+		return true, err
+	}
+	c.sendMatchNotification(match)
+	c.state = EventStateWinner
+	c.winner = ""
+	resp.Text = "match registered\nwinner:"
+	return true, nil
+}
+
+func (c *EventCommand) handleStateWinner(text string, resp *tgbotapi.MessageConfig) (bool, error) {
+	if text == "" {
+		resp.Text = "winner:"
+		return true, nil
+	}
+	if text == draw {
+		c.state = EventStateDraw
+		resp.Text = "first"
+		return true, nil
+	}
+	c.winner = text
+	c.state = EventStateLooser
+	resp.Text = "loser"
+	return true, nil
+}
+
+func (c *EventCommand) handleStateWaitForPlayers(text string, resp *tgbotapi.MessageConfig) (bool, error) {
+	if text == "" {
+		resp.Text = "waiting for players names"
+		return true, nil
+	}
+	names := strings.Fields(text)
+	if len(names) <= 1 {
+		resp.Text = "need more then 1 player"
+		return true, nil
+	}
+	for _, name := range names {
+		player, err := c.playerService.GetByName(name)
+		if err != nil {
+			return false, err
+		}
+		c.players.Add(player)
+	}
+	resp.ReplyMarkup = generateKeyboard(c.players)
+	c.state = EventStateWinner
+	resp.Text = "event registered\nwinner:"
+	return true, nil
+}
+
+func (c *EventCommand) handleStateStart(resp *tgbotapi.MessageConfig) (bool, error) {
+	c.state = EventStateWaitForPlayers
+	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
+	resp.Text = "start event"
+	return true, nil
 }
 
 const rowWidth = 4

@@ -1,7 +1,6 @@
 # Options for analysis running.
 run:
-  # See the dedicated "run" documentation section.
-  option: value
+  tests: false
 # output configuration options
 output:
   # See the dedicated "output" documentation section.
@@ -11,24 +10,10 @@ linters-settings:
   # See the dedicated "linters-settings" documentation section.
   option: value
 linters:
-  enable-all: true
-  disable:
-    - ifshort
-    - deadcode
-    - interfacer
-    - structcheck
-    - scopelint
-    - nosnakecase
-    - maligned
-    - varcheck
-    - exhaustivestruct
-    - golint
-    - gci
-    - gofmt
-    - goimports
-    - dupl # to many false positives
-    - wrapcheck # is it necessary??
-    - testpackage # Whaaat?
+  presets:
+    - bugs
+    - comment
+    - complexity
 issues:
   # See the dedicated "issues" documentation section.
   option: value

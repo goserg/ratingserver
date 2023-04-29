@@ -83,15 +83,8 @@ func (uc *Commands) RunCommand(
 	for s, command := range uc.list {
 		if msg.Command() == s {
 			if command.Permission().Contains(user.Role) {
-				command.Reset()
-				needContinue, err := command.Run(user, msg.CommandArguments(), resp)
-				if err != nil {
+				if err := uc.runCommand(user, msg.CommandArguments(), resp, command); err != nil {
 					return err
-				}
-				if needContinue {
-					uc.userCurrentCommand[user.ID] = command
-				} else {
-					uc.userCurrentCommand[user.ID] = nil
 				}
 				return nil
 			}
@@ -111,4 +104,18 @@ func (uc *Commands) RunCommand(
 		return nil
 	}
 	return ErrBadRequest
+}
+
+func (uc *Commands) runCommand(user model.User, args string, resp *tgbotapi.MessageConfig, command Command) error {
+	command.Reset()
+	needContinue, err := command.Run(user, args, resp)
+	if err != nil {
+		return err
+	}
+	if needContinue {
+		uc.userCurrentCommand[user.ID] = command
+	} else {
+		uc.userCurrentCommand[user.ID] = nil
+	}
+	return nil
 }
