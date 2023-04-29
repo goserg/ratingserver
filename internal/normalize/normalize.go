@@ -184,7 +184,7 @@ var unavailableMapping = map[rune]rune{
 	'\u1efe': 'Y',
 }
 
-// normalize removes diacritical characters and replaces them with their ASCII representation
+// normalize removes diacritical characters and replaces them with their ASCII representation.
 func normalize(input string) string {
 	var transformChain = transform.Chain(
 		runes.Map(mapDecomposeUnavailable),

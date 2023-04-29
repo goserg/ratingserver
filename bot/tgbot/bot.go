@@ -4,14 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
 	"ratingserver/bot/botstorage"
 	botmodel "ratingserver/bot/model"
 	"ratingserver/internal/config"
 	"ratingserver/internal/service"
 	"time"
-
-	"github.com/sirupsen/logrus"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -95,51 +94,55 @@ func (b *Bot) Run() {
 		case <-ctx.Done():
 			return
 		case update := <-updates:
-			if update.Message == nil { // ignore any non-Message updates
-				continue
-			}
-			tgUser := update.SentFrom()
-			if tgUser == nil {
-				continue
-			}
-			log := b.log.WithFields(map[string]interface{}{
-				"user_id": tgUser.ID,
-				"text":    update.Message.Text,
-			})
-			user, err := b.botStorage.GetUser(int(tgUser.ID))
-			if err != nil {
-				user, err = b.botStorage.NewUser(botmodel.User{
-					ID:        int(tgUser.ID),
-					FirstName: tgUser.FirstName,
-					Username:  tgUser.UserName,
-					CreatedAt: time.Now(),
-					UpdatedAt: time.Now(),
-				})
-				if err != nil {
-					log.WithError(err).Error("unable to get user from db")
-					continue
-				}
-			}
-
-			err = b.botStorage.Log(user, update.Message.Text)
-			if err != nil {
-				log.WithError(err).Error("Can't log to db")
-			}
-
-			// Create a new MessageConfig. We don't have text yet,
-			// so we leave it empty.
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
-
-			err = b.commands.RunCommand(user, update.Message, &msg)
-			if err != nil {
-				msg.Text = err.Error()
-			}
-			if _, err := b.bot.Send(msg); err != nil {
-				log.WithError(err).Error("send error")
-				return
-			}
+			b.handleMessage(update)
 		}
 
+	}
+}
+
+func (b *Bot) handleMessage(update tgbotapi.Update) {
+	if update.Message == nil { // ignore any non-Message updates
+		return
+	}
+	tgUser := update.SentFrom()
+	if tgUser == nil {
+		return
+	}
+	log := b.log.WithFields(map[string]interface{}{
+		"user_id": tgUser.ID,
+		"text":    update.Message.Text,
+	})
+	user, err := b.botStorage.GetUser(int(tgUser.ID))
+	if err != nil {
+		user, err = b.botStorage.NewUser(botmodel.User{
+			ID:        int(tgUser.ID),
+			FirstName: tgUser.FirstName,
+			Username:  tgUser.UserName,
+			CreatedAt: time.Now(),
+			UpdatedAt: time.Now(),
+		})
+		if err != nil {
+			log.WithError(err).Error("unable to get user from db")
+			return
+		}
+	}
+
+	err = b.botStorage.Log(user, update.Message.Text)
+	if err != nil {
+		log.WithError(err).Error("Can't log to db")
+	}
+
+	// Create a new MessageConfig. We don't have text yet,
+	// so we leave it empty.
+	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+
+	err = b.commands.RunCommand(user, update.Message, &msg)
+	if err != nil {
+		msg.Text = err.Error()
+	}
+	if _, err := b.bot.Send(msg); err != nil {
+		log.WithError(err).Error("send error")
+		return
 	}
 }
 
