@@ -16,6 +16,7 @@ linters:
     - complexity
 #    - error
     - performance
+    - unused
 issues:
   # See the dedicated "issues" documentation section.
   option: value
