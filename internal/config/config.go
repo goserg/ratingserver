@@ -4,7 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
-	configsdefault "ratingserver/configs_default"
+	embedded "ratingserver"
 
 	"github.com/BurntSushi/toml"
 )
@@ -107,7 +107,7 @@ func createConfigFileIfNotExists(filename string) error {
 	if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	defaultCfg, err := configsdefault.Files.Open(defaultEmbedPath + filename)
+	defaultCfg, err := embedded.DefaultConfigs.Open(defaultEmbedPath + filename)
 	if err != nil {
 		return err
 	}
