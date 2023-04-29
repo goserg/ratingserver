@@ -22,7 +22,7 @@ func convertPlayersToDomain(players []model.Players) []domain.Player {
 func convertPlayerToDomain(player model.Players) (domain.Player, error) {
 	id, err := uuid.Parse(player.ID)
 	if err != nil {
-		return domain.Player{}, nil
+		return domain.Player{}, err
 	}
 	return domain.Player{
 		ID:           id,

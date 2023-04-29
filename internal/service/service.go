@@ -212,9 +212,9 @@ func reverse(m []domain.Match) {
 const exportVersion = 1
 
 type export struct {
-	Version int
-	Players []domain.Player
-	Matches []domain.Match
+	Version int             `json:"version"`
+	Players []domain.Player `json:"players"`
+	Matches []domain.Match  `json:"matches"`
 }
 
 func (s *PlayerService) Export() ([]byte, error) {
