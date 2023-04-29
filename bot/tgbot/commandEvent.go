@@ -56,11 +56,12 @@ func (c *EventCommand) Run(
 	}()
 	switch c.state {
 	case EventStateStart:
-		return c.handleStateStart(resp)
+		return c.handleStateStart(resp), nil
 	case EventStateWaitForPlayers:
 		return c.handleStateWaitForPlayers(text, resp)
 	case EventStateWinner:
-		return c.handleStateWinner(text, resp)
+		c.handleStateWinner(text, resp)
+		return true, nil
 	case EventStateLooser:
 		return c.handleStateLoser(text, resp)
 	case EventStateDraw:
@@ -134,20 +135,19 @@ func (c *EventCommand) handleStateLoser(text string, resp *tgbotapi.MessageConfi
 	return true, nil
 }
 
-func (c *EventCommand) handleStateWinner(text string, resp *tgbotapi.MessageConfig) (bool, error) {
+func (c *EventCommand) handleStateWinner(text string, resp *tgbotapi.MessageConfig) {
 	if text == "" {
 		resp.Text = "winner:"
-		return true, nil
+		return
 	}
 	if text == draw {
 		c.state = EventStateDraw
 		resp.Text = "first"
-		return true, nil
+		return
 	}
 	c.winner = text
 	c.state = EventStateLooser
 	resp.Text = "loser"
-	return true, nil
 }
 
 func (c *EventCommand) handleStateWaitForPlayers(text string, resp *tgbotapi.MessageConfig) (bool, error) {
@@ -173,11 +173,11 @@ func (c *EventCommand) handleStateWaitForPlayers(text string, resp *tgbotapi.Mes
 	return true, nil
 }
 
-func (c *EventCommand) handleStateStart(resp *tgbotapi.MessageConfig) (bool, error) {
+func (c *EventCommand) handleStateStart(resp *tgbotapi.MessageConfig) bool {
 	c.state = EventStateWaitForPlayers
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
 	resp.Text = "start event"
-	return true, nil
+	return true
 }
 
 const rowWidth = 4

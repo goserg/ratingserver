@@ -109,10 +109,7 @@ func (s *Server) handleCreateMatch(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	dMatch, err := newMatch.convertToDomainMatch()
-	if err != nil {
-		return err
-	}
+	dMatch := newMatch.convertToDomainMatch()
 	_, err = s.playerService.CreateMatch(dMatch)
 	if err != nil {
 		return err
