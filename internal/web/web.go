@@ -52,29 +52,29 @@ func (s *Server) Serve() error {
 	return s.app.Listen(":3000")
 }
 
-func (s *Server) handleMain(c *fiber.Ctx) error {
+func (s *Server) handleMain(ctx *fiber.Ctx) error {
 	globalRating := s.playerService.GetRatings()
-	return c.Render("index", fiber.Map{
-		"Button":  1,
+	return ctx.Render("index", fiber.Map{
+		"Button":  "rating",
 		"Title":   "Рейтинг",
 		"Players": globalRating,
 	}, "layouts/main")
 }
 
-func (s *Server) handleMatches(c *fiber.Ctx) error {
+func (s *Server) handleMatches(ctx *fiber.Ctx) error {
 	matches, err := s.playerService.GetMatches()
 	if err != nil {
 		return err
 	}
 
-	return c.Render("matches", fiber.Map{
-		"Button":  2,
+	return ctx.Render("matches", fiber.Map{
+		"Button":  "matches",
 		"Title":   "Список матчей",
 		"Matches": matches,
 	}, "layouts/main")
 }
 
-func (s *Server) HandleExport(c *fiber.Ctx) error {
+func (s *Server) HandleExport(ctx *fiber.Ctx) error {
 	fileData, err := s.playerService.Export()
 	if err != nil {
 		return err
@@ -88,20 +88,20 @@ func (s *Server) HandleExport(c *fiber.Ctx) error {
 		return err
 	}
 	defer os.Remove(f.Name())
-	return c.SendFile(f.Name())
+	return ctx.SendFile(f.Name())
 }
 
-func (s *Server) HandleImport(c *fiber.Ctx) error {
-	err := s.playerService.Import(c.Body())
+func (s *Server) HandleImport(ctx *fiber.Ctx) error {
+	err := s.playerService.Import(ctx.Body())
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Server) handleCreateMatch(c *fiber.Ctx) error {
+func (s *Server) handleCreateMatch(ctx *fiber.Ctx) error {
 	var newMatch createMatch
-	err := json.Unmarshal(c.Body(), &newMatch)
+	err := json.Unmarshal(ctx.Body(), &newMatch)
 	if err != nil {
 		return err
 	}
@@ -117,15 +117,15 @@ func (s *Server) handleCreateMatch(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	err = c.Redirect("/")
+	err = ctx.Redirect("/")
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *Server) HandlePlayerInfo(c *fiber.Ctx) error {
-	strID := c.Params("id")
+func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
+	strID := ctx.Params("id")
 	id, err := uuid.Parse(strID)
 	if err != nil {
 		return err
@@ -134,8 +134,8 @@ func (s *Server) HandlePlayerInfo(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return c.Render("playerCard", fiber.Map{
-		"Button": 3,
+	return ctx.Render("playerCard", fiber.Map{
+		"Button": "playerCard",
 		"Title":  data.Player.Name,
 		"Data":   data,
 	}, "layouts/main")

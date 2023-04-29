@@ -166,37 +166,41 @@ func (s *PlayerService) GetMatches() ([]domain.Match, error) {
 func calculateMatches(matches []domain.Match) []domain.Match {
 	players := make(map[uuid.UUID]domain.Player)
 	for i := range matches {
-		playerA, ok := players[matches[i].PlayerA.ID]
-		if !ok {
-			playerA = matches[i].PlayerA
-			playerA.EloRating = 1000
-		}
-		playerB, ok := players[matches[i].PlayerB.ID]
-		if !ok {
-			playerB = matches[i].PlayerB
-			playerB.EloRating = 1000
-		}
-		pointsA, pointsB := calculatePoints(playerA, matches[i].Winner)
-		playerCoefficientA := calculatePlayerCoefficient(playerA.GamesPlayed, playerA.EloRating)
-		playerCoefficientB := calculatePlayerCoefficient(playerB.GamesPlayed, playerB.EloRating)
-
-		newRatingA := elo.Calculate(playerA.EloRating, playerB.EloRating, playerCoefficientA, pointsA)
-		newRatingB := elo.Calculate(playerB.EloRating, playerA.EloRating, playerCoefficientB, pointsB)
-
-		playerA.RatingChange = newRatingA - playerA.EloRating
-		playerA.EloRating = newRatingA
-		playerB.RatingChange = newRatingB - playerB.EloRating
-		playerB.EloRating = newRatingB
-
-		playerA.GamesPlayed++
-		playerB.GamesPlayed++
-
-		matches[i].PlayerA = playerA
-		matches[i].PlayerB = playerB
-		players[playerA.ID] = playerA
-		players[playerB.ID] = playerB
+		calculateMatch(&matches[i], players)
 	}
 	return matches
+}
+
+func calculateMatch(match *domain.Match, players map[uuid.UUID]domain.Player) {
+	playerA, ok := players[match.PlayerA.ID]
+	if !ok {
+		playerA = match.PlayerA
+		playerA.EloRating = 1000
+	}
+	playerB, ok := players[match.PlayerB.ID]
+	if !ok {
+		playerB = match.PlayerB
+		playerB.EloRating = 1000
+	}
+	pointsA, pointsB := calculatePoints(playerA, match.Winner)
+	playerCoefficientA := calculatePlayerCoefficient(playerA.GamesPlayed, playerA.EloRating)
+	playerCoefficientB := calculatePlayerCoefficient(playerB.GamesPlayed, playerB.EloRating)
+
+	newRatingA := elo.Calculate(playerA.EloRating, playerB.EloRating, playerCoefficientA, pointsA)
+	newRatingB := elo.Calculate(playerB.EloRating, playerA.EloRating, playerCoefficientB, pointsB)
+
+	playerA.RatingChange = newRatingA - playerA.EloRating
+	playerA.EloRating = newRatingA
+	playerB.RatingChange = newRatingB - playerB.EloRating
+	playerB.EloRating = newRatingB
+
+	playerA.GamesPlayed++
+	playerB.GamesPlayed++
+
+	match.PlayerA = playerA
+	match.PlayerB = playerB
+	players[playerA.ID] = playerA
+	players[playerB.ID] = playerB
 }
 
 func reverse(m []domain.Match) {
@@ -268,13 +272,13 @@ func (s *PlayerService) CreateMatch(match domain.Match) (m domain.Match, err err
 	return s.matchStorage.Create(match)
 }
 
-func (s *PlayerService) Get(id uuid.UUID) (domain.Player, error) {
+func (s *PlayerService) Get(playerID uuid.UUID) (domain.Player, error) {
 	rating, err := s.getRatings()
 	if err != nil {
 		return domain.Player{}, err
 	}
 	for i := range rating {
-		if rating[i].ID == id {
+		if rating[i].ID == playerID {
 			return rating[i], nil
 		}
 	}

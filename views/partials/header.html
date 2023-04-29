@@ -5,8 +5,8 @@
         </div>
         <div class="nav-content">
             <ul class="tabs tabs-transparent">
-                <li class="tab"><a {{ if eq .Button 1 }}class="active"{{end}} href="/">Рейтинг</a></li>
-                <li class="tab"><a {{ if eq .Button 2 }}class="active"{{end}} href="/matches">Матчи</a></li>
+                <li class="tab"><a {{ if eq .Button "rating" }}class="active"{{end}} href="/">Рейтинг</a></li>
+                <li class="tab"><a {{ if eq .Button "matches" }}class="active"{{end}} href="/matches">Матчи</a></li>
             </ul>
         </div>
     </div>
