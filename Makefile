@@ -29,7 +29,7 @@ build-tools-lint:
 	go build -modfile $(TOOLS_MODFILE) -o $(LINT_TOOL) github.com/golangci/golangci-lint/cmd/golangci-lint
 
 lint: build-tools-lint
-	$(LINT_TOOL) run ./... --sort-results
+	$(LINT_TOOL) run ./...
 
 build-tools-jet:
 	go build -modfile $(TOOLS_MODFILE) -o $(JET_TOOL) github.com/go-jet/jet/v2/cmd/jet

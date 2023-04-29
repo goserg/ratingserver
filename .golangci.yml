@@ -1,14 +1,7 @@
-# Options for analysis running.
 run:
   tests: false
-# output configuration options
 output:
-  # See the dedicated "output" documentation section.
-  option: value
-# All available settings of specific linters.
-linters-settings:
-  # See the dedicated "linters-settings" documentation section.
-  option: value
+  sort-results: true
 linters:
   presets:
     - bugs
@@ -17,9 +10,3 @@ linters:
 #    - error
     - performance
     - unused
-issues:
-  # See the dedicated "issues" documentation section.
-  option: value
-severity:
-  # See the dedicated "severity" documentation section.
-  option: value
