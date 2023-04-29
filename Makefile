@@ -14,6 +14,9 @@ build: gen-jet
 run: build
 	${SERVER_BIN}
 
+test:
+	go test ./...
+
 # TOOLS
 
 TOOLS_DIR = tools/
