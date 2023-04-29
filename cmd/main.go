@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"os"
 	botstorage "ratingserver/bot/botstorage/sqlite"
 	"ratingserver/bot/tgbot"
@@ -17,7 +17,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Println(err.Error())
+		log.Println(err.Error())
 		os.Exit(1)
 	}
 }

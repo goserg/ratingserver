@@ -9,17 +9,20 @@ import (
 )
 
 type createMatch struct {
-	PlayerA uuid.UUID `json:"player_a_id"`
-	PlayerB uuid.UUID `json:"player_b_id"`
-	Winner  uuid.UUID `json:"winner_id"`
+	PlayerA uuid.UUID `json:"playerAId"`
+	PlayerB uuid.UUID `json:"playerBId"`
+	Winner  uuid.UUID `json:"winnerId"`
 }
+
+var ErrWrongWinner = errors.New("ID победителя не совпадает с ID учасников")
+var ErrMissingPlayer = errors.New("оба игрока должны присутствовать")
 
 func (c createMatch) Validate() error {
 	if c.PlayerA.ID() == 0 || c.PlayerB.ID() == 0 {
-		return errors.New("оба игрока должны присутствовать")
+		return ErrMissingPlayer
 	}
 	if c.Winner.ID() != 0 && (c.Winner.ID() != c.PlayerA.ID() && c.Winner.ID() != c.PlayerB.ID()) {
-		return errors.New("ID победителя не совпадает с ID учасников")
+		return ErrWrongWinner
 	}
 	return nil
 }
