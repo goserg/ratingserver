@@ -197,7 +197,7 @@ func (s *Storage) ListUsers() ([]model.User, error) {
 }
 
 func convertGetUsersModelToDomain(dest []GetUserModel) []model.User {
-	var converted []model.User
+	converted := make([]model.User, 0, len(dest))
 	for i := range dest {
 		converted = append(converted, convertGetUserModelToDomain(dest[i]))
 	}

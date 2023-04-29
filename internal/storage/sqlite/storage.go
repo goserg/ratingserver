@@ -102,7 +102,7 @@ func convertPlayersToMap(players []domain.Player) map[uuid.UUID]domain.Player {
 }
 
 func (s *Storage) ImportPlayers(players []domain.Player) error {
-	var mPlayers []model.Players
+	mPlayers := make([]model.Players, 0, len(players))
 	for i := range players {
 		mPlayers = append(mPlayers, convertPlayerFromDomain(players[i]))
 	}
@@ -114,7 +114,7 @@ func (s *Storage) ImportPlayers(players []domain.Player) error {
 }
 
 func (s *Storage) ImportMatches(matches []domain.Match) error {
-	var mMatches []model.Matches
+	mMatches := make([]model.Matches, 0, len(matches))
 	for i := range matches {
 		mMatches = append(mMatches, convertMatchesFromDomain(matches[i]))
 	}
