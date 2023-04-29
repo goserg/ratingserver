@@ -10,3 +10,6 @@ var ServerMigrations embed.FS
 
 //go:embed "bot/migrations"
 var BotMigrations embed.FS
+
+//go:embed "configs_default"
+var DefaultConfigs embed.FS
