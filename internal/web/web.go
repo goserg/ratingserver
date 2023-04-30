@@ -2,10 +2,12 @@ package web
 
 import (
 	"encoding/json"
+	"github.com/golang-jwt/jwt"
 	"io/fs"
 	"net/http"
 	"os"
 	embedded "ratingserver"
+	authservice "ratingserver/internal/auth/service"
 	"ratingserver/internal/config"
 	"ratingserver/internal/service"
 	"time"
@@ -17,6 +19,7 @@ import (
 )
 
 type Server struct {
+	auth          *authservice.Service
 	playerService *service.PlayerService
 	app           *fiber.App
 }
@@ -44,6 +47,8 @@ func New(ps *service.PlayerService, cfg config.Server) (*Server, error) {
 	app.Get("/export", server.HandleExport)
 	app.Post("/import", server.HandleImport)
 	app.Get("/players/:id", server.HandlePlayerInfo)
+	app.Get("/login", server.HandleGetLogin)
+	app.Post("/login", server.HandlePostLogin)
 	server.app = app
 	return &server, nil
 }
@@ -136,6 +141,44 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 		"Title":  data.Player.Name,
 		"Data":   data,
 	}, "layouts/main")
+}
+
+func (s *Server) HandleGetLogin(ctx *fiber.Ctx) error {
+	return ctx.Render("login", fiber.Map{
+		"Title": "Войти",
+	}, "layouts/main")
+}
+
+func (s *Server) HandlePostLogin(ctx *fiber.Ctx) error {
+	name := ctx.FormValue("username", "")
+	password := ctx.FormValue("password", "")
+	user, err := s.auth.Login(ctx.Context(), name, password)
+	if err != nil {
+		return err
+	}
+	expirationTime := time.Now().Add(5 * time.Minute)
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+		IssuedAt: expirationTime.Unix(),
+		Subject:  user.ID.String(),
+	})
+	tokenString, err := token.SignedString([]byte("awdawdawd4yeg")) // TODO secret
+	if err != nil {
+		return err
+	}
+	ctx.Cookie(&fiber.Cookie{
+		Name:        "token",
+		Value:       tokenString,
+		Path:        "/",
+		Domain:      "127.0.0.1",
+		Expires:     expirationTime,
+		Secure:      false,
+		HTTPOnly:    true,
+		SameSite:    "",
+		SessionOnly: false,
+	})
+	return ctx.JSON(fiber.Map{
+		"jwt": token,
+	})
 }
 
 func formatDate(t time.Time) string {
