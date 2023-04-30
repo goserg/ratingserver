@@ -3,6 +3,5 @@ bin
 
 configs/
 
-rating.sqlite
-bot.sqlite
+*.sqlite
 export.json

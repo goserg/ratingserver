@@ -5,3 +5,5 @@ sqlite_file = "rating.sqlite"
 [auth]
 token = "generate secret"
 expiration = "5m"
+root_password = "default password"
+sqlite_file = "auth.sqlite"

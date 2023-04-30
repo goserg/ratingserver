@@ -7,17 +7,22 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"ratingserver/internal/auth/users"
+	"ratingserver/auth/storage/sqlite"
+	"ratingserver/auth/users"
 	"ratingserver/internal/config"
 	"time"
 )
 
 type Service struct {
-	cfg config.Server
+	storage *sqlite.Storage
+	cfg     config.Server
 }
 
-func New(cgf config.Server) *Service {
-	return &Service{cfg: cgf}
+func New(cgf config.Server, storage *sqlite.Storage) *Service {
+	return &Service{
+		cfg:     cgf,
+		storage: storage,
+	}
 }
 
 func (s *Service) Login(ctx context.Context, name string, password string) (users.User, error) {
