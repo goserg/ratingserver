@@ -41,14 +41,27 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
-	app.Get("/", server.handleMain)
-	app.Get("/matches", server.handleMatches)
-	app.Post("/matches", server.handleCreateMatch)
-	app.Get("/export", server.HandleExport)
-	app.Post("/import", server.HandleImport)
-	app.Get("/players/:id", server.HandlePlayerInfo)
+	app.Use("/api", func(c *fiber.Ctx) error {
+		tokenCookie := c.Cookies("token")
+		err := auth.Auth(tokenCookie)
+		if err != nil {
+			return c.Redirect("/login")
+		}
+		return c.Next()
+	})
 	app.Get("/login", server.HandleGetLogin)
 	app.Post("/login", server.HandlePostLogin)
+	app.Get("/", func(ctx *fiber.Ctx) error {
+		return ctx.Redirect("/api")
+	})
+
+	api := app.Group("/api")
+	api.Get("/", server.handleMain)
+	api.Get("/matches", server.handleMatches)
+	api.Post("/matches", server.handleCreateMatch)
+	api.Get("/export", server.HandleExport)
+	api.Post("/import", server.HandleImport)
+	api.Get("/players/:id", server.HandlePlayerInfo)
 	server.app = app
 	return &server, nil
 }

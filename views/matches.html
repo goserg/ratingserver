@@ -11,13 +11,13 @@
     {{ range .Matches }}
     <tr>
       <td>
-        {{ if eq .PlayerA .Winner }}<b>{{ end }}<a href="/players/{{ .PlayerA.ID }}">{{ .PlayerA.Name }}</a>
+        {{ if eq .PlayerA .Winner }}<b>{{ end }}<a href="/api/players/{{ .PlayerA.ID }}">{{ .PlayerA.Name }}</a>
         <span class="{{ if gt .PlayerA.RatingChange 0 }} green-text {{end}}{{ if lt .PlayerA.RatingChange 0 }} red-text text-accent-4 {{end}}">{{ .PlayerA.RatingChange }}</span>
         {{ if eq .PlayerA .Winner }}</b>{{ end }}
       </td>
 
       <td>
-        {{ if eq .PlayerB .Winner }}<b>{{ end }}<a href="/players/{{ .PlayerB.ID }}">{{ .PlayerB.Name }}</a>
+        {{ if eq .PlayerB .Winner }}<b>{{ end }}<a href="/api/players/{{ .PlayerB.ID }}">{{ .PlayerB.Name }}</a>
         <span class="{{ if gt .PlayerB.RatingChange 0 }} green-text {{end}}{{ if lt .PlayerB.RatingChange 0 }} red-text text-accent-4 {{end}}">{{ .PlayerB.RatingChange }}</span>
         {{ if eq .PlayerB .Winner }}</b>{{ end }}
       </td>

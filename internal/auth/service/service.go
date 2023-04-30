@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -29,8 +31,9 @@ func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
 	}
 	expirationTime := time.Now().Add(expiresIn)
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		IssuedAt: expirationTime.Unix(),
-		Subject:  userID.String(),
+		ExpiresAt: expirationTime.Unix(),
+		IssuedAt:  time.Now().Unix(),
+		Subject:   userID.String(),
 	})
 	tokenString, err := token.SignedString([]byte(s.cfg.Auth.AuthToken))
 	if err != nil {
@@ -47,4 +50,32 @@ func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
 		SameSite:    "",
 		SessionOnly: false,
 	}, nil
+}
+
+func (s *Service) Auth(cookie string) error {
+	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(s.cfg.Auth.AuthToken), nil
+	})
+	if err != nil {
+		return err
+	}
+	if token.Valid {
+		claims, ok := token.Claims.(*jwt.StandardClaims)
+		if !ok {
+			return errors.New("bad request")
+		}
+		user := claims.Subject
+		fmt.Println("user:", user)
+		return nil
+	} else if ve, ok := err.(*jwt.ValidationError); ok {
+		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
+			return errors.New("bad request")
+		} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+			return errors.New("token expired")
+		} else {
+			return err
+		}
+	} else {
+		return err
+	}
 }

@@ -21,7 +21,7 @@
             </tr>
             {{ range $key, $value := .Data.Results }}
             <tr>
-                <td><a href="/players/{{ $key }}">{{$value.Player.Name}}</a></td>
+                <td><a href="/api/players/{{ $key }}">{{$value.Player.Name}}</a></td>
                 <td>{{$value.Player.EloRating}}</td>
                 <td>{{$value.Wins}}</td>
                 <td>{{$value.Loses}}</td>
