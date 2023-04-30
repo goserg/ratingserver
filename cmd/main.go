@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"os"
 	authservice "ratingserver/auth/service"
@@ -25,6 +26,7 @@ func main() {
 }
 
 func run() error {
+	ctx := context.Background()
 	cfg, err := config.New()
 	if err != nil {
 		return err
@@ -59,7 +61,10 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	auth := authservice.New(cfg.Server, authstorage)
+	auth, err := authservice.New(ctx, cfg.Server, authstorage)
+	if err != nil {
+		return err
+	}
 
 	server, err := web.New(playerService, cfg.Server, auth)
 	if err != nil {

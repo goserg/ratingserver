@@ -30,6 +30,7 @@ type Server struct {
 		SqliteFile     string `toml:"sqlite_file"`
 		AuthToken      string `toml:"token"`
 		AuthExpiration string `toml:"expiration"`
+		RootPassword   string `toml:"root_password"`
 	} `toml:"auth"`
 }
 

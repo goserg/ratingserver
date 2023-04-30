@@ -2,27 +2,60 @@ package service
 
 import (
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"ratingserver/auth/storage/sqlite"
+	"ratingserver/auth/storage"
 	"ratingserver/auth/users"
 	"ratingserver/internal/config"
 	"time"
 )
 
 type Service struct {
-	storage *sqlite.Storage
+	storage storage.AuthStorage
 	cfg     config.Server
 }
 
-func New(cgf config.Server, storage *sqlite.Storage) *Service {
-	return &Service{
+func New(ctx context.Context, cgf config.Server, storage storage.AuthStorage) (*Service, error) {
+	s := Service{
 		cfg:     cgf,
 		storage: storage,
 	}
+	_, err := s.storage.GetUserByName(ctx, "root")
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			return nil, err
+		}
+		sha := sha256.New()
+		sha.Write([]byte(cgf.Auth.RootPassword))
+		salt := make([]byte, 8)
+		_, err := rand.Read(salt)
+		if err != nil {
+			return nil, err
+		}
+		err = s.storage.CreateUser(ctx, users.User{
+			ID:           uuid.New(),
+			Name:         "root",
+			Roles:        nil,
+			RegisteredAt: time.Now(),
+		}, users.Secret{
+			PasswordHash: string(sha.Sum(nil)),
+			Salt:         salt,
+		})
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &s, nil
+}
+
+func (s *Service) GetUserByName(ctx context.Context, name string) (users.User, error) {
+	return s.storage.GetUserByName(ctx, name)
 }
 
 func (s *Service) Login(ctx context.Context, name string, password string) (users.User, error) {

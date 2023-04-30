@@ -17,11 +17,14 @@ type usersTable struct {
 	sqlite.Table
 
 	// Columns
-	ID        sqlite.ColumnInteger
-	FirstName sqlite.ColumnString
-	Username  sqlite.ColumnString
-	CreatedAt sqlite.ColumnTimestamp
-	UpdatedAt sqlite.ColumnTimestamp
+	ID           sqlite.ColumnString
+	FirstName    sqlite.ColumnString
+	Username     sqlite.ColumnString
+	PasswordHash sqlite.ColumnString
+	PasswordSalt sqlite.ColumnString
+	CreatedAt    sqlite.ColumnTimestamp
+	UpdatedAt    sqlite.ColumnTimestamp
+	DeletedAt    sqlite.ColumnTimestamp
 
 	AllColumns     sqlite.ColumnList
 	MutableColumns sqlite.ColumnList
@@ -62,24 +65,30 @@ func newUsersTable(schemaName, tableName, alias string) *UsersTable {
 
 func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 	var (
-		IDColumn        = sqlite.IntegerColumn("id")
-		FirstNameColumn = sqlite.StringColumn("first_name")
-		UsernameColumn  = sqlite.StringColumn("username")
-		CreatedAtColumn = sqlite.TimestampColumn("created_at")
-		UpdatedAtColumn = sqlite.TimestampColumn("updated_at")
-		allColumns      = sqlite.ColumnList{IDColumn, FirstNameColumn, UsernameColumn, CreatedAtColumn, UpdatedAtColumn}
-		mutableColumns  = sqlite.ColumnList{FirstNameColumn, UsernameColumn, CreatedAtColumn, UpdatedAtColumn}
+		IDColumn           = sqlite.StringColumn("id")
+		FirstNameColumn    = sqlite.StringColumn("first_name")
+		UsernameColumn     = sqlite.StringColumn("username")
+		PasswordHashColumn = sqlite.StringColumn("password_hash")
+		PasswordSaltColumn = sqlite.StringColumn("password_salt")
+		CreatedAtColumn    = sqlite.TimestampColumn("created_at")
+		UpdatedAtColumn    = sqlite.TimestampColumn("updated_at")
+		DeletedAtColumn    = sqlite.TimestampColumn("deleted_at")
+		allColumns         = sqlite.ColumnList{IDColumn, FirstNameColumn, UsernameColumn, PasswordHashColumn, PasswordSaltColumn, CreatedAtColumn, UpdatedAtColumn, DeletedAtColumn}
+		mutableColumns     = sqlite.ColumnList{FirstNameColumn, UsernameColumn, PasswordHashColumn, PasswordSaltColumn, CreatedAtColumn, UpdatedAtColumn, DeletedAtColumn}
 	)
 
 	return usersTable{
 		Table: sqlite.NewTable(schemaName, tableName, alias, allColumns...),
 
 		//Columns
-		ID:        IDColumn,
-		FirstName: FirstNameColumn,
-		Username:  UsernameColumn,
-		CreatedAt: CreatedAtColumn,
-		UpdatedAt: UpdatedAtColumn,
+		ID:           IDColumn,
+		FirstName:    FirstNameColumn,
+		Username:     UsernameColumn,
+		PasswordHash: PasswordHashColumn,
+		PasswordSalt: PasswordSaltColumn,
+		CreatedAt:    CreatedAtColumn,
+		UpdatedAt:    UpdatedAtColumn,
+		DeletedAt:    DeletedAtColumn,
 
 		AllColumns:     allColumns,
 		MutableColumns: mutableColumns,
