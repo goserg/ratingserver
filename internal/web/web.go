@@ -44,14 +44,15 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	})
 	app.Use("/api", func(c *fiber.Ctx) error {
 		tokenCookie := c.Cookies("token")
-		err := auth.Auth(tokenCookie)
+		userID, err := auth.Auth(tokenCookie)
 		if err != nil {
 			return c.Redirect("/login")
 		}
+		c.Context().SetUserValue(userIDKey, userID)
 		return c.Next()
 	})
-	app.Get("/login", server.HandleGetLogin)
-	app.Post("/login", server.HandlePostLogin)
+	app.Get("/signin", server.HandleGetLogin)
+	app.Post("/signin", server.HandlePostLogin)
 	app.Get("/signup", server.HandleGetSignup)
 	app.Post("/signup", server.HandlePostSignup)
 	app.Get("/", func(ctx *fiber.Ctx) error {
@@ -73,12 +74,19 @@ func (s *Server) Serve() error {
 	return s.app.Listen(":3000")
 }
 
+const userIDKey = "user-id"
+
 func (s *Server) handleMain(ctx *fiber.Ctx) error {
+	userID, ok := ctx.Context().UserValue(userIDKey).(uuid.UUID)
+	if !ok {
+		return errors.New("unauthorized")
+	}
 	globalRating := s.playerService.GetRatings()
 	return ctx.Render("index", fiber.Map{
 		"Button":  "rating",
 		"Title":   "Рейтинг",
 		"Players": globalRating,
+		"UserID":  userID.String(),
 	}, "layouts/main")
 }
 
@@ -160,7 +168,7 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) HandleGetLogin(ctx *fiber.Ctx) error {
-	return ctx.Render("login", fiber.Map{
+	return ctx.Render("signin", fiber.Map{
 		"Title": "Войти",
 	}, "layouts/main")
 }

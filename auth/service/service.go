@@ -6,7 +6,6 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"errors"
-	"fmt"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -53,7 +52,7 @@ func (s *Service) GetUserByName(ctx context.Context, name string) (users.User, e
 }
 
 func (s *Service) Login(ctx context.Context, name string, password string) (users.User, error) {
-	return users.User{}, nil
+	return s.storage.GetUserByName(ctx, name) // TODO check password
 }
 
 func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
@@ -84,32 +83,35 @@ func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
 	}, nil
 }
 
-func (s *Service) Auth(cookie string) error {
+func (s *Service) Auth(cookie string) (uuid.UUID, error) {
 	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.cfg.Auth.AuthToken), nil
 	})
 	if err != nil {
-		return err
+		return uuid.Nil, err
 	}
 	if token.Valid {
 		claims, ok := token.Claims.(*jwt.StandardClaims)
 		if !ok {
-			return errors.New("bad request")
+			return uuid.Nil, errors.New("bad request")
 		}
-		user := claims.Subject
-		fmt.Println("user:", user) // TODO
-		return nil
+		userID := claims.Subject
+		id, err := uuid.Parse(userID)
+		if err != nil {
+			return uuid.Nil, err
+		}
+		return id, nil
 	}
 	ve := jwt.ValidationError{}
 	if ok := errors.As(err, &ve); !ok {
-		return err
+		return uuid.Nil, err
 	}
 	if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-		return errors.New("bad request")
+		return uuid.Nil, errors.New("bad request")
 	} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-		return errors.New("token expired")
+		return uuid.Nil, errors.New("token expired")
 	} else {
-		return err
+		return uuid.Nil, err
 	}
 }
 
