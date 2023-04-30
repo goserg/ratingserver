@@ -2,4 +2,6 @@ disable_tg_bot = false
 debug_mode = false
 sqlite_file = "rating.sqlite"
 
-auth_token = "generate secret"
+[auth]
+token = "generate secret"
+expiration = "5m"
