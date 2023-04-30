@@ -65,16 +65,17 @@ func (s *Service) Auth(cookie string) error {
 			return errors.New("bad request")
 		}
 		user := claims.Subject
-		fmt.Println("user:", user)
+		fmt.Println("user:", user) // TODO
 		return nil
-	} else if ve, ok := err.(*jwt.ValidationError); ok {
-		if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-			return errors.New("bad request")
-		} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-			return errors.New("token expired")
-		} else {
-			return err
-		}
+	}
+	ve := jwt.ValidationError{}
+	if ok := errors.As(err, &ve); !ok {
+		return err
+	}
+	if ve.Errors&jwt.ValidationErrorMalformed != 0 {
+		return errors.New("bad request")
+	} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
+		return errors.New("token expired")
 	} else {
 		return err
 	}
