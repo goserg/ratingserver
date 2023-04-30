@@ -17,7 +17,7 @@ type userRolesTable struct {
 	sqlite.Table
 
 	// Columns
-	UserID sqlite.ColumnInteger
+	UserID sqlite.ColumnString
 	RoleID sqlite.ColumnInteger
 
 	AllColumns     sqlite.ColumnList
@@ -59,7 +59,7 @@ func newUserRolesTable(schemaName, tableName, alias string) *UserRolesTable {
 
 func newUserRolesTableImpl(schemaName, tableName, alias string) userRolesTable {
 	var (
-		UserIDColumn   = sqlite.IntegerColumn("user_id")
+		UserIDColumn   = sqlite.StringColumn("user_id")
 		RoleIDColumn   = sqlite.IntegerColumn("role_id")
 		allColumns     = sqlite.ColumnList{UserIDColumn, RoleIDColumn}
 		mutableColumns = sqlite.ColumnList{}

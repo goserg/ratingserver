@@ -11,3 +11,8 @@ type User struct {
 	Roles        []int // TODO role type
 	RegisteredAt time.Time
 }
+
+type Secret struct {
+	PasswordHash string
+	Salt         []byte
+}
