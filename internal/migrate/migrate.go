@@ -54,3 +54,25 @@ func UpBotDB(db *sql.DB) error {
 	}
 	return nil
 }
+
+func UpAuthDB(db *sql.DB) error {
+	sourceDriver, err := iofs.New(embedded.AuthMigrations, "auth/migrations")
+	if err != nil {
+		return err
+	}
+	databaseDriver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	if err != nil {
+		return err
+	}
+	m, err := migrate.NewWithInstance("iofs",
+		sourceDriver,
+		"auth", databaseDriver)
+	if err != nil {
+		return err
+	}
+	err = m.Up()
+	if err != nil && !errors.Is(err, migrate.ErrNoChange) {
+		return err
+	}
+	return nil
+}

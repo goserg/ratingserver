@@ -27,6 +27,7 @@ type Server struct {
 	Debug        bool   `toml:"debug_mode"`
 	SqliteFile   string `toml:"sqlite_file"`
 	Auth         struct {
+		SqliteFile     string `toml:"sqlite_file"`
 		AuthToken      string `toml:"token"`
 		AuthExpiration string `toml:"expiration"`
 	} `toml:"auth"`

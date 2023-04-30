@@ -3,9 +3,10 @@ package main
 import (
 	"log"
 	"os"
+	authservice "ratingserver/auth/service"
+	authstorage "ratingserver/auth/storage/sqlite"
 	botstorage "ratingserver/bot/botstorage/sqlite"
 	"ratingserver/bot/tgbot"
-	authservice "ratingserver/internal/auth/service"
 	"ratingserver/internal/cache/mem"
 	"ratingserver/internal/config"
 	"ratingserver/internal/logger"
@@ -54,7 +55,11 @@ func run() error {
 		defer bot.Stop()
 	}
 
-	auth := authservice.New(cfg.Server)
+	authstorage, err := authstorage.New(log, cfg.Server)
+	if err != nil {
+		return err
+	}
+	auth := authservice.New(cfg.Server, authstorage)
 
 	server, err := web.New(playerService, cfg.Server, auth)
 	if err != nil {

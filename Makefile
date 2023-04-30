@@ -1,12 +1,15 @@
 JET_OUTPUT="gen"
 JET_BOT_OUTPUT="bot/gen"
+JET_BOT_OUTPUT="auth/gen"
 SQLITE_RATINGS_FILE_LOCATION="rating.sqlite"
 SQLITE_BOT_FILE_LOCATION="bot.sqlite"
+SQLITE_AUTH_FILE_LOCATION="auth.sqlite"
 SERVER_BIN="./bin/server"
 
 gen-jet: build-tools-jet
 	$(JET_TOOL) -source=sqlite -dsn=${SQLITE_RATINGS_FILE_LOCATION} -path=${JET_OUTPUT}
 	$(JET_TOOL) -source=sqlite -dsn=${SQLITE_BOT_FILE_LOCATION} -path=${JET_BOT_OUTPUT}
+	$(JET_TOOL) -source=sqlite -dsn=${SQLITE_AUTH_FILE_LOCATION} -path=${JET_AUTH_OUTPUT}
 
 build: gen-jet
 	go build -o ${SERVER_BIN} cmd/main.go

@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	embedded "ratingserver"
-	authservice "ratingserver/internal/auth/service"
+	authservice "ratingserver/auth/service"
 	"ratingserver/internal/config"
 	"ratingserver/internal/service"
 	"time"
