@@ -2,7 +2,6 @@ package web
 
 import (
 	"encoding/json"
-	"github.com/golang-jwt/jwt"
 	"io/fs"
 	"net/http"
 	"os"
@@ -24,9 +23,10 @@ type Server struct {
 	app           *fiber.App
 }
 
-func New(ps *service.PlayerService, cfg config.Server) (*Server, error) {
+func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service) (*Server, error) {
 	server := Server{
 		playerService: ps,
+		auth:          auth,
 	}
 
 	fsFS, err := fs.Sub(embedded.Views, "views")
@@ -156,29 +156,12 @@ func (s *Server) HandlePostLogin(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	expirationTime := time.Now().Add(5 * time.Minute)
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		IssuedAt: expirationTime.Unix(),
-		Subject:  user.ID.String(),
-	})
-	tokenString, err := token.SignedString([]byte("awdawdawd4yeg")) // TODO secret
+	cookie, err := s.auth.GenerateJWTCookie(user.ID)
 	if err != nil {
 		return err
 	}
-	ctx.Cookie(&fiber.Cookie{
-		Name:        "token",
-		Value:       tokenString,
-		Path:        "/",
-		Domain:      "127.0.0.1",
-		Expires:     expirationTime,
-		Secure:      false,
-		HTTPOnly:    true,
-		SameSite:    "",
-		SessionOnly: false,
-	})
-	return ctx.JSON(fiber.Map{
-		"jwt": token,
-	})
+	ctx.Cookie(cookie)
+	return ctx.Redirect("/")
 }
 
 func formatDate(t time.Time) string {
