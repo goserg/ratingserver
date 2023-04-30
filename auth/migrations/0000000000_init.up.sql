@@ -12,7 +12,6 @@ create table users
     id         text   not null
         constraint users_pk
             primary key,
-    first_name text      not null,
     username   text      not null,
     password_hash text   not null,
     password_salt text   not null,

@@ -13,7 +13,6 @@ import (
 
 type Users struct {
 	ID           string `sql:"primary_key"`
-	FirstName    string
 	Username     string
 	PasswordHash string
 	PasswordSalt string
