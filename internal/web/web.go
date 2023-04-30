@@ -2,6 +2,7 @@ package web
 
 import (
 	"encoding/json"
+	"errors"
 	"io/fs"
 	"net/http"
 	"os"
@@ -51,6 +52,8 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	})
 	app.Get("/login", server.HandleGetLogin)
 	app.Post("/login", server.HandlePostLogin)
+	app.Get("/signup", server.HandleGetSignup)
+	app.Post("/signup", server.HandlePostSignup)
 	app.Get("/", func(ctx *fiber.Ctx) error {
 		return ctx.Redirect("/api")
 	})
@@ -175,6 +178,26 @@ func (s *Server) HandlePostLogin(ctx *fiber.Ctx) error {
 	}
 	ctx.Cookie(cookie)
 	return ctx.Redirect("/")
+}
+
+func (s *Server) HandleGetSignup(ctx *fiber.Ctx) error {
+	return ctx.Render("signup", fiber.Map{
+		"Title": "Зарегистрироваться",
+	}, "layouts/main")
+}
+
+func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
+	name := ctx.FormValue("name", "")
+	password := ctx.FormValue("password", "")
+	passwordRepeat := ctx.FormValue("password-repeat", "")
+	if password != passwordRepeat {
+		return errors.New("passwords don't match")
+	}
+	err := s.auth.SignUp(ctx.Context(), name, password)
+	if err != nil {
+		return err
+	}
+	return ctx.Redirect("/login")
 }
 
 func formatDate(t time.Time) string {

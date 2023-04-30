@@ -26,7 +26,7 @@ func (s *Storage) CreateUser(ctx context.Context, user users.User, secret users.
 	dbUser := model.Users{
 		ID:           user.ID.String(),
 		Username:     user.Name,
-		PasswordHash: secret.PasswordHash,
+		PasswordHash: string(secret.PasswordHash),
 		PasswordSalt: string(secret.Salt),
 		CreatedAt:    time.Now(),
 	}
