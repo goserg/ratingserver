@@ -13,6 +13,6 @@ type User struct {
 }
 
 type Secret struct {
-	PasswordHash string
+	PasswordHash []byte
 	Salt         []byte
 }
