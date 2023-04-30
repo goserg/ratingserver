@@ -18,7 +18,6 @@ type usersTable struct {
 
 	// Columns
 	ID           sqlite.ColumnString
-	FirstName    sqlite.ColumnString
 	Username     sqlite.ColumnString
 	PasswordHash sqlite.ColumnString
 	PasswordSalt sqlite.ColumnString
@@ -66,15 +65,14 @@ func newUsersTable(schemaName, tableName, alias string) *UsersTable {
 func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 	var (
 		IDColumn           = sqlite.StringColumn("id")
-		FirstNameColumn    = sqlite.StringColumn("first_name")
 		UsernameColumn     = sqlite.StringColumn("username")
 		PasswordHashColumn = sqlite.StringColumn("password_hash")
 		PasswordSaltColumn = sqlite.StringColumn("password_salt")
 		CreatedAtColumn    = sqlite.TimestampColumn("created_at")
 		UpdatedAtColumn    = sqlite.TimestampColumn("updated_at")
 		DeletedAtColumn    = sqlite.TimestampColumn("deleted_at")
-		allColumns         = sqlite.ColumnList{IDColumn, FirstNameColumn, UsernameColumn, PasswordHashColumn, PasswordSaltColumn, CreatedAtColumn, UpdatedAtColumn, DeletedAtColumn}
-		mutableColumns     = sqlite.ColumnList{FirstNameColumn, UsernameColumn, PasswordHashColumn, PasswordSaltColumn, CreatedAtColumn, UpdatedAtColumn, DeletedAtColumn}
+		allColumns         = sqlite.ColumnList{IDColumn, UsernameColumn, PasswordHashColumn, PasswordSaltColumn, CreatedAtColumn, UpdatedAtColumn, DeletedAtColumn}
+		mutableColumns     = sqlite.ColumnList{UsernameColumn, PasswordHashColumn, PasswordSaltColumn, CreatedAtColumn, UpdatedAtColumn, DeletedAtColumn}
 	)
 
 	return usersTable{
@@ -82,7 +80,6 @@ func newUsersTableImpl(schemaName, tableName, alias string) usersTable {
 
 		//Columns
 		ID:           IDColumn,
-		FirstName:    FirstNameColumn,
 		Username:     UsernameColumn,
 		PasswordHash: PasswordHashColumn,
 		PasswordSalt: PasswordSaltColumn,
