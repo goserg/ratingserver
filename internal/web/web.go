@@ -9,6 +9,7 @@ import (
 	authservice "ratingserver/auth/service"
 	"ratingserver/internal/config"
 	"ratingserver/internal/service"
+	"strconv"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,12 +22,14 @@ type Server struct {
 	auth          *authservice.Service
 	playerService *service.PlayerService
 	app           *fiber.App
+	cfg           config.Server
 }
 
 func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service) (*Server, error) {
 	server := Server{
 		playerService: ps,
 		auth:          auth,
+		cfg:           cfg,
 	}
 
 	fsFS, err := fs.Sub(embedded.Views, "views")
@@ -67,7 +70,7 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 }
 
 func (s *Server) Serve() error {
-	return s.app.Listen(":3000")
+	return s.app.Listen(s.cfg.Host + ":" + strconv.Itoa(s.cfg.Port))
 }
 
 const userIDKey = "user-id"
