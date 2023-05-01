@@ -4,7 +4,7 @@
         <input type="text" name="name" id="signName" placeholder="Username" required autocomplete="off">
         <input type="password" name="password" id="signPassword" placeholder="Password" required autocomplete="off"><br>
         <input type="password" name="password-repeat" id="signPasswordRepeat" placeholder="Repeat password" required autocomplete="off"><br>
-        <input type="submit" value="Sign Up">
-        <a href={{ .PathSignIn }}>Sign In</a>
+        <button class="btn waves-effect waves-light" id="signup-form-submit" type="submit" name="create">Sign Up</button>
+        <a class="waves-effect waves-teal btn-flat" href={{ .Path.SignIn }}>Sign In</a>
     </form>
 </div>

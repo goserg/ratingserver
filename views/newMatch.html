@@ -1,0 +1,13 @@
+{{template "partials/header" .}}
+<div class="container">
+    <form id="new-match-form" method="post">
+        <input type="text" name="winner" id="new-match-form-winner" placeholder="winner" required>
+        <input type="text" name="loser" id="new-match-form-loser" placeholder="loser" required><br>
+        <label>
+            <input type="checkbox" name="draw" id="new-match-form-draw" />
+            <span>Draw</span>
+        </label><br>
+        <button class="btn waves-effect waves-light" type="submit" name="create">Create</button>
+    </form>
+</div>
+{{template "partials/footer" .}}
