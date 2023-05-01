@@ -3,6 +3,7 @@ package sqlite
 import (
 	"context"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"github.com/go-jet/jet/v2/qrm"
 	"github.com/go-jet/jet/v2/sqlite"
@@ -22,12 +23,51 @@ type Storage struct {
 	log *logrus.Entry
 }
 
+func (s *Storage) GetUserSecret(ctx context.Context, user users.User) (users.Secret, error) {
+	var where sqlite.BoolExpression
+	switch {
+	case user.ID != uuid.Nil:
+		where = table.Users.ID.EQ(sqlite.UUID(user.ID))
+	case user.Name != "":
+		where = table.Users.Username.EQ(sqlite.String(user.Name))
+	default:
+		return users.Secret{}, errors.New("empty user")
+	}
+
+	var dbUser model.Users
+	err := table.Users.
+		SELECT(
+			table.Users.PasswordHash,
+			table.Users.PasswordSalt,
+		).
+		FROM(table.Users).
+		WHERE(where).QueryContext(ctx, s.db, &dbUser)
+	if err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return users.Secret{}, sql.ErrNoRows
+		}
+		return users.Secret{}, err
+	}
+	hash, err := hexToBytes(dbUser.PasswordHash)
+	if err != nil {
+		return users.Secret{}, err
+	}
+	salt, err := hexToBytes(dbUser.PasswordSalt)
+	if err != nil {
+		return users.Secret{}, err
+	}
+	return users.Secret{
+		PasswordHash: hash,
+		Salt:         salt,
+	}, nil
+}
+
 func (s *Storage) CreateUser(ctx context.Context, user users.User, secret users.Secret) error {
 	dbUser := model.Users{
 		ID:           user.ID.String(),
 		Username:     user.Name,
-		PasswordHash: string(secret.PasswordHash),
-		PasswordSalt: string(secret.Salt),
+		PasswordHash: bytesToHex(secret.PasswordHash),
+		PasswordSalt: bytesToHex(secret.Salt),
 		CreatedAt:    time.Now(),
 	}
 	_, err := table.Users.INSERT(table.Users.AllColumns).MODEL(dbUser).ExecContext(ctx, s.db)
@@ -37,7 +77,7 @@ func (s *Storage) CreateUser(ctx context.Context, user users.User, secret users.
 	return nil
 }
 
-func (s *Storage) GetUserByName(ctx context.Context, name string) (users.User, error) {
+func (s *Storage) SignIn(ctx context.Context, name string, passwordHash []byte) (users.User, error) {
 	var dbUser model.Users
 	err := table.Users.
 		SELECT(
@@ -48,7 +88,8 @@ func (s *Storage) GetUserByName(ctx context.Context, name string) (users.User, e
 		).
 		WHERE(
 			table.Users.Username.EQ(sqlite.String(name)).
-				AND(table.Users.DeletedAt.IS_NULL()),
+				AND(table.Users.DeletedAt.IS_NULL()).
+				AND(table.Users.PasswordHash.EQ(sqlite.String(bytesToHex(passwordHash)))),
 		).
 		QueryContext(ctx, s.db, &dbUser)
 	if err != nil {
@@ -103,4 +144,12 @@ func New(l *logrus.Logger, cfg config.Server) (*Storage, error) {
 
 func buildSource(fileName string) string {
 	return "file:" + fileName + "?cache=shared"
+}
+
+func bytesToHex(b []byte) string {
+	return hex.EncodeToString(b)
+}
+
+func hexToBytes(s string) ([]byte, error) {
+	return hex.DecodeString(s)
 }

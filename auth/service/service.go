@@ -24,12 +24,13 @@ func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service
 		cfg:     cfg,
 		storage: storage,
 	}
-	_, err := s.storage.GetUserByName(ctx, "root")
+	_, err := s.storage.GetUserSecret(ctx, users.User{Name: "root"})
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
-		secret, err := generateSecret(cfg.RootPassword, cfg.PasswordPepper)
+		salt, err := randomSalt()
+		secret, err := generateSecret(cfg.RootPassword, cfg.PasswordPepper, salt)
 		if err != nil {
 			return nil, err
 		}
@@ -46,12 +47,16 @@ func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service
 	return &s, nil
 }
 
-func (s *Service) GetUserByName(ctx context.Context, name string) (users.User, error) {
-	return s.storage.GetUserByName(ctx, name)
-}
-
 func (s *Service) Login(ctx context.Context, name string, password string) (users.User, error) {
-	return s.storage.GetUserByName(ctx, name) // TODO check password
+	userSecret, err := s.storage.GetUserSecret(ctx, users.User{Name: name})
+	if err != nil {
+		return users.User{}, err
+	}
+	secret, err := generateSecret(password, s.cfg.PasswordPepper, userSecret.Salt)
+	if err != nil {
+		return users.User{}, err
+	}
+	return s.storage.SignIn(ctx, name, secret.PasswordHash)
 }
 
 func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
@@ -115,7 +120,12 @@ func (s *Service) Auth(cookie string) (uuid.UUID, error) {
 }
 
 func (s *Service) SignUp(ctx context.Context, name string, password string) error {
-	secret, err := generateSecret(password, s.cfg.PasswordPepper)
+	salt, err := randomSalt()
+	if err != nil {
+		return err
+	}
+	secret, err := generateSecret(password, s.cfg.PasswordPepper, salt)
+
 	if err != nil {
 		return err
 	}
@@ -131,14 +141,19 @@ func (s *Service) SignUp(ctx context.Context, name string, password string) erro
 	return nil
 }
 
-func generateSecret(password string, pepper string) (users.Secret, error) {
-	sha := sha256.New()
-	sha.Write([]byte(pepper + password))
+func randomSalt() ([]byte, error) {
 	salt := make([]byte, 8)
 	_, err := rand.Read(salt)
 	if err != nil {
-		return users.Secret{}, err
+		return nil, err
 	}
+	return salt, nil
+}
+
+func generateSecret(password string, pepper string, salt []byte) (users.Secret, error) {
+	sha := sha256.New()
+	sha.Write([]byte(pepper + password))
+
 	sha.Write(salt)
 	return users.Secret{
 		PasswordHash: sha.Sum(nil),
