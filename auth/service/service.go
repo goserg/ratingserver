@@ -11,6 +11,7 @@ import (
 	"github.com/google/uuid"
 	"ratingserver/auth/storage"
 	"ratingserver/auth/users"
+	"regexp"
 	"time"
 )
 
@@ -37,7 +38,7 @@ func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service
 		err = s.storage.CreateUser(ctx, users.User{
 			ID:           uuid.New(),
 			Name:         "root",
-			Roles:        nil,
+			Roles:        []string{"admin"},
 			RegisteredAt: time.Now(),
 		}, secret)
 		if err != nil {
@@ -87,7 +88,42 @@ func (s *Service) GenerateJWTCookie(userID uuid.UUID, host string) (*fiber.Cooki
 	}, nil
 }
 
-func (s *Service) Auth(ctx context.Context, cookie string) (users.User, error) {
+func (s *Service) Auth(ctx context.Context, cookie string, method string, url string) (users.User, error) {
+	user, err := s.getUserFromToken(ctx, cookie)
+	if err != nil {
+		return users.User{}, err
+	}
+
+	for _, rule := range s.cfg.Rules {
+		r, err := regexp.Compile(rule.Path)
+		if err != nil {
+			return users.User{}, err
+		}
+		if r.MatchString(url) {
+			for _, ruleMethod := range rule.Method {
+				if ruleMethod == "*" || ruleMethod == method {
+					for _, role := range rule.Allow {
+						if role == "*" {
+							return user, nil
+						}
+						for _, userRole := range user.Roles {
+							if role == userRole {
+								return user, nil
+							}
+						}
+					}
+					return users.User{}, errors.New("permission denied")
+				}
+			}
+		}
+	}
+	return users.User{}, errors.New("permission denied")
+}
+
+func (s *Service) getUserFromToken(ctx context.Context, cookie string) (users.User, error) {
+	if cookie == "" {
+		return users.User{}, nil
+	}
 	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.cfg.Token), nil
 	})
