@@ -11,18 +11,17 @@ import (
 	"github.com/google/uuid"
 	"ratingserver/auth/storage"
 	"ratingserver/auth/users"
-	"ratingserver/internal/config"
 	"time"
 )
 
 type Service struct {
 	storage storage.AuthStorage
-	cfg     config.Server
+	cfg     Config
 }
 
-func New(ctx context.Context, cgf config.Server, storage storage.AuthStorage) (*Service, error) {
+func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service, error) {
 	s := Service{
-		cfg:     cgf,
+		cfg:     cfg,
 		storage: storage,
 	}
 	_, err := s.storage.GetUserByName(ctx, "root")
@@ -30,7 +29,7 @@ func New(ctx context.Context, cgf config.Server, storage storage.AuthStorage) (*
 		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
-		secret, err := generateSecret(cgf.Auth.RootPassword)
+		secret, err := generateSecret(cfg.RootPassword)
 		if err != nil {
 			return nil, err
 		}
@@ -56,7 +55,7 @@ func (s *Service) Login(ctx context.Context, name string, password string) (user
 }
 
 func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
-	expiresIn, err := time.ParseDuration(s.cfg.Auth.AuthExpiration)
+	expiresIn, err := time.ParseDuration(s.cfg.Expiration)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +65,7 @@ func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
 		IssuedAt:  time.Now().Unix(),
 		Subject:   userID.String(),
 	})
-	tokenString, err := token.SignedString([]byte(s.cfg.Auth.AuthToken))
+	tokenString, err := token.SignedString([]byte(s.cfg.Token))
 	if err != nil {
 		return nil, err
 	}
@@ -85,7 +84,7 @@ func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
 
 func (s *Service) Auth(cookie string) (uuid.UUID, error) {
 	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(s.cfg.Auth.AuthToken), nil
+		return []byte(s.cfg.Token), nil
 	})
 	if err != nil {
 		return uuid.Nil, err
