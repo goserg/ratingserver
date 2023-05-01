@@ -29,7 +29,7 @@ func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service
 		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
 		}
-		secret, err := generateSecret(cfg.RootPassword)
+		secret, err := generateSecret(cfg.RootPassword, cfg.PasswordPepper)
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +115,7 @@ func (s *Service) Auth(cookie string) (uuid.UUID, error) {
 }
 
 func (s *Service) SignUp(ctx context.Context, name string, password string) error {
-	secret, err := generateSecret(password)
+	secret, err := generateSecret(password, s.cfg.PasswordPepper)
 	if err != nil {
 		return err
 	}
@@ -131,16 +131,17 @@ func (s *Service) SignUp(ctx context.Context, name string, password string) erro
 	return nil
 }
 
-func generateSecret(password string) (users.Secret, error) {
+func generateSecret(password string, pepper string) (users.Secret, error) {
 	sha := sha256.New()
-	sha.Write([]byte(password))
+	sha.Write([]byte(pepper + password))
 	salt := make([]byte, 8)
 	_, err := rand.Read(salt)
 	if err != nil {
 		return users.Secret{}, err
 	}
+	sha.Write(salt)
 	return users.Secret{
-		PasswordHash: sha.Sum(salt),
-		Salt:         salt, // TODO add extra salt to config file
+		PasswordHash: sha.Sum(nil),
+		Salt:         salt,
 	}, nil
 }

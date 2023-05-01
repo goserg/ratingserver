@@ -46,7 +46,7 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 		tokenCookie := c.Cookies("token")
 		userID, err := auth.Auth(tokenCookie)
 		if err != nil {
-			return c.Redirect("/login")
+			return c.Redirect("/signin")
 		}
 		c.Context().SetUserValue(userIDKey, userID)
 		return c.Next()
@@ -205,7 +205,7 @@ func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return ctx.Redirect("/login")
+	return ctx.Redirect("/signin")
 }
 
 func formatDate(t time.Time) string {
