@@ -8,7 +8,7 @@ import (
 type User struct {
 	ID           uuid.UUID
 	Name         string
-	Roles        []int // TODO role type
+	Roles        []string // TODO role type
 	RegisteredAt time.Time
 }
 

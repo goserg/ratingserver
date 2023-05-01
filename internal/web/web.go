@@ -48,10 +48,11 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	})
 	app.Use(api, func(c *fiber.Ctx) error {
 		tokenCookie := c.Cookies("token")
-		user, err := auth.Auth(c.Context(), tokenCookie)
-		if err == nil {
-			c.Context().SetUserValue(userKey, user)
+		user, err := auth.Auth(c.Context(), tokenCookie, c.Method(), c.OriginalURL())
+		if err != nil {
+			return err
 		}
+		c.Context().SetUserValue(userKey, user)
 		return c.Next()
 	})
 	app.Get(signin, server.HandleGetSignIn)
@@ -106,9 +107,11 @@ func (s *Server) handleMatches(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) handleCreateMatchGet(ctx *fiber.Ctx) error {
+	user, _ := ctx.Context().UserValue(userKey).(users.User)
 	return ctx.Render("newMatch", fiber.Map{
 		"Title": "Добавить игру",
 		"Path":  Path(),
+		"User":  user,
 	}, "layouts/main")
 }
 

@@ -37,7 +37,7 @@ func (s *Storage) GetUser(ctx context.Context, id uuid.UUID) (users.User, error)
 	if err != nil {
 		return users.User{}, err
 	}
-	return convertUserToModel(dbUser)
+	return convertUserToModel(dbUser, nil)
 }
 
 func (s *Storage) GetUserSecret(ctx context.Context, user users.User) (users.Secret, error) {
@@ -91,44 +91,78 @@ func (s *Storage) CreateUser(ctx context.Context, user users.User, secret users.
 	if err != nil {
 		return err
 	}
+	for _, role := range user.Roles {
+		var roleDB int
+		switch role {
+		case "admin":
+			roleDB = 1
+		case "user":
+			roleDB = 2
+		}
+		userRoleDB := model.UserRoles{
+			UserID: user.ID.String(),
+			RoleID: int32(roleDB),
+		}
+		_, err = table.UserRoles.INSERT(table.UserRoles.AllColumns).MODEL(userRoleDB).ExecContext(ctx, s.db)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
 func (s *Storage) SignIn(ctx context.Context, name string, passwordHash []byte) (users.User, error) {
-	var dbUser model.Users
+	var dest struct {
+		model.Users
+		UserRoles []model.UserRoles
+	}
 	err := table.Users.
 		SELECT(
 			table.Users.AllColumns.Except(
 				table.Users.PasswordHash,
 				table.Users.PasswordSalt,
 			),
+			table.UserRoles.AllColumns,
 		).
+		FROM(table.Users.INNER_JOIN(table.UserRoles, table.UserRoles.UserID.EQ(table.Users.ID))).
 		WHERE(
 			table.Users.Username.EQ(sqlite.String(name)).
 				AND(table.Users.DeletedAt.IS_NULL()).
 				AND(table.Users.PasswordHash.EQ(sqlite.String(bytesToHex(passwordHash)))),
 		).
-		QueryContext(ctx, s.db, &dbUser)
+		QueryContext(ctx, s.db, &dest)
 	if err != nil {
 		if errors.Is(err, qrm.ErrNoRows) { // TODO better handle ErrNoRows
 			return users.User{}, sql.ErrNoRows
 		}
 		return users.User{}, err
 	}
-	return convertUserToModel(dbUser)
+	return convertUserToModel(dest.Users, dest.UserRoles)
 }
 
-func convertUserToModel(user model.Users) (users.User, error) {
+func convertUserToModel(user model.Users, roles []model.UserRoles) (users.User, error) {
 	id, err := uuid.Parse(user.ID)
 	if err != nil {
 		return users.User{}, err
 	}
-	return users.User{
+	u := users.User{
 		ID:           id,
 		Name:         user.Username,
-		Roles:        nil, // TODO
+		Roles:        []string{"admin"}, // TODO
 		RegisteredAt: user.CreatedAt,
-	}, nil
+	}
+
+	for _, role := range roles {
+		var domainRole string
+		switch role.RoleID {
+		case 1:
+			domainRole = "admin"
+		case 2:
+			domainRole = "user"
+		}
+		u.Roles = append(u.Roles, domainRole)
+	}
+	return u, nil
 }
 
 var _ storage.AuthStorage = (*Storage)(nil)

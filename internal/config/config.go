@@ -6,6 +6,7 @@ import (
 	"os"
 	embedded "ratingserver"
 	authservice "ratingserver/auth/service"
+	"sort"
 
 	"github.com/BurntSushi/toml"
 )
@@ -83,6 +84,9 @@ func serverConfig() (Server, error) {
 	if err != nil {
 		return Server{}, err
 	}
+	sort.SliceStable(serverCfg.Auth.Rules, func(i, j int) bool {
+		return serverCfg.Auth.Rules[i].Order < serverCfg.Auth.Rules[j].Order
+	})
 	return serverCfg, nil
 }
 
