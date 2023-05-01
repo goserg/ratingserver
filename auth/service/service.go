@@ -59,7 +59,7 @@ func (s *Service) Login(ctx context.Context, name string, password string) (user
 	return s.storage.SignIn(ctx, name, secret.PasswordHash)
 }
 
-func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
+func (s *Service) GenerateJWTCookie(userID uuid.UUID, host string) (*fiber.Cookie, error) {
 	expiresIn, err := time.ParseDuration(s.cfg.Expiration)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
 		Name:        "token",
 		Value:       tokenString,
 		Path:        "/",
-		Domain:      "127.0.0.1",
+		Domain:      host,
 		Expires:     expirationTime,
 		Secure:      false,
 		HTTPOnly:    true,

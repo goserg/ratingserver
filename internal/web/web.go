@@ -174,7 +174,7 @@ func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	cookie, err := s.auth.GenerateJWTCookie(user.ID)
+	cookie, err := s.auth.GenerateJWTCookie(user.ID, s.cfg.Host)
 	if err != nil {
 		return err
 	}
