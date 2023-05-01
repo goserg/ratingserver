@@ -1,7 +1,6 @@
 package service
 
 import (
-	"encoding/json"
 	"errors"
 	glicko "github.com/zelenin/go-glicko2"
 	"ratingserver/internal/cache/mem"
@@ -223,47 +222,6 @@ type export struct {
 	Version int             `json:"version"`
 	Players []domain.Player `json:"players"`
 	Matches []domain.Match  `json:"matches"`
-}
-
-func (s *PlayerService) Export() ([]byte, error) {
-	players, err := s.getRatings()
-	if err != nil {
-		return nil, err
-	}
-	matches, err := s.GetMatches()
-	if err != nil {
-		return nil, err
-	}
-	exportData := export{
-		Version: exportVersion,
-		Players: players,
-		Matches: matches,
-	}
-	data, err := json.Marshal(exportData)
-	if err != nil {
-		return nil, err
-	}
-	return data, nil
-}
-
-func (s *PlayerService) Import(data []byte) error {
-	var importData export
-	err := json.Unmarshal(data, &importData)
-	if err != nil {
-		return err
-	}
-	if importData.Version != exportVersion {
-		return errors.New("invalid export file version")
-	}
-	err = s.playerStorage.ImportPlayers(importData.Players)
-	if err != nil {
-		return err
-	}
-	err = s.matchStorage.ImportMatches(importData.Matches)
-	if err != nil {
-		return err
-	}
-	return nil
 }
 
 func (s *PlayerService) CreateMatch(match domain.Match) (m domain.Match, err error) {

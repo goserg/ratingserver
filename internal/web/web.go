@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
-	"os"
 	embedded "ratingserver"
 	authservice "ratingserver/auth/service"
 	"ratingserver/internal/config"
@@ -42,30 +41,27 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
-	app.Use("/api", func(c *fiber.Ctx) error {
+	app.Use(api, func(c *fiber.Ctx) error {
 		tokenCookie := c.Cookies("token")
 		userID, err := auth.Auth(tokenCookie)
 		if err != nil {
-			return c.Redirect("/signin")
+			return c.Redirect(signin)
 		}
 		c.Context().SetUserValue(userIDKey, userID)
 		return c.Next()
 	})
-	app.Get("/signin", server.HandleGetLogin)
-	app.Post("/signin", server.HandlePostLogin)
-	app.Get("/signup", server.HandleGetSignup)
-	app.Post("/signup", server.HandlePostSignup)
-	app.Get("/", func(ctx *fiber.Ctx) error {
-		return ctx.Redirect("/api")
+	app.Get(signin, server.HandleGetSignIn)
+	app.Post(signin, server.HandlePostSignIn)
+	app.Get(signup, server.HandleGetSignup)
+	app.Post(signup, server.HandlePostSignup)
+	app.Get(home, func(ctx *fiber.Ctx) error {
+		return ctx.Redirect(api)
 	})
 
-	api := app.Group("/api")
-	api.Get("/", server.handleMain)
-	api.Get("/matches", server.handleMatches)
-	api.Post("/matches", server.handleCreateMatch)
-	api.Get("/export", server.HandleExport)
-	api.Post("/import", server.HandleImport)
-	api.Get("/players/:id", server.HandlePlayerInfo)
+	app.Get(apiHome, server.handleMain)
+	app.Get(apiMatches, server.handleMatches)
+	app.Post(apiMatches, server.handleCreateMatch)
+	app.Get(apiGetPlayers, server.HandlePlayerInfo)
 	server.app = app
 	return &server, nil
 }
@@ -103,31 +99,6 @@ func (s *Server) handleMatches(ctx *fiber.Ctx) error {
 	}, "layouts/main")
 }
 
-func (s *Server) HandleExport(ctx *fiber.Ctx) error {
-	fileData, err := s.playerService.Export()
-	if err != nil {
-		return err
-	}
-	f, err := os.CreateTemp("", "rating_export_*.json")
-	if err != nil {
-		return err
-	}
-	_, err = f.Write(fileData)
-	if err != nil {
-		return err
-	}
-	defer os.Remove(f.Name())
-	return ctx.SendFile(f.Name())
-}
-
-func (s *Server) HandleImport(ctx *fiber.Ctx) error {
-	err := s.playerService.Import(ctx.Body())
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *Server) handleCreateMatch(ctx *fiber.Ctx) error {
 	var newMatch createMatch
 	err := json.Unmarshal(ctx.Body(), &newMatch)
@@ -143,7 +114,7 @@ func (s *Server) handleCreateMatch(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	err = ctx.Redirect("/")
+	err = ctx.Redirect(apiHome)
 	if err != nil {
 		return err
 	}
@@ -167,13 +138,14 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 	}, "layouts/main")
 }
 
-func (s *Server) HandleGetLogin(ctx *fiber.Ctx) error {
+func (s *Server) HandleGetSignIn(ctx *fiber.Ctx) error {
 	return ctx.Render("signin", fiber.Map{
-		"Title": "Войти",
+		"Title":      "Войти",
+		"PathSignUp": signup,
 	}, "layouts/main")
 }
 
-func (s *Server) HandlePostLogin(ctx *fiber.Ctx) error {
+func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
 	name := ctx.FormValue("username", "")
 	password := ctx.FormValue("password", "")
 	user, err := s.auth.Login(ctx.Context(), name, password)
@@ -185,12 +157,13 @@ func (s *Server) HandlePostLogin(ctx *fiber.Ctx) error {
 		return err
 	}
 	ctx.Cookie(cookie)
-	return ctx.Redirect("/")
+	return ctx.Redirect(apiHome)
 }
 
 func (s *Server) HandleGetSignup(ctx *fiber.Ctx) error {
 	return ctx.Render("signup", fiber.Map{
-		"Title": "Зарегистрироваться",
+		"Title":      "Зарегистрироваться",
+		"PathSignIn": signin,
 	}, "layouts/main")
 }
 
@@ -205,7 +178,7 @@ func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return ctx.Redirect("/signin")
+	return ctx.Redirect(signin)
 }
 
 func formatDate(t time.Time) string {
