@@ -6,6 +6,7 @@ import (
 )
 
 type AuthStorage interface {
+	GetUserSecret(ctx context.Context, user users.User) (users.Secret, error)
 	CreateUser(ctx context.Context, user users.User, secret users.Secret) error
-	GetUserByName(ctx context.Context, name string) (users.User, error)
+	SignIn(ctx context.Context, name string, pwdHash []byte) (users.User, error)
 }
