@@ -6,6 +6,7 @@ import (
 	"net/http"
 	embedded "ratingserver"
 	authservice "ratingserver/auth/service"
+	"ratingserver/auth/users"
 	"ratingserver/internal/config"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/normalize"
@@ -47,9 +48,9 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	})
 	app.Use(api, func(c *fiber.Ctx) error {
 		tokenCookie := c.Cookies("token")
-		userID, err := auth.Auth(tokenCookie)
+		user, err := auth.Auth(c.Context(), tokenCookie)
 		if err == nil {
-			c.Context().SetUserValue(userIDKey, userID)
+			c.Context().SetUserValue(userKey, user)
 		}
 		return c.Next()
 	})
@@ -57,6 +58,7 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	app.Post(signin, server.HandlePostSignIn)
 	app.Get(signup, server.HandleGetSignup)
 	app.Post(signup, server.HandlePostSignup)
+	app.Get(signout, server.HandleSignOut)
 	app.Get(home, func(ctx *fiber.Ctx) error {
 		return ctx.Redirect(api)
 	})
@@ -74,19 +76,22 @@ func (s *Server) Serve() error {
 	return s.app.Listen(s.cfg.Host + ":" + strconv.Itoa(s.cfg.Port))
 }
 
-const userIDKey = "user-id"
+const userKey = "user"
 
 func (s *Server) handleMain(ctx *fiber.Ctx) error {
+	user, _ := ctx.Context().UserValue(userKey).(users.User)
 	globalRating := s.playerService.GetRatings()
 	return ctx.Render("index", fiber.Map{
 		"Button":  "rating",
 		"Title":   "Рейтинг",
 		"Players": globalRating,
 		"Path":    Path(),
+		"User":    user,
 	}, "layouts/main")
 }
 
 func (s *Server) handleMatches(ctx *fiber.Ctx) error {
+	user, _ := ctx.Context().UserValue(userKey).(users.User)
 	matches, err := s.playerService.GetMatches()
 	if err != nil {
 		return err
@@ -96,6 +101,7 @@ func (s *Server) handleMatches(ctx *fiber.Ctx) error {
 		"Title":   "Список матчей",
 		"Matches": matches,
 		"Path":    Path(),
+		"User":    user,
 	}, "layouts/main")
 }
 
@@ -135,6 +141,7 @@ func (s *Server) handleCreateMatchPost(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
+	user, _ := ctx.Context().UserValue(userKey).(users.User)
 	strID := ctx.Params("id")
 	id, err := uuid.Parse(strID)
 	if err != nil {
@@ -149,6 +156,7 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 		"Title":  data.Player.Name,
 		"Data":   data,
 		"Path":   Path(),
+		"User":   user,
 	}, "layouts/main")
 }
 
@@ -193,6 +201,11 @@ func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
 		return err
 	}
 	return ctx.Redirect(signin)
+}
+
+func (s *Server) HandleSignOut(ctx *fiber.Ctx) error {
+	ctx.ClearCookie("token")
+	return ctx.Redirect(apiHome)
 }
 
 func formatDate(t time.Time) string {

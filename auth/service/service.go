@@ -87,35 +87,39 @@ func (s *Service) GenerateJWTCookie(userID uuid.UUID) (*fiber.Cookie, error) {
 	}, nil
 }
 
-func (s *Service) Auth(cookie string) (uuid.UUID, error) {
+func (s *Service) Auth(ctx context.Context, cookie string) (users.User, error) {
 	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return []byte(s.cfg.Token), nil
 	})
 	if err != nil {
-		return uuid.Nil, err
+		return users.User{}, err
 	}
 	if token.Valid {
 		claims, ok := token.Claims.(*jwt.StandardClaims)
 		if !ok {
-			return uuid.Nil, errors.New("bad request")
+			return users.User{}, errors.New("bad request")
 		}
 		userID := claims.Subject
 		id, err := uuid.Parse(userID)
 		if err != nil {
-			return uuid.Nil, err
+			return users.User{}, err
 		}
-		return id, nil
+		user, err := s.storage.GetUser(ctx, id)
+		if err != nil {
+			return users.User{}, err
+		}
+		return user, nil
 	}
 	ve := jwt.ValidationError{}
 	if ok := errors.As(err, &ve); !ok {
-		return uuid.Nil, err
+		return users.User{}, err
 	}
 	if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-		return uuid.Nil, errors.New("bad request")
+		return users.User{}, errors.New("bad request")
 	} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-		return uuid.Nil, errors.New("token expired")
+		return users.User{}, errors.New("token expired")
 	} else {
-		return uuid.Nil, err
+		return users.User{}, err
 	}
 }
 
