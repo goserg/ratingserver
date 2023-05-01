@@ -23,6 +23,23 @@ type Storage struct {
 	log *logrus.Entry
 }
 
+func (s *Storage) GetUser(ctx context.Context, id uuid.UUID) (users.User, error) {
+	var dbUser model.Users
+	err := table.Users.
+		SELECT(
+			table.Users.AllColumns.
+				Except(table.Users.PasswordHash, table.Users.PasswordSalt),
+		).FROM(table.Users).
+		WHERE(
+			table.Users.DeletedAt.IS_NULL().
+				AND(table.Users.ID.EQ(sqlite.UUID(id))),
+		).QueryContext(ctx, s.db, &dbUser)
+	if err != nil {
+		return users.User{}, err
+	}
+	return convertUserToModel(dbUser)
+}
+
 func (s *Storage) GetUserSecret(ctx context.Context, user users.User) (users.Secret, error) {
 	var where sqlite.BoolExpression
 	switch {
