@@ -61,7 +61,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-	auth, err := authservice.New(ctx, cfg.Server, authstorage)
+	auth, err := authservice.New(ctx, cfg.Server.Auth, authstorage)
 	if err != nil {
 		return err
 	}

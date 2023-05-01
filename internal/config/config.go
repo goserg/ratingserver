@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	embedded "ratingserver"
+	authservice "ratingserver/auth/service"
 
 	"github.com/BurntSushi/toml"
 )
@@ -23,15 +24,10 @@ type TgBot struct {
 }
 
 type Server struct {
-	TgBotDisable bool   `toml:"disable_tg_bot"`
-	Debug        bool   `toml:"debug_mode"`
-	SqliteFile   string `toml:"sqlite_file"`
-	Auth         struct {
-		SqliteFile     string `toml:"sqlite_file"`
-		AuthToken      string `toml:"token"`
-		AuthExpiration string `toml:"expiration"`
-		RootPassword   string `toml:"root_password"`
-	} `toml:"auth"`
+	TgBotDisable bool               `toml:"disable_tg_bot"`
+	Debug        bool               `toml:"debug_mode"`
+	SqliteFile   string             `toml:"sqlite_file"`
+	Auth         authservice.Config `toml:"auth"`
 }
 
 type Config struct {
