@@ -1,13 +1,14 @@
 package web
 
 import (
-	"encoding/json"
 	"errors"
 	"io/fs"
 	"net/http"
 	embedded "ratingserver"
 	authservice "ratingserver/auth/service"
 	"ratingserver/internal/config"
+	"ratingserver/internal/domain"
+	"ratingserver/internal/normalize"
 	"ratingserver/internal/service"
 	"strconv"
 	"time"
@@ -47,10 +48,9 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	app.Use(api, func(c *fiber.Ctx) error {
 		tokenCookie := c.Cookies("token")
 		userID, err := auth.Auth(tokenCookie)
-		if err != nil {
-			return c.Redirect(signin)
+		if err == nil {
+			c.Context().SetUserValue(userIDKey, userID)
 		}
-		c.Context().SetUserValue(userIDKey, userID)
 		return c.Next()
 	})
 	app.Get(signin, server.HandleGetSignIn)
@@ -62,8 +62,9 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	})
 
 	app.Get(apiHome, server.handleMain)
-	app.Get(apiMatches, server.handleMatches)
-	app.Post(apiMatches, server.handleCreateMatch)
+	app.Get(apiMatchesList, server.handleMatches)
+	app.Get(apiMatches, server.handleCreateMatchGet)
+	app.Post(apiMatches, server.handleCreateMatchPost)
 	app.Get(apiGetPlayers, server.HandlePlayerInfo)
 	server.app = app
 	return &server, nil
@@ -76,16 +77,12 @@ func (s *Server) Serve() error {
 const userIDKey = "user-id"
 
 func (s *Server) handleMain(ctx *fiber.Ctx) error {
-	userID, ok := ctx.Context().UserValue(userIDKey).(uuid.UUID)
-	if !ok {
-		return errors.New("unauthorized")
-	}
 	globalRating := s.playerService.GetRatings()
 	return ctx.Render("index", fiber.Map{
 		"Button":  "rating",
 		"Title":   "Рейтинг",
 		"Players": globalRating,
-		"UserID":  userID.String(),
+		"Path":    Path(),
 	}, "layouts/main")
 }
 
@@ -94,26 +91,39 @@ func (s *Server) handleMatches(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-
 	return ctx.Render("matches", fiber.Map{
 		"Button":  "matches",
 		"Title":   "Список матчей",
 		"Matches": matches,
+		"Path":    Path(),
 	}, "layouts/main")
 }
 
-func (s *Server) handleCreateMatch(ctx *fiber.Ctx) error {
-	var newMatch createMatch
-	err := json.Unmarshal(ctx.Body(), &newMatch)
+func (s *Server) handleCreateMatchGet(ctx *fiber.Ctx) error {
+	return ctx.Render("newMatch", fiber.Map{
+		"Title": "Добавить игру",
+		"Path":  Path(),
+	}, "layouts/main")
+}
+
+func (s *Server) handleCreateMatchPost(ctx *fiber.Ctx) error {
+	winner, err := s.playerService.GetByName(normalize.Name(ctx.FormValue("winner")))
 	if err != nil {
 		return err
 	}
-	err = newMatch.Validate()
+	loser, err := s.playerService.GetByName(normalize.Name(ctx.FormValue("loser")))
 	if err != nil {
 		return err
 	}
-	dMatch := newMatch.convertToDomainMatch()
-	_, err = s.playerService.CreateMatch(dMatch)
+	m := domain.Match{
+		PlayerA: winner,
+		PlayerB: loser,
+		Winner:  winner,
+	}
+	if ctx.FormValue("draw") == "on" {
+		m.Winner = domain.Player{}
+	}
+	_, err = s.playerService.CreateMatch(m)
 	if err != nil {
 		return err
 	}
@@ -138,13 +148,14 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 		"Button": "playerCard",
 		"Title":  data.Player.Name,
 		"Data":   data,
+		"Path":   Path(),
 	}, "layouts/main")
 }
 
 func (s *Server) HandleGetSignIn(ctx *fiber.Ctx) error {
 	return ctx.Render("signin", fiber.Map{
-		"Title":      "Войти",
-		"PathSignUp": signup,
+		"Title": "Войти",
+		"Path":  Path(),
 	}, "layouts/main")
 }
 
@@ -165,8 +176,8 @@ func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
 
 func (s *Server) HandleGetSignup(ctx *fiber.Ctx) error {
 	return ctx.Render("signup", fiber.Map{
-		"Title":      "Зарегистрироваться",
-		"PathSignIn": signin,
+		"Title": "Зарегистрироваться",
+		"Path":  Path(),
 	}, "layouts/main")
 }
 
