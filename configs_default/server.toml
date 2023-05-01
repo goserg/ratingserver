@@ -6,5 +6,6 @@ sqlite_file = "rating.sqlite"
 token = "generate secret"
 expiration = "5m"
 root_password = "default password"
+password_pepper = "generate random string"
 sqlite_file = "auth.sqlite"
 roles = ["admin", "user"]
