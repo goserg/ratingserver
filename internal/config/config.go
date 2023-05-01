@@ -27,6 +27,8 @@ type Server struct {
 	TgBotDisable bool               `toml:"disable_tg_bot"`
 	Debug        bool               `toml:"debug_mode"`
 	SqliteFile   string             `toml:"sqlite_file"`
+	Host         string             `toml:"host"`
+	Port         int                `toml:"port"`
 	Auth         authservice.Config `toml:"auth"`
 }
 
