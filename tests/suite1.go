@@ -9,6 +9,8 @@ import (
 	auth "ratingserver/auth/service"
 	"ratingserver/internal/config"
 	"ratingserver/internal/web/webpath"
+	"strconv"
+	"strings"
 	"time"
 
 	mapset "github.com/deckarep/golang-set/v2"
@@ -111,6 +113,12 @@ func (s *TestSuite1) TestHandlers() {
 		s.NewPlayer("Артём"),
 		s.NewPlayer("Мария"),
 		s.CheckPlayersExist("Иван", "Артём", "Мария"),
+		s.NewGame("Иван", "Артём", false),
+		s.NewGame("Иван", "Мария", false),
+		s.NewGame("Иван", "Мария", true),
+		s.NewGame("Артём", "Иван", false),
+		s.NewGame("Мария", "Артём", false),
+		s.CheckPlayersStats(),
 		chromedp.Navigate(s.addr),
 		chromedp.Text(`.brand-logo`, &logo),
 		chromedp.ActionFunc(func(ctx context.Context) error {
@@ -237,6 +245,107 @@ func (s *TestSuite1) CheckPlayersExist(names ...string) chromedp.Tasks {
 			}
 			if !actualNames.Equal(expectedNames) {
 				s.T().Errorf("Ожидались: %s; Найдено: %s", expectedNames.String(), actualNames.String())
+			}
+			return nil
+		}),
+	}
+}
+
+func (s *TestSuite1) NewGame(winner string, loser string, draw bool) chromedp.Tasks {
+	winnerPoints := 1.0
+	loserPoints := 0.0
+	if draw {
+		winnerPoints = 0.5
+		loserPoints = 0.5
+	}
+	s.T().Logf("Создание новой игры: %s %.1f:%.1f %s", winner, winnerPoints, loserPoints, loser)
+	return []chromedp.Action{
+		chromedp.Navigate(s.addr + webpath.ApiNewMatch),
+		chromedp.SendKeys("#new-match-form-winner", winner),
+		chromedp.SendKeys("#new-match-form-loser", loser),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			if draw {
+				err := chromedp.Click("#new-match-form-draw").Do(ctx)
+				if err != nil {
+					return err
+				}
+			}
+			return nil
+		}),
+		chromedp.Submit("#new-match-form-submit"),
+		chromedp.WaitVisible(`.brand-logo`),
+	}
+}
+
+type PlayerStats struct {
+	Name        string
+	GamesPlayed int
+	EloRating   int
+}
+
+func PlayerStatsFromString(str string) (PlayerStats, error) {
+	s := strings.Split(strings.TrimSpace(str), "\n")
+	if len(s) < 3 {
+		return PlayerStats{}, errors.New("invalid player stats")
+	}
+	gp, err := strconv.Atoi(strings.TrimSpace(s[1]))
+	if err != nil {
+		return PlayerStats{}, err
+	}
+	er, err := strconv.Atoi(strings.TrimSpace(s[2]))
+	if err != nil {
+		return PlayerStats{}, err
+	}
+
+	return PlayerStats{
+		Name:        strings.TrimSpace(s[0]),
+		GamesPlayed: gp,
+		EloRating:   er,
+	}, nil
+}
+
+func (s *TestSuite1) CheckPlayersStats() chromedp.Tasks {
+	s.T().Logf("Проверка правильности содания игр")
+	expectedStats := mapset.NewSet[PlayerStats](
+		PlayerStats{
+			Name:        "Иван",
+			GamesPlayed: 4,
+			EloRating:   1013,
+		},
+		PlayerStats{
+			Name:        "Артём",
+			GamesPlayed: 3,
+			EloRating:   982,
+		},
+		PlayerStats{
+			Name:        "Мария",
+			GamesPlayed: 3,
+			EloRating:   1005,
+		},
+	)
+	return []chromedp.Action{
+		chromedp.Navigate(s.addr),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Nodes("#player-list-row", &nodes, chromedp.NodeVisible).Do(ctx)
+			if err != nil {
+				return err
+			}
+			actualStats := mapset.NewSet[PlayerStats]()
+			for _, node := range nodes {
+				var text string
+				err := chromedp.TextContent(node.FullXPath(), &text, chromedp.NodeVisible).Do(ctx)
+				if err != nil {
+					return err
+				}
+				stat, err := PlayerStatsFromString(text)
+				if err != nil {
+					return err
+				}
+				actualStats.Add(stat)
+			}
+			if !actualStats.Equal(expectedStats) {
+				s.T().Errorf("Ошибка\nОжидалось: %s.\nПолучено: %s.\nРазница: %s", expectedStats, actualStats, expectedStats.Difference(actualStats))
 			}
 			return nil
 		}),
