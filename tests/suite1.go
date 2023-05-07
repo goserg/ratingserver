@@ -11,6 +11,10 @@ import (
 	"ratingserver/internal/web/webpath"
 	"time"
 
+	mapset "github.com/deckarep/golang-set/v2"
+
+	"github.com/chromedp/cdproto/cdp"
+
 	"github.com/chromedp/chromedp"
 	"github.com/stretchr/testify/suite"
 )
@@ -102,6 +106,11 @@ func (s *TestSuite1) TestHandlers() {
 		s.CheckAccessGranted(s.addr+webpath.Signin),
 		s.CheckAccessGranted(s.addr+webpath.Signout),
 		s.CheckAccessGranted(s.addr+webpath.Signup),
+		s.Login(auth.Root, s.config.Server.Auth.RootPassword),
+		s.NewPlayer("Иван"),
+		s.NewPlayer("Артём"),
+		s.NewPlayer("Мария"),
+		s.CheckPlayersExist("Иван", "Артём", "Мария"),
 		chromedp.Navigate(s.addr),
 		chromedp.Text(`.brand-logo`, &logo),
 		chromedp.ActionFunc(func(ctx context.Context) error {
@@ -173,6 +182,16 @@ func (s *TestSuite1) Screenshot(filename string) chromedp.ActionFunc {
 	}
 }
 
+func (s *TestSuite1) NewPlayer(name string) chromedp.Tasks {
+	s.T().Logf("Создание игрока %s", name)
+	return []chromedp.Action{
+		chromedp.Navigate(s.addr + webpath.ApiNewPlayer),
+		chromedp.SendKeys("#new-player-form-name", name),
+		chromedp.Submit("#new-player-form-submit"),
+		chromedp.WaitVisible(`.brand-logo`),
+	}
+}
+
 func (s *TestSuite1) Login(user, password string) chromedp.Tasks {
 	s.T().Logf("Логин как %s", user)
 	return []chromedp.Action{
@@ -193,4 +212,33 @@ func (s *TestSuite1) cleanupDB() error {
 		err = errors.Join(err, os.Remove(s.config.TgBot.SqliteFile))
 	}
 	return err
+}
+
+func (s *TestSuite1) CheckPlayersExist(names ...string) chromedp.Tasks {
+	expectedNames := mapset.NewSet(names...)
+	s.T().Log("Проверяем, что игроки создались")
+	return []chromedp.Action{
+		chromedp.Navigate(s.addr + webpath.ApiHome),
+		chromedp.WaitVisible(`.brand-logo`),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			var nodes []*cdp.Node
+			err := chromedp.Nodes("#player-list-row-name", &nodes, chromedp.NodeVisible).Do(ctx)
+			if err != nil {
+				return err
+			}
+			actualNames := mapset.NewSet[string]()
+			for _, node := range nodes {
+				var name string
+				err := chromedp.TextContent(node.FullXPath(), &name, chromedp.NodeVisible).Do(ctx)
+				if err != nil {
+					return err
+				}
+				actualNames.Add(name)
+			}
+			if !actualNames.Equal(expectedNames) {
+				s.T().Errorf("Ожидались: %s; Найдено: %s", expectedNames.String(), actualNames.String())
+			}
+			return nil
+		}),
+	}
 }
