@@ -101,7 +101,9 @@ func (s *TestSuite1) TestHandlers() {
 			if logo != "Эш-рейтинг" {
 				err := errors.New("invalid logo text: " + logo)
 				var screenShot []byte
-				chromedp.FullScreenshot(&screenShot, 80).Do(ctx)
+				if errS := chromedp.FullScreenshot(&screenShot, 80).Do(ctx); errS != nil {
+					return errors.Join(errS, err)
+				}
 				if errW := os.WriteFile("invalid_logo.png", screenShot, 0o644); errW != nil {
 					return errors.Join(errW, err)
 				}
