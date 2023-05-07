@@ -11,6 +11,7 @@ import (
 	"ratingserver/internal/domain"
 	"ratingserver/internal/normalize"
 	"ratingserver/internal/service"
+	"ratingserver/internal/web/webpath"
 	"strconv"
 	"time"
 
@@ -46,7 +47,7 @@ func New(ps *service.PlayerService, cfg config.Server, authService *authservice.
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
-	app.Use(api, func(c *fiber.Ctx) error {
+	app.Use(webpath.Api, func(c *fiber.Ctx) error {
 		tokenCookie := c.Cookies("token")
 		user, err := authService.Auth(c.Context(), tokenCookie, c.Method(), c.OriginalURL())
 		if err != nil {
@@ -63,13 +64,13 @@ func New(ps *service.PlayerService, cfg config.Server, authService *authservice.
 		c.Context().SetUserValue(userKey, user)
 		return c.Next()
 	})
-	app.Get(signin, server.HandleGetSignIn)
-	app.Post(signin, server.HandlePostSignIn)
-	app.Get(signup, server.HandleGetSignup)
-	app.Post(signup, server.HandlePostSignup)
-	app.Get(signout, server.HandleSignOut)
-	app.Get(home, func(ctx *fiber.Ctx) error {
-		return ctx.Redirect(api)
+	app.Get(webpath.Signin, server.HandleGetSignIn)
+	app.Post(webpath.Signin, server.HandlePostSignIn)
+	app.Get(webpath.Signup, server.HandleGetSignup)
+	app.Post(webpath.Signup, server.HandlePostSignup)
+	app.Get(webpath.Signout, server.HandleSignOut)
+	app.Get(webpath.Home, func(ctx *fiber.Ctx) error {
+		return ctx.Redirect(webpath.Api)
 	})
 
 	app.Get(apiHome, server.handleMain)
@@ -96,7 +97,7 @@ func (s *Server) handleMain(ctx *fiber.Ctx) error {
 		"Button":  "rating",
 		"Title":   "Рейтинг",
 		"Players": globalRating,
-		"Path":    Path(),
+		"Path":    webpath.Path(),
 		"User":    user,
 	}, "layouts/main")
 }
@@ -111,7 +112,7 @@ func (s *Server) handleMatches(ctx *fiber.Ctx) error {
 		"Button":  "matches",
 		"Title":   "Список матчей",
 		"Matches": matches,
-		"Path":    Path(),
+		"Path":    webpath.Path(),
 		"User":    user,
 	}, "layouts/main")
 }
@@ -120,7 +121,7 @@ func (s *Server) handleCreateMatchGet(ctx *fiber.Ctx) error {
 	user, _ := ctx.Context().UserValue(userKey).(users.User)
 	return ctx.Render("newMatch", fiber.Map{
 		"Title": "Добавить игру",
-		"Path":  Path(),
+		"Path":  webpath.Path(),
 		"User":  user,
 	}, "layouts/main")
 }
@@ -146,7 +147,7 @@ func (s *Server) handleCreateMatchPost(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	err = ctx.Redirect(apiHome)
+	err = ctx.Redirect(webpath.ApiHome)
 	if err != nil {
 		return err
 	}
@@ -168,7 +169,7 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 		"Button": "playerCard",
 		"Title":  data.Player.Name,
 		"Data":   data,
-		"Path":   Path(),
+		"Path":   webpath.Path(),
 		"User":   user,
 	}, "layouts/main")
 }
@@ -176,7 +177,7 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 func (s *Server) HandleGetSignIn(ctx *fiber.Ctx) error {
 	return ctx.Render("signin", fiber.Map{
 		"Title": "Войти",
-		"Path":  Path(),
+		"Path":  webpath.Path(),
 	}, "layouts/main")
 }
 
@@ -192,13 +193,13 @@ func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
 		return err
 	}
 	ctx.Cookie(cookie)
-	return ctx.Redirect(apiHome)
+	return ctx.Redirect(webpath.ApiHome)
 }
 
 func (s *Server) HandleGetSignup(ctx *fiber.Ctx) error {
 	return ctx.Render("signup", fiber.Map{
 		"Title": "Зарегистрироваться",
-		"Path":  Path(),
+		"Path":  webpath.Path(),
 	}, "layouts/main")
 }
 
@@ -213,12 +214,12 @@ func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return ctx.Redirect(signin)
+	return ctx.Redirect(webpath.Signin)
 }
 
 func (s *Server) HandleSignOut(ctx *fiber.Ctx) error {
 	ctx.ClearCookie("token")
-	return ctx.Redirect(apiHome)
+	return ctx.Redirect(webpath.ApiHome)
 }
 
 func (s *Server) handleAddPlayerGet(ctx *fiber.Ctx) error {

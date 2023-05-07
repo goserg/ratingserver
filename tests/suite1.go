@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
+	"ratingserver/internal/config"
+	"ratingserver/internal/web/webpath"
 	"time"
 
 	"github.com/chromedp/chromedp"
@@ -16,38 +17,37 @@ import (
 type TestSuite1 struct {
 	suite.Suite
 	process *Process
-}
 
-var (
-	serverConfigPath string
-	botConfigPath    string
-)
-
-func init() {
-	flag.StringVar(&serverConfigPath, "server-config", "", "path to server configs")
-	flag.StringVar(&botConfigPath, "bot-config", "", "path to bot configs")
+	addr         string
+	serverConfig *config.Server
 }
 
 // SetupSuite подготавливает необходимые зависимости
 func (s *TestSuite1) SetupSuite() {
 	fmt.Println("setupSuite")
-	s.Require().NotEmpty(serverConfigPath, "-server-config MUST be set")
-	s.Require().NotEmpty(botConfigPath, "-bot-config MUST be set")
+
+	cfg, err := config.New()
+	if err != nil {
+		s.T().Fatalf("can't get configs")
+	}
+	s.serverConfig = &cfg.Server
+	s.addr = fmt.Sprintf("http://%s:%d", cfg.Server.Host, cfg.Server.Port)
+
 	p := NewProcess(context.Background(), "../bin/server",
-		"-server-config", serverConfigPath,
-		"-bot-config", botConfigPath)
+		"-server-config", config.ServerConfigPath,
+		"-bot-config", config.BotConfigPath)
 	s.process = p
-	err := p.Start(context.Background())
+	err = p.Start(context.Background())
 	if err != nil {
 		s.T().Errorf("cant start process: %v", err)
 	}
 
-	if err := waitForStartup(time.Second * 5); err != nil {
+	if err := s.waitForStartup(time.Second * 5); err != nil {
 		s.T().Fatalf("unable to start app: %v", err)
 	}
 }
 
-func waitForStartup(duration time.Duration) error {
+func (s *TestSuite1) waitForStartup(duration time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), duration)
 	defer cancel()
 
@@ -55,7 +55,7 @@ func waitForStartup(duration time.Duration) error {
 	for {
 		select {
 		case <-ticker.C:
-			r, _ := http.Get("http://0.0.0.0:3000/")
+			r, _ := http.Get(s.addr)
 			if r != nil && r.StatusCode == http.StatusOK {
 				return nil
 			}
@@ -88,22 +88,22 @@ func (s *TestSuite1) TestHandlers() {
 	// run task list
 	var logo string
 	err := chromedp.Run(ctx,
-		s.CheckAccessDenied(`http://0.0.0.0:3000/api/matches`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/api`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/api/matches-list`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/signin`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/signout`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/signup`),
+		s.CheckAccessDenied(s.addr+webpath.ApiNewMatch),
+		s.CheckAccessGranted(s.addr),
+		s.CheckAccessGranted(s.addr+webpath.Api),
+		s.CheckAccessGranted(s.addr+webpath.ApiMatchesList),
+		s.CheckAccessGranted(s.addr+webpath.Signin),
+		s.CheckAccessGranted(s.addr+webpath.Signout),
+		s.CheckAccessGranted(s.addr+webpath.Signup),
 		s.Login("root", "default password"),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/api/matches`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/api`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/api/matches-list`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/signin`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/signout`),
-		s.CheckAccessGranted(`http://0.0.0.0:3000/signup`),
-		chromedp.Navigate(`http://0.0.0.0:3000/`),
+		s.CheckAccessGranted(s.addr+webpath.ApiNewMatch),
+		s.CheckAccessGranted(s.addr),
+		s.CheckAccessGranted(s.addr+webpath.Api),
+		s.CheckAccessGranted(s.addr+webpath.ApiMatchesList),
+		s.CheckAccessGranted(s.addr+webpath.Signin),
+		s.CheckAccessGranted(s.addr+webpath.Signout),
+		s.CheckAccessGranted(s.addr+webpath.Signup),
+		chromedp.Navigate(s.addr),
 		chromedp.Text(`.brand-logo`, &logo),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			if logo != "Эш-рейтинг" {
@@ -174,7 +174,7 @@ func (s *TestSuite1) Screenshot(filename string) chromedp.ActionFunc {
 
 func (s *TestSuite1) Login(user, password string) chromedp.Tasks {
 	return []chromedp.Action{
-		chromedp.Navigate("http://0.0.0.0:3000/signin"),
+		chromedp.Navigate(s.addr + webpath.Signin),
 		chromedp.SendKeys("#username-field", user),
 		chromedp.SendKeys("#password-field", password),
 		chromedp.Submit("#signin-form-submit"),
