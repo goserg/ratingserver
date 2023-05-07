@@ -21,6 +21,8 @@ type Service struct {
 	cfg     Config
 }
 
+const Root = "root"
+
 var (
 	ErrForbidden     = errors.New("access denied")
 	ErrNotAuthorized = errors.New("unauthorized")
@@ -31,7 +33,7 @@ func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service
 		cfg:     cfg,
 		storage: storage,
 	}
-	_, err := s.storage.GetUserSecret(ctx, users.User{Name: "root"})
+	_, err := s.storage.GetUserSecret(ctx, users.User{Name: Root})
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			return nil, err
@@ -43,7 +45,7 @@ func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service
 		secret := generateSecret(cfg.RootPassword, cfg.PasswordPepper, salt)
 		err = s.storage.CreateUser(ctx, users.User{
 			ID:           uuid.New(),
-			Name:         "root",
+			Name:         Root,
 			Roles:        []string{"admin"},
 			RegisteredAt: time.Now(),
 		}, secret)

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	auth "ratingserver/auth/service"
 	"ratingserver/internal/config"
 	"ratingserver/internal/web/webpath"
 	"time"
@@ -97,7 +98,7 @@ func (s *TestSuite1) TestHandlers() {
 		s.CheckAccessGranted(s.addr+webpath.Signin),
 		s.CheckAccessGranted(s.addr+webpath.Signout),
 		s.CheckAccessGranted(s.addr+webpath.Signup),
-		s.Login("root", "default password"),
+		s.Login(auth.Root, s.config.Server.Auth.RootPassword),
 		s.CheckAccessGranted(s.addr+webpath.ApiNewMatch),
 		s.CheckAccessGranted(s.addr),
 		s.CheckAccessGranted(s.addr+webpath.Api),
