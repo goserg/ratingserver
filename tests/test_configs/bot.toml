@@ -1,0 +1,3 @@
+telegram_apitoken = "5823756775:AAEg3rQl4eHS7n_GOaDp1oUOXdjyCLc6uW4"
+sqlite_file = "bot.sqlite"
+admin_pass = "lolbot"

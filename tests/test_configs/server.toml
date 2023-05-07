@@ -1,0 +1,27 @@
+disable_tg_bot = true
+debug_mode = false
+sqlite_file = "rating.sqlite"
+host = "0.0.0.0"
+port = 3000
+
+[auth]
+token = "generate secret"
+expiration = "5m"
+root_password = "default password"
+password_pepper = "generate random string"
+sqlite_file = "auth.sqlite"
+roles = ["admin", "user"]
+
+[[auth.rules]]
+name = "allow all"
+path = ".+"
+method = ["*"]
+allow = ["*"]
+order = 100
+
+[[auth.rules]]
+name = "create match only admin"
+path = "^/api/matches$"
+method = ["*"]
+allow = ["admin"]
+order = 1
