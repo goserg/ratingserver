@@ -13,15 +13,17 @@ type Process struct {
 	stderr *bytes.Buffer
 }
 
-func NewProcess(ctx context.Context, command string) *Process {
+func NewProcess(ctx context.Context, command string, args ...string) *Process {
 	return &Process{
-		cmd:    exec.CommandContext(ctx, command),
+		cmd:    exec.CommandContext(ctx, command, args...),
 		stdout: &bytes.Buffer{},
 		stderr: &bytes.Buffer{},
 	}
 }
 
 func (p *Process) Start(ctx context.Context) error {
+	p.cmd.Stdout = p.stdout
+	p.cmd.Stderr = p.stderr
 	startChan := make(chan error, 1)
 	go func() {
 		startChan <- p.cmd.Start()
