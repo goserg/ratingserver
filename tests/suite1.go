@@ -25,8 +25,6 @@ type TestSuite1 struct {
 
 // SetupSuite подготавливает необходимые зависимости
 func (s *TestSuite1) SetupSuite() {
-	fmt.Println("setupSuite")
-
 	cfg, err := config.New()
 	if err != nil {
 		s.T().Fatalf("can't get configs")
@@ -68,7 +66,6 @@ func (s *TestSuite1) waitForStartup(duration time.Duration) error {
 
 // TearDownSuite высвобождает имеющиеся зависимости
 func (s *TestSuite1) TearDownSuite() {
-	fmt.Println("teardown Suite1")
 	exitCode, err := s.process.Stop()
 	if err != nil {
 		s.T().Logf("cant stop process: %v", err)
@@ -80,9 +77,6 @@ func (s *TestSuite1) TearDownSuite() {
 }
 
 func (s *TestSuite1) TestHandlers() {
-	fmt.Println("test handlers")
-	defer fmt.Println("test finished")
-
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
 
 	// create context
@@ -131,6 +125,7 @@ func (s *TestSuite1) TestHandlers() {
 }
 
 func (s *TestSuite1) CheckAccessDenied(path string) chromedp.Tasks {
+	s.T().Logf("Проверка на закрытый доступ к %s", path)
 	return []chromedp.Action{
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			resp, err := chromedp.RunResponse(ctx,
@@ -147,6 +142,7 @@ func (s *TestSuite1) CheckAccessDenied(path string) chromedp.Tasks {
 }
 
 func (s *TestSuite1) CheckAccessGranted(path string) chromedp.Tasks {
+	s.T().Logf("Проверка на разрешенный доступ к %s", path)
 	return []chromedp.Action{
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			resp, err := chromedp.RunResponse(ctx,
@@ -176,6 +172,7 @@ func (s *TestSuite1) Screenshot(filename string) chromedp.ActionFunc {
 }
 
 func (s *TestSuite1) Login(user, password string) chromedp.Tasks {
+	s.T().Logf("Логин как %s", user)
 	return []chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.Signin),
 		chromedp.SendKeys("#username-field", user),
