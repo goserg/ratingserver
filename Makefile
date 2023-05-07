@@ -20,6 +20,9 @@ run: build
 test:
 	go test ./...
 
+auto-test:
+	cd tests && go test -v ./...
+
 # TOOLS
 
 TOOLS_DIR = tools/
