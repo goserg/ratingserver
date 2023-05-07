@@ -27,10 +27,10 @@ type Server struct {
 	cfg           config.Server
 }
 
-func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service) (*Server, error) {
+func New(ps *service.PlayerService, cfg config.Server, authService *authservice.Service) (*Server, error) {
 	server := Server{
 		playerService: ps,
-		auth:          auth,
+		auth:          authService,
 		cfg:           cfg,
 	}
 
@@ -48,9 +48,17 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	})
 	app.Use(api, func(c *fiber.Ctx) error {
 		tokenCookie := c.Cookies("token")
-		user, err := auth.Auth(c.Context(), tokenCookie, c.Method(), c.OriginalURL())
+		user, err := authService.Auth(c.Context(), tokenCookie, c.Method(), c.OriginalURL())
 		if err != nil {
-			return err
+			switch err {
+			case authservice.ErrForbidden:
+				c.Status(fiber.StatusForbidden)
+			case authservice.ErrNotAuthorized:
+				c.Status(fiber.StatusUnauthorized)
+			default:
+				c.Status(fiber.StatusInternalServerError)
+			}
+			return nil
 		}
 		c.Context().SetUserValue(userKey, user)
 		return c.Next()
