@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	glicko "github.com/zelenin/go-glicko2"
 	"ratingserver/internal/cache/mem"
 	"ratingserver/internal/domain"
 	"ratingserver/internal/elo"
@@ -10,6 +9,8 @@ import (
 	"ratingserver/internal/storage"
 	"sort"
 	"time"
+
+	glicko "github.com/zelenin/go-glicko2"
 
 	"github.com/google/uuid"
 )
@@ -49,6 +50,9 @@ func (s *PlayerService) getGlicko2() (map[uuid.UUID]domain.Player, error) {
 	matches, err := s.matchStorage.ListMatches()
 	if err != nil {
 		return nil, err
+	}
+	if len(matches) == 0 {
+		return make(map[uuid.UUID]domain.Player), nil
 	}
 	ps, err := s.playerStorage.ListPlayers()
 	if err != nil {
