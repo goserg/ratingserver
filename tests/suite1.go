@@ -86,6 +86,7 @@ func (s *TestSuite1) TestHandlers() {
 	var logo string
 	err := chromedp.Run(ctx,
 		s.CheckAccessDenied(s.addr+webpath.ApiNewMatch),
+		s.CheckAccessDenied(s.addr+webpath.ApiNewPlayer),
 		s.CheckAccessGranted(s.addr),
 		s.CheckAccessGranted(s.addr+webpath.Api),
 		s.CheckAccessGranted(s.addr+webpath.ApiMatchesList),
@@ -94,6 +95,7 @@ func (s *TestSuite1) TestHandlers() {
 		s.CheckAccessGranted(s.addr+webpath.Signup),
 		s.Login(auth.Root, s.config.Server.Auth.RootPassword),
 		s.CheckAccessGranted(s.addr+webpath.ApiNewMatch),
+		s.CheckAccessGranted(s.addr+webpath.ApiNewPlayer),
 		s.CheckAccessGranted(s.addr),
 		s.CheckAccessGranted(s.addr+webpath.Api),
 		s.CheckAccessGranted(s.addr+webpath.ApiMatchesList),
