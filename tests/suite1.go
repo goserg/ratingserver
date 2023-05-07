@@ -72,7 +72,7 @@ func (suite *TestSuite1) TearDownSuite() {
 	if err != nil {
 		suite.T().Logf("cant stop process: %v", err)
 	}
-
+	// TODO clean DB files
 	suite.T().Logf("process finished with code %d", exitCode)
 }
 
