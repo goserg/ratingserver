@@ -12,6 +12,5 @@ func TestMain(m *testing.M) {
 }
 
 func Test1(t *testing.T) {
-	t.Log("start autotests")
 	suite.Run(t, &TestSuite1{})
 }

@@ -79,7 +79,9 @@ func (s *TestSuite1) TearDownSuite() {
 	if err := s.cleanupDB(); err != nil {
 		s.T().Logf("can't clean db files")
 	}
-	s.T().Logf("process finished with code %d", exitCode)
+	if exitCode > 0 {
+		s.T().Logf("process finished with code %d", exitCode)
+	}
 }
 
 func (s *TestSuite1) TestHandlers() {
