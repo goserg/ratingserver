@@ -6,19 +6,25 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"errors"
-	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt"
-	"github.com/google/uuid"
 	"ratingserver/auth/storage"
 	"ratingserver/auth/users"
 	"regexp"
 	"time"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 )
 
 type Service struct {
 	storage storage.AuthStorage
 	cfg     Config
 }
+
+var (
+	ErrForbidden     = errors.New("access denied")
+	ErrNotAuthorized = errors.New("unauthorized")
+)
 
 func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service, error) {
 	s := Service{
@@ -91,7 +97,7 @@ func (s *Service) GenerateJWTCookie(userID uuid.UUID, host string) (*fiber.Cooki
 func (s *Service) Auth(ctx context.Context, cookie string, method string, url string) (users.User, error) {
 	user, err := s.getUserFromToken(ctx, cookie)
 	if err != nil {
-		return users.User{}, err
+		return users.User{}, ErrNotAuthorized
 	}
 
 	for _, rule := range s.cfg.Rules {
@@ -112,12 +118,12 @@ func (s *Service) Auth(ctx context.Context, cookie string, method string, url st
 							}
 						}
 					}
-					return users.User{}, errors.New("permission denied")
+					return users.User{}, ErrForbidden
 				}
 			}
 		}
 	}
-	return users.User{}, errors.New("permission denied")
+	return users.User{}, ErrForbidden
 }
 
 func (s *Service) getUserFromToken(ctx context.Context, cookie string) (users.User, error) {
