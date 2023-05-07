@@ -29,21 +29,21 @@ func init() {
 }
 
 // SetupSuite подготавливает необходимые зависимости
-func (suite *TestSuite1) SetupSuite() {
+func (s *TestSuite1) SetupSuite() {
 	fmt.Println("setupSuite")
-	suite.Require().NotEmpty(serverConfigPath, "-server-config MUST be set")
-	suite.Require().NotEmpty(botConfigPath, "-bot-config MUST be set")
+	s.Require().NotEmpty(serverConfigPath, "-server-config MUST be set")
+	s.Require().NotEmpty(botConfigPath, "-bot-config MUST be set")
 	p := NewProcess(context.Background(), "../bin/server",
 		"-server-config", serverConfigPath,
 		"-bot-config", botConfigPath)
-	suite.process = p
+	s.process = p
 	err := p.Start(context.Background())
 	if err != nil {
-		suite.T().Errorf("cant start process: %v", err)
+		s.T().Errorf("cant start process: %v", err)
 	}
 
 	if err := waitForStartup(time.Second * 5); err != nil {
-		suite.T().Fatalf("unable to start app: %v", err)
+		s.T().Fatalf("unable to start app: %v", err)
 	}
 }
 
@@ -66,17 +66,17 @@ func waitForStartup(duration time.Duration) error {
 }
 
 // TearDownSuite высвобождает имеющиеся зависимости
-func (suite *TestSuite1) TearDownSuite() {
+func (s *TestSuite1) TearDownSuite() {
 	fmt.Println("teardown Suite1")
-	exitCode, err := suite.process.Stop()
+	exitCode, err := s.process.Stop()
 	if err != nil {
-		suite.T().Logf("cant stop process: %v", err)
+		s.T().Logf("cant stop process: %v", err)
 	}
 	// TODO clean DB files
-	suite.T().Logf("process finished with code %d", exitCode)
+	s.T().Logf("process finished with code %d", exitCode)
 }
 
-func (suite *TestSuite1) TestHandlers() {
+func (s *TestSuite1) TestHandlers() {
 	fmt.Println("test handlers")
 	defer fmt.Println("test finished")
 
@@ -88,6 +88,13 @@ func (suite *TestSuite1) TestHandlers() {
 	// run task list
 	var logo string
 	err := chromedp.Run(ctx,
+		s.CheckGuestAccessDenied(`http://0.0.0.0:3000/api/matches`),
+		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/`),
+		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/api`),
+		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/api/matches-list`),
+		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/signin`),
+		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/signout`),
+		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/signup`),
 		chromedp.Navigate(`http://0.0.0.0:3000/`),
 		chromedp.Text(`.brand-logo`, &logo),
 		chromedp.ActionFunc(func(ctx context.Context) error {
@@ -105,7 +112,39 @@ func (suite *TestSuite1) TestHandlers() {
 	)
 
 	if err != nil {
-		suite.T().Fatalf(err.Error())
+		s.T().Fatalf(err.Error())
 	}
-	suite.Equal("Эш-рейтинг", logo)
+	s.Equal("Эш-рейтинг", logo)
+}
+
+func (s *TestSuite1) CheckGuestAccessDenied(path string) chromedp.Tasks {
+	return []chromedp.Action{
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			resp, err := chromedp.RunResponse(ctx,
+				chromedp.Navigate(path))
+			if err != nil {
+				return err
+			}
+			if resp.Status != http.StatusForbidden {
+				s.T().Errorf("Доступ к %s для гостей должен быть запрещен (статус 403), сервер ответил статуом %d", path, resp.Status)
+			}
+			return nil
+		}),
+	}
+}
+
+func (s *TestSuite1) CheckGuestAccessGranted(path string) chromedp.Tasks {
+	return []chromedp.Action{
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			resp, err := chromedp.RunResponse(ctx,
+				chromedp.Navigate(path))
+			if err != nil {
+				return err
+			}
+			if resp.Status != http.StatusOK {
+				s.T().Errorf("Доступ к %s для гостей должен быть разрешен (статус 200), сервер ответил статуом %d", path, resp.Status)
+			}
+			return nil
+		}),
+	}
 }
