@@ -20,8 +20,11 @@ run: build
 test:
 	go test ./...
 
+TEST_SERVER_CONFIG_PATH = test_configs/server.toml
+TEST_BOT_CONFIG_PATH = test_configs/bot.toml
+
 auto-test:
-	cd tests && go test -v ./...
+	cd tests && go test -v -server-config $(TEST_SERVER_CONFIG_PATH) -bot-config $(TEST_BOT_CONFIG_PATH) ./...
 
 # TOOLS
 
