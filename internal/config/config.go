@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"flag"
 	"io"
 	"os"
 	embedded "ratingserver"
@@ -13,9 +14,9 @@ import (
 
 const (
 	botCfgName       = "bot.toml"
-	serverCftName    = "server.toml"
+	serverCfgName    = "server.toml"
 	defaultEmbedPath = "default/"
-	cftFolder        = "configs/"
+	cfgFolder        = "configs/"
 )
 
 type TgBot struct {
@@ -39,19 +40,24 @@ type Config struct {
 }
 
 func New() (Config, error) {
+	var serverConfigPath string
+	flag.StringVar(&serverConfigPath, "server-config", cfgFolder+serverCfgName, "server config path")
+	var botConfigPath string
+	flag.StringVar(&botConfigPath, "bot-config", cfgFolder+botCfgName, "bot config path")
+	flag.Parse()
 	err := createCfgFolderIfNotExists()
 	if err != nil {
 		return Config{}, err
 	}
 
-	serverCfg, err := serverConfig()
+	serverCfg, err := serverConfig(serverConfigPath)
 	if err != nil {
 		return Config{}, err
 	}
 
 	var tgBotCfg TgBot
 	if !serverCfg.TgBotDisable {
-		tgBotCfg, err = tgBotConfig()
+		tgBotCfg, err = tgBotConfig(botConfigPath)
 		if err != nil {
 			return Config{}, err
 		}
@@ -64,23 +70,34 @@ func New() (Config, error) {
 }
 
 func createCfgFolderIfNotExists() error {
-	_, err := os.Stat(cftFolder)
+	_, err := os.Stat(cfgFolder)
 	if err == nil {
 		return nil
 	}
 	if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	return os.Mkdir(cftFolder, 0750)
+	return os.Mkdir(cfgFolder, 0750)
 }
 
-func serverConfig() (Server, error) {
-	err := createConfigFileIfNotExists(serverCftName)
+func serverConfig(path string) (Server, error) {
+	if path != "" {
+		var serverCfg Server
+		_, err := toml.DecodeFile(path, &serverCfg)
+		if err != nil {
+			return Server{}, err
+		}
+		sort.SliceStable(serverCfg.Auth.Rules, func(i, j int) bool {
+			return serverCfg.Auth.Rules[i].Order < serverCfg.Auth.Rules[j].Order
+		})
+		return serverCfg, nil
+	}
+	err := createConfigFileIfNotExists(serverCfgName)
 	if err != nil {
 		return Server{}, err
 	}
 	var serverCfg Server
-	_, err = toml.DecodeFile(cftFolder+serverCftName, &serverCfg)
+	_, err = toml.DecodeFile(cfgFolder+serverCfgName, &serverCfg)
 	if err != nil {
 		return Server{}, err
 	}
@@ -90,13 +107,25 @@ func serverConfig() (Server, error) {
 	return serverCfg, nil
 }
 
-func tgBotConfig() (TgBot, error) {
+func tgBotConfig(path string) (TgBot, error) {
+	if path != "" {
+		var tgBotCfg TgBot
+		_, err := toml.DecodeFile(path, &tgBotCfg)
+		if err != nil {
+			return TgBot{}, err
+		}
+		token := os.Getenv("TELEGRAM_APITOKEN")
+		if token != "" {
+			tgBotCfg.TelegramApiToken = token
+		}
+		return tgBotCfg, err
+	}
 	err := createConfigFileIfNotExists(botCfgName)
 	if err != nil {
 		return TgBot{}, err
 	}
 	var tgBotCfg TgBot
-	_, err = toml.DecodeFile(cftFolder+botCfgName, &tgBotCfg)
+	_, err = toml.DecodeFile(cfgFolder+botCfgName, &tgBotCfg)
 	if err != nil {
 		return TgBot{}, err
 	}
@@ -108,7 +137,7 @@ func tgBotConfig() (TgBot, error) {
 }
 
 func createConfigFileIfNotExists(filename string) error {
-	_, err := os.Stat(cftFolder + filename)
+	_, err := os.Stat(cfgFolder + filename)
 	if err == nil {
 		return nil
 	}
@@ -120,7 +149,7 @@ func createConfigFileIfNotExists(filename string) error {
 		return err
 	}
 	defer defaultCfg.Close()
-	newCfg, err := os.Create(cftFolder + filename)
+	newCfg, err := os.Create(cfgFolder + filename)
 	if err != nil {
 		return err
 	}
