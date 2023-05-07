@@ -50,10 +50,10 @@ func New(ps *service.PlayerService, cfg config.Server, authService *authservice.
 		tokenCookie := c.Cookies("token")
 		user, err := authService.Auth(c.Context(), tokenCookie, c.Method(), c.OriginalURL())
 		if err != nil {
-			switch err {
-			case authservice.ErrForbidden:
+			switch {
+			case errors.Is(err, authservice.ErrForbidden):
 				c.Status(fiber.StatusForbidden)
-			case authservice.ErrNotAuthorized:
+			case errors.Is(err, authservice.ErrNotAuthorized):
 				c.Status(fiber.StatusUnauthorized)
 			default:
 				c.Status(fiber.StatusInternalServerError)

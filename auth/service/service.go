@@ -37,10 +37,10 @@ func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service
 			return nil, err
 		}
 		salt, err := randomSalt()
-		secret, err := generateSecret(cfg.RootPassword, cfg.PasswordPepper, salt)
 		if err != nil {
 			return nil, err
 		}
+		secret := generateSecret(cfg.RootPassword, cfg.PasswordPepper, salt)
 		err = s.storage.CreateUser(ctx, users.User{
 			ID:           uuid.New(),
 			Name:         "root",
@@ -59,7 +59,7 @@ func (s *Service) Login(ctx context.Context, name string, password string) (user
 	if err != nil {
 		return users.User{}, err
 	}
-	secret, err := generateSecret(password, s.cfg.PasswordPepper, userSecret.Salt)
+	secret := generateSecret(password, s.cfg.PasswordPepper, userSecret.Salt)
 	if err != nil {
 		return users.User{}, err
 	}
@@ -170,11 +170,7 @@ func (s *Service) SignUp(ctx context.Context, name string, password string) erro
 	if err != nil {
 		return err
 	}
-	secret, err := generateSecret(password, s.cfg.PasswordPepper, salt)
-
-	if err != nil {
-		return err
-	}
+	secret := generateSecret(password, s.cfg.PasswordPepper, salt)
 	err = s.storage.CreateUser(ctx, users.User{
 		ID:           uuid.New(),
 		Name:         name,
@@ -196,7 +192,7 @@ func randomSalt() ([]byte, error) {
 	return salt, nil
 }
 
-func generateSecret(password string, pepper string, salt []byte) (users.Secret, error) {
+func generateSecret(password string, pepper string, salt []byte) users.Secret {
 	sha := sha256.New()
 	sha.Write([]byte(pepper + password))
 
@@ -204,5 +200,5 @@ func generateSecret(password string, pepper string, salt []byte) (users.Secret, 
 	return users.Secret{
 		PasswordHash: sha.Sum(nil),
 		Salt:         salt,
-	}, nil
+	}
 }

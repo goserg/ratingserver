@@ -220,14 +220,6 @@ func reverse(m []domain.Match) {
 	}
 }
 
-const exportVersion = 1
-
-type export struct {
-	Version int             `json:"version"`
-	Players []domain.Player `json:"players"`
-	Matches []domain.Match  `json:"matches"`
-}
-
 func (s *PlayerService) CreateMatch(match domain.Match) (m domain.Match, err error) {
 	defer func() {
 		if err != nil {
