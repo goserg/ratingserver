@@ -88,13 +88,21 @@ func (s *TestSuite1) TestHandlers() {
 	// run task list
 	var logo string
 	err := chromedp.Run(ctx,
-		s.CheckGuestAccessDenied(`http://0.0.0.0:3000/api/matches`),
-		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/`),
-		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/api`),
-		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/api/matches-list`),
-		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/signin`),
-		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/signout`),
-		s.CheckGuestAccessGranted(`http://0.0.0.0:3000/signup`),
+		s.CheckAccessDenied(`http://0.0.0.0:3000/api/matches`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/api`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/api/matches-list`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/signin`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/signout`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/signup`),
+		s.Login("root", "default password"),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/api/matches`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/api`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/api/matches-list`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/signin`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/signout`),
+		s.CheckAccessGranted(`http://0.0.0.0:3000/signup`),
 		chromedp.Navigate(`http://0.0.0.0:3000/`),
 		chromedp.Text(`.brand-logo`, &logo),
 		chromedp.ActionFunc(func(ctx context.Context) error {
@@ -119,7 +127,7 @@ func (s *TestSuite1) TestHandlers() {
 	s.Equal("Эш-рейтинг", logo)
 }
 
-func (s *TestSuite1) CheckGuestAccessDenied(path string) chromedp.Tasks {
+func (s *TestSuite1) CheckAccessDenied(path string) chromedp.Tasks {
 	return []chromedp.Action{
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			resp, err := chromedp.RunResponse(ctx,
@@ -128,14 +136,14 @@ func (s *TestSuite1) CheckGuestAccessDenied(path string) chromedp.Tasks {
 				return err
 			}
 			if resp.Status != http.StatusForbidden {
-				s.T().Errorf("Доступ к %s для гостей должен быть запрещен (статус 403), сервер ответил статуом %d", path, resp.Status)
+				s.T().Errorf("Доступ к %s должен быть запрещен (статус 403), сервер ответил статуом %d", path, resp.Status)
 			}
 			return nil
 		}),
 	}
 }
 
-func (s *TestSuite1) CheckGuestAccessGranted(path string) chromedp.Tasks {
+func (s *TestSuite1) CheckAccessGranted(path string) chromedp.Tasks {
 	return []chromedp.Action{
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			resp, err := chromedp.RunResponse(ctx,
@@ -148,5 +156,28 @@ func (s *TestSuite1) CheckGuestAccessGranted(path string) chromedp.Tasks {
 			}
 			return nil
 		}),
+	}
+}
+
+func (s *TestSuite1) Screenshot(filename string) chromedp.ActionFunc {
+	return func(ctx context.Context) error {
+		var screenShot []byte
+		if err := chromedp.FullScreenshot(&screenShot, 80).Do(ctx); err != nil {
+			return err
+		}
+		if err := os.WriteFile(filename, screenShot, 0o644); err != nil {
+			return err
+		}
+		return nil
+	}
+}
+
+func (s *TestSuite1) Login(user, password string) chromedp.Tasks {
+	return []chromedp.Action{
+		chromedp.Navigate("http://0.0.0.0:3000/signin"),
+		chromedp.SendKeys("#username-field", user),
+		chromedp.SendKeys("#password-field", password),
+		chromedp.Submit("#signin-form-submit"),
+		chromedp.WaitVisible(`.brand-logo`),
 	}
 }
