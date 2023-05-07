@@ -18,8 +18,8 @@ type TestSuite1 struct {
 	suite.Suite
 	process *Process
 
-	addr         string
-	serverConfig *config.Server
+	addr   string
+	config config.Config
 }
 
 // SetupSuite подготавливает необходимые зависимости
@@ -30,7 +30,7 @@ func (s *TestSuite1) SetupSuite() {
 	if err != nil {
 		s.T().Fatalf("can't get configs")
 	}
-	s.serverConfig = &cfg.Server
+	s.config = cfg
 	s.addr = fmt.Sprintf("http://%s:%d", cfg.Server.Host, cfg.Server.Port)
 
 	p := NewProcess(context.Background(), "../bin/server",
@@ -72,7 +72,9 @@ func (s *TestSuite1) TearDownSuite() {
 	if err != nil {
 		s.T().Logf("cant stop process: %v", err)
 	}
-	// TODO clean DB files
+	if err := s.cleanupDB(); err != nil {
+		s.T().Logf("can't clean db files")
+	}
 	s.T().Logf("process finished with code %d", exitCode)
 }
 
@@ -180,4 +182,15 @@ func (s *TestSuite1) Login(user, password string) chromedp.Tasks {
 		chromedp.Submit("#signin-form-submit"),
 		chromedp.WaitVisible(`.brand-logo`),
 	}
+}
+
+func (s *TestSuite1) cleanupDB() error {
+	err := errors.Join(
+		os.Remove(s.config.Server.SqliteFile),
+		os.Remove(s.config.Server.Auth.SqliteFile),
+	)
+	if !s.config.Server.TgBotDisable {
+		err = errors.Join(err, os.Remove(s.config.TgBot.SqliteFile))
+	}
+	return err
 }
