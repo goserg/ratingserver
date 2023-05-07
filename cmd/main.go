@@ -57,11 +57,11 @@ func run() error {
 		defer bot.Stop()
 	}
 
-	authstorage, err := authstorage.New(log, cfg.Server)
+	authStorage, err := authstorage.New(log, cfg.Server)
 	if err != nil {
 		return err
 	}
-	auth, err := authservice.New(ctx, cfg.Server.Auth, authstorage)
+	auth, err := authservice.New(ctx, cfg.Server.Auth, authStorage)
 	if err != nil {
 		return err
 	}
