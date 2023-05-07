@@ -25,3 +25,10 @@ path = "^/api/matches$"
 method = ["*"]
 allow = ["admin"]
 order = 1
+
+[[auth.rules]]
+name = "add player only admin"
+path = "^/api/players$"
+method = ["*"]
+allow = ["admin"]
+order = 1

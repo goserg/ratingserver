@@ -11,17 +11,19 @@ const (
 	apiMatchesList = api + "/matches-list"
 	apiMatches     = api + "/matches"
 	apiGetPlayers  = api + "/players/:id"
+	apiAddPlayer   = api + "/players"
 )
 
 func Path() map[string]string {
 	return map[string]string{
-		"SignUp":      signup,
-		"SignIn":      signin,
-		"SignOut":     signout,
-		"Home":        home,
-		"Api":         api,
-		"ApiHome":     apiHome,
-		"ApiNewMatch": apiMatches,
-		"ApiMatches":  apiMatchesList,
+		"SignUp":       signup,
+		"SignIn":       signin,
+		"SignOut":      signout,
+		"Home":         home,
+		"Api":          api,
+		"ApiHome":      apiHome,
+		"ApiNewMatch":  apiMatches,
+		"ApiMatches":   apiMatchesList,
+		"ApiAddPlayer": apiAddPlayer,
 	}
 }

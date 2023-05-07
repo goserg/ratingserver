@@ -1,13 +1,13 @@
 {{template "partials/header" .}}
 <div class="container">
     <form id="new-match-form" method="post">
-        <input type="text" name="winner" id="new-match-form-winner" placeholder="winner" required>
-        <input type="text" name="loser" id="new-match-form-loser" placeholder="loser" required><br>
+        <input id="new-match-form-winner" name="winner" placeholder="winner" required type="text">
+        <input id="new-match-form-loser" name="loser" placeholder="loser" required type="text"><br>
         <label>
-            <input type="checkbox" name="draw" id="new-match-form-draw" />
+            <input id="new-match-form-draw" name="draw" type="checkbox" />
             <span>Draw</span>
         </label><br>
-        <button class="btn waves-effect waves-light" type="submit" name="create">Create</button>
+        <button class="btn waves-effect waves-light" id="new-match-form-submit" name="create" type="submit">Create</button>
     </form>
 </div>
 {{template "partials/footer" .}}

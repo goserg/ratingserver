@@ -69,6 +69,8 @@ func New(ps *service.PlayerService, cfg config.Server, auth *authservice.Service
 	app.Get(apiMatches, server.handleCreateMatchGet)
 	app.Post(apiMatches, server.handleCreateMatchPost)
 	app.Get(apiGetPlayers, server.HandlePlayerInfo)
+	app.Get(apiAddPlayer, server.handleAddPlayerGet)
+	app.Post(apiAddPlayer, server.handleAddPlayerPost)
 	server.app = app
 	return &server, nil
 }
@@ -208,6 +210,25 @@ func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
 
 func (s *Server) HandleSignOut(ctx *fiber.Ctx) error {
 	ctx.ClearCookie("token")
+	return ctx.Redirect(apiHome)
+}
+
+func (s *Server) handleAddPlayerGet(ctx *fiber.Ctx) error {
+	return ctx.Render("newPlayer", fiber.Map{
+		"Title": "Добавить игрока",
+		"Path":  Path(),
+	}, "layouts/main")
+}
+
+func (s *Server) handleAddPlayerPost(ctx *fiber.Ctx) error {
+	name := ctx.FormValue("name", "")
+	if name == "" {
+		return errors.New("empty player name")
+	}
+	_, err := s.playerService.CreatePlayer(name)
+	if err != nil {
+		return err
+	}
 	return ctx.Redirect(apiHome)
 }
 
