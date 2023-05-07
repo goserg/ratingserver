@@ -73,13 +73,13 @@ func New(ps *service.PlayerService, cfg config.Server, authService *authservice.
 		return ctx.Redirect(webpath.Api)
 	})
 
-	app.Get(apiHome, server.handleMain)
-	app.Get(apiMatchesList, server.handleMatches)
-	app.Get(apiMatches, server.handleCreateMatchGet)
-	app.Post(apiMatches, server.handleCreateMatchPost)
-	app.Get(apiGetPlayers, server.HandlePlayerInfo)
-	app.Get(apiAddPlayer, server.handleAddPlayerGet)
-	app.Post(apiAddPlayer, server.handleAddPlayerPost)
+	app.Get(webpath.ApiHome, server.handleMain)
+	app.Get(webpath.ApiMatchesList, server.handleMatches)
+	app.Get(webpath.ApiNewMatch, server.handleCreateMatchGet)
+	app.Post(webpath.ApiNewMatch, server.handleCreateMatchPost)
+	app.Get(webpath.ApiGetPlayers, server.HandlePlayerInfo)
+	app.Get(webpath.ApiNewPlayer, server.handleNewPlayerGet)
+	app.Post(webpath.ApiNewPlayer, server.handleNewPlayerPost)
 	server.app = app
 	return &server, nil
 }
@@ -222,14 +222,14 @@ func (s *Server) HandleSignOut(ctx *fiber.Ctx) error {
 	return ctx.Redirect(webpath.ApiHome)
 }
 
-func (s *Server) handleAddPlayerGet(ctx *fiber.Ctx) error {
+func (s *Server) handleNewPlayerGet(ctx *fiber.Ctx) error {
 	return ctx.Render("newPlayer", fiber.Map{
 		"Title": "Добавить игрока",
-		"Path":  Path(),
+		"Path":  webpath.Path(),
 	}, "layouts/main")
 }
 
-func (s *Server) handleAddPlayerPost(ctx *fiber.Ctx) error {
+func (s *Server) handleNewPlayerPost(ctx *fiber.Ctx) error {
 	name := ctx.FormValue("name", "")
 	if name == "" {
 		return errors.New("empty player name")
@@ -238,7 +238,7 @@ func (s *Server) handleAddPlayerPost(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return ctx.Redirect(apiHome)
+	return ctx.Redirect(webpath.ApiHome)
 }
 
 func formatDate(t time.Time) string {
