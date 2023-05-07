@@ -39,25 +39,29 @@ type Config struct {
 	Server Server
 }
 
+var ServerConfigPath string
+var BotConfigPath string
+
+func init() {
+	flag.StringVar(&ServerConfigPath, "server-config", cfgFolder+serverCfgName, "server config path")
+	flag.StringVar(&BotConfigPath, "bot-config", cfgFolder+botCfgName, "bot config path")
+}
+
 func New() (Config, error) {
-	var serverConfigPath string
-	flag.StringVar(&serverConfigPath, "server-config", cfgFolder+serverCfgName, "server config path")
-	var botConfigPath string
-	flag.StringVar(&botConfigPath, "bot-config", cfgFolder+botCfgName, "bot config path")
 	flag.Parse()
 	err := createCfgFolderIfNotExists()
 	if err != nil {
 		return Config{}, err
 	}
 
-	serverCfg, err := serverConfig(serverConfigPath)
+	serverCfg, err := serverConfig(ServerConfigPath)
 	if err != nil {
 		return Config{}, err
 	}
 
 	var tgBotCfg TgBot
 	if !serverCfg.TgBotDisable {
-		tgBotCfg, err = tgBotConfig(botConfigPath)
+		tgBotCfg, err = tgBotConfig(BotConfigPath)
 		if err != nil {
 			return Config{}, err
 		}
