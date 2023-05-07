@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net"
 	"time"
 
 	"github.com/stretchr/testify/suite"
@@ -17,24 +16,13 @@ type TestSuite1 struct {
 // SetupSuite подготавливает необходимые зависимости
 func (suite *TestSuite1) SetupSuite() {
 	fmt.Println("setupSuite")
-	p := NewProcess(context.Background(), "../bin/server")
+	p := NewProcess(context.Background(), "../bin/server",
+		"-server-config", "/home/serg/src/ratingserver/configs/server.toml",
+		"-bot-config", "/home/serg/src/ratingserver/configs/bot.toml")
 	suite.process = p
 	err := p.Start(context.Background())
 	if err != nil {
 		suite.T().Errorf("cant start process: %v", err)
-	}
-	t := time.NewTicker(time.Second / 2)
-	//wait for start
-	for {
-		select {
-		case <-t.C:
-			suite.T().Logf("test connection")
-			conn, _ := net.DialTimeout("http", "127.0.0.1:3300", time.Second/4)
-			if conn != nil {
-				conn.Close()
-				return
-			}
-		}
 	}
 }
 
@@ -48,7 +36,7 @@ func (suite *TestSuite1) TearDownSuite() {
 	out := suite.process.stdout.String()
 	suite.T().Logf("out: %s", out)
 
-	stderr := suite.process.stdout.String()
+	stderr := suite.process.stderr.String()
 	suite.T().Logf("err: %s", stderr)
 
 	suite.T().Logf("process finished with code %d", exitCode)
