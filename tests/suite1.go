@@ -193,8 +193,7 @@ func (s *TestSuite1) NewPlayer(name string) chromedp.Tasks {
 	return []chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiNewPlayer),
 		chromedp.SendKeys(sel.NewPlayerFormName, name),
-		chromedp.Submit(sel.NewPlayerFormSubmit),
-		chromedp.WaitVisible(sel.Logo),
+		wait200(chromedp.Submit(sel.NewPlayerFormSubmit)),
 	}
 }
 
@@ -204,8 +203,7 @@ func (s *TestSuite1) SignIn(user, password string) chromedp.Tasks {
 		chromedp.Navigate(s.addr + webpath.Signin),
 		chromedp.SendKeys(sel.SignInFormUsername, user),
 		chromedp.SendKeys(sel.SignInFormPass, password),
-		chromedp.Submit(sel.SignIngFormSubmit),
-		chromedp.WaitVisible(sel.Logo),
+		wait200(chromedp.Submit(sel.SignIngFormSubmit)),
 	}
 }
 
@@ -225,7 +223,6 @@ func (s *TestSuite1) CheckPlayersExist(names ...string) chromedp.Tasks {
 	s.T().Log("Проверяем, что игроки создались")
 	return []chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiHome),
-		chromedp.WaitVisible(sel.Logo),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var nodes []*cdp.Node
 			err := chromedp.Nodes(sel.PlayerListRowName, &nodes, chromedp.NodeVisible).Do(ctx)
@@ -267,9 +264,21 @@ func (s *TestSuite1) NewGame(winner string, loser string, draw bool) chromedp.Ta
 			}
 			return chromedp.Click(sel.NewMatchFormDraw).Do(ctx)
 		}),
-		chromedp.Submit(sel.NewMatchFormSubmit),
-		chromedp.WaitReady(sel.Logo), // ждём пока матч создастся
+		wait200(chromedp.Submit(sel.NewMatchFormSubmit)),
 	}
+}
+
+func wait200(action chromedp.Action) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		resp, err := chromedp.RunResponse(ctx, action)
+		if err != nil {
+			return err
+		}
+		if resp.Status != http.StatusOK {
+			return errors.New("match creation failed")
+		}
+		return nil
+	})
 }
 
 type PlayerStats struct {
