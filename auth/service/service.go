@@ -176,7 +176,7 @@ func (s *Service) SignUp(ctx context.Context, name string, password string) erro
 	err = s.storage.CreateUser(ctx, users.User{
 		ID:           uuid.New(),
 		Name:         name,
-		Roles:        nil, // TODO roles?
+		Roles:        []string{"user"},
 		RegisteredAt: time.Now(),
 	}, secret)
 	if err != nil {
