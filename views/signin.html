@@ -1,10 +1,19 @@
 <div class="container">
 
     <form id="signin-form" method="post">
-        <input type="text" name="username" id="username-field" class="signin-form-field" required placeholder="Username">
-        <input type="password" name="password" id="password-field" class="signin-form-field" required placeholder="Password">
+        <input type="text" name="username" id="username-field" class="signin-form-field" placeholder="Username">
+        <input type="password" name="password" id="password-field" class="signin-form-field" placeholder="Password">
         <button class="btn waves-effect waves-light" id="signin-form-submit" type="submit" name="create">Sign In</button>
         <a id="signin-signup" class="waves-effect waves-teal btn-flat" href={{ .Path.SignUp }}>Sign Up</a>
+        {{ if .Errors }}
+        <p id="error-message" class="border-red red-text text-darken-2">
+            Ошибка:<br>
+        {{ range .Errors }}
+        {{ . }}<br>
+        {{ end }}
+        </p>
+        {{ end }}
+
     </form>
 
 </div>
