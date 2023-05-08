@@ -53,5 +53,9 @@ jobs:
             libasound2 \
             libatk-bridge2.0-0 \
             libgtk-3-0
+          
+      - name: Build bin
+        run: make build
+
       - name: Run tests
         run: make auto-test
