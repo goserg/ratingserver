@@ -207,7 +207,7 @@ func (s *TestSuite1) SignIn(user, password string) chromedp.Tasks {
 		chromedp.Navigate(s.addr + webpath.Signin),
 		chromedp.SendKeys(sel.SignInFormUsername, user),
 		chromedp.SendKeys(sel.SignInFormPass, password),
-		s.wait200(chromedp.Submit(sel.SignIngFormSubmit)),
+		s.wait200(chromedp.Submit(sel.SignInFormSubmit)),
 	}
 }
 
