@@ -380,6 +380,9 @@ func (s *TestSuite1) CheckLink(from string, selector string, expectTarget string
 			if err != nil {
 				return err
 			}
+			if resp.Status != http.StatusOK {
+				s.T().Errorf("Ссылка %s на странице %s вернула статус %d", selector, from, resp.Status)
+			}
 			if resp.URL != s.addr+expectTarget {
 				s.T().Errorf("Ссылка %s ведет на %s, ожидалось %s", selector, resp.URL, expectTarget)
 			}
