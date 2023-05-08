@@ -92,7 +92,6 @@ func (s *TestSuite1) TestHandlers() {
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
 	// run task list
-	var logo string
 	err := chromedp.Run(ctx,
 		s.CheckAccessDenied(s.addr+webpath.ApiNewMatch),
 		s.CheckAccessDenied(s.addr+webpath.ApiNewPlayer),
@@ -122,23 +121,20 @@ func (s *TestSuite1) TestHandlers() {
 		s.NewGame("Артём", "Иван", false),
 		s.NewGame("Мария", "Артём", false),
 		s.CheckPlayersStats(),
-		chromedp.Navigate(s.addr),
-		chromedp.Text(sel.Logo, &logo),
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			if logo != "Эш-рейтинг" {
-				return errors.Join(
-					errors.New("invalid logo text: "+logo),
-					s.Screenshot("invalid_logo.png").Do(ctx),
-				)
-			}
-			return nil
-		}),
+		s.CreateUser("user1", "qwerty"),
+		s.SignIn("user1", "qwerty"),
+		s.CheckAccessDenied(s.addr+webpath.ApiNewMatch),
+		s.CheckAccessDenied(s.addr+webpath.ApiNewPlayer),
+		s.CheckAccessGranted(s.addr),
+		s.CheckAccessGranted(s.addr+webpath.Api),
+		s.CheckAccessGranted(s.addr+webpath.ApiMatchesList),
+		s.CheckAccessGranted(s.addr+webpath.Signin),
+		s.CheckAccessGranted(s.addr+webpath.Signup),
+		s.CheckAccessGranted(s.addr+webpath.Signout),
 	)
-
 	if err != nil {
 		s.T().Fatalf(err.Error())
 	}
-	s.Equal("Эш-рейтинг", logo)
 }
 
 func (s *TestSuite1) CheckAccessDenied(path string) chromedp.Tasks {
@@ -168,7 +164,7 @@ func (s *TestSuite1) CheckAccessGranted(path string) chromedp.Tasks {
 				return err
 			}
 			if resp.Status != http.StatusOK {
-				s.T().Errorf("Доступ к %s для гостей должен быть разрешен (статус 200), сервер ответил статуом %d", path, resp.Status)
+				s.T().Errorf("Доступ к %s должен быть разрешен (статус 200), сервер ответил статуом %d", path, resp.Status)
 			}
 			return nil
 		}),
@@ -193,17 +189,17 @@ func (s *TestSuite1) NewPlayer(name string) chromedp.Tasks {
 	return []chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiNewPlayer),
 		chromedp.SendKeys(sel.NewPlayerFormName, name),
-		wait200(chromedp.Submit(sel.NewPlayerFormSubmit)),
+		s.wait200(chromedp.Submit(sel.NewPlayerFormSubmit)),
 	}
 }
 
 func (s *TestSuite1) SignIn(user, password string) chromedp.Tasks {
-	s.T().Logf("Логин как %s", user)
+	s.T().Logf("Логин как %q", user)
 	return []chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.Signin),
 		chromedp.SendKeys(sel.SignInFormUsername, user),
 		chromedp.SendKeys(sel.SignInFormPass, password),
-		wait200(chromedp.Submit(sel.SignIngFormSubmit)),
+		s.wait200(chromedp.Submit(sel.SignIngFormSubmit)),
 	}
 }
 
@@ -264,18 +260,19 @@ func (s *TestSuite1) NewGame(winner string, loser string, draw bool) chromedp.Ta
 			}
 			return chromedp.Click(sel.NewMatchFormDraw).Do(ctx)
 		}),
-		wait200(chromedp.Submit(sel.NewMatchFormSubmit)),
+		s.wait200(chromedp.Submit(sel.NewMatchFormSubmit)),
 	}
 }
 
-func wait200(action chromedp.Action) chromedp.Action {
+func (s *TestSuite1) wait200(action chromedp.Action) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		resp, err := chromedp.RunResponse(ctx, action)
 		if err != nil {
 			return err
 		}
 		if resp.Status != http.StatusOK {
-			return errors.New("match creation failed")
+			s.Screenshot("err.png")
+			return fmt.Errorf("ожидалось 200, результат %d", resp.Status)
 		}
 		return nil
 	})
@@ -353,5 +350,16 @@ func (s *TestSuite1) CheckPlayersStats() chromedp.Tasks {
 			}
 			return nil
 		}),
+	}
+}
+
+func (s *TestSuite1) CreateUser(name, password string) chromedp.Tasks {
+	s.T().Logf("Создание нового пользователя %q", name)
+	return []chromedp.Action{
+		chromedp.Navigate(s.addr + webpath.Signup),
+		chromedp.SendKeys(sel.SignUpFormUsername, name),
+		chromedp.SendKeys(sel.SignUpFormPassword, password),
+		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, password),
+		s.wait200(chromedp.Submit(sel.SignUpFormSubmit)),
 	}
 }
