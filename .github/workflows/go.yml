@@ -40,6 +40,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update && apt-get install -y \
+            build-essential \
             make \
             chromium \
             libglib2.0-0 \
@@ -53,7 +54,7 @@ jobs:
             libasound2 \
             libatk-bridge2.0-0 \
             libgtk-3-0
-          
+
       - name: Build bin
         run: make build
 
