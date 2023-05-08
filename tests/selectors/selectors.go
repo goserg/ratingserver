@@ -23,7 +23,7 @@ const (
 
 	SignInFormUsername = "#username-field"
 	SignInFormPass     = "#password-field"
-	SignIngFormSubmit  = "#signin-form-submit"
+	SignInFormSubmit   = "#signin-form-submit"
 	SignInToSignUpLink = "a#signin-signup"
 
 	NavPlayersLink = "#nav-players a"
