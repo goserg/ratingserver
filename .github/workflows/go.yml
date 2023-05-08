@@ -35,6 +35,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt-get update && apt-get install -y \
+            make \
             chromium \
             libglib2.0-0 \
             libnss3 \
