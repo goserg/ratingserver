@@ -93,23 +93,23 @@ func (s *TestSuite1) TestHandlers() {
 	defer cancel()
 	// run task list
 	err := chromedp.Run(ctx,
-		s.CheckAccessDenied(s.addr+webpath.ApiNewMatch),
-		s.CheckAccessDenied(s.addr+webpath.ApiNewPlayer),
-		s.CheckAccessGranted(s.addr),
-		s.CheckAccessGranted(s.addr+webpath.Api),
-		s.CheckAccessGranted(s.addr+webpath.ApiMatchesList),
-		s.CheckAccessGranted(s.addr+webpath.Signin),
-		s.CheckAccessGranted(s.addr+webpath.Signup),
-		s.CheckAccessGranted(s.addr+webpath.Signout),
+		s.CheckAccessDenied(webpath.ApiNewMatch),
+		s.CheckAccessDenied(webpath.ApiNewPlayer),
+		s.CheckAccessGranted(webpath.Home),
+		s.CheckAccessGranted(webpath.Api),
+		s.CheckAccessGranted(webpath.ApiMatchesList),
+		s.CheckAccessGranted(webpath.Signin),
+		s.CheckAccessGranted(webpath.Signup),
+		s.CheckAccessGranted(webpath.Signout),
 		s.SignIn(auth.Root, s.config.Server.Auth.RootPassword),
-		s.CheckAccessGranted(s.addr+webpath.ApiNewMatch),
-		s.CheckAccessGranted(s.addr+webpath.ApiNewPlayer),
-		s.CheckAccessGranted(s.addr),
-		s.CheckAccessGranted(s.addr+webpath.Api),
-		s.CheckAccessGranted(s.addr+webpath.ApiMatchesList),
-		s.CheckAccessGranted(s.addr+webpath.Signin),
-		s.CheckAccessGranted(s.addr+webpath.Signup),
-		s.CheckAccessGranted(s.addr+webpath.Signout),
+		s.CheckAccessGranted(webpath.ApiNewMatch),
+		s.CheckAccessGranted(webpath.ApiNewPlayer),
+		s.CheckAccessGranted(webpath.Home),
+		s.CheckAccessGranted(webpath.Api),
+		s.CheckAccessGranted(webpath.ApiMatchesList),
+		s.CheckAccessGranted(webpath.Signin),
+		s.CheckAccessGranted(webpath.Signup),
+		s.CheckAccessGranted(webpath.Signout),
 		s.SignIn(auth.Root, s.config.Server.Auth.RootPassword),
 		s.NewPlayer("Иван"),
 		s.NewPlayer("Артём"),
@@ -123,14 +123,20 @@ func (s *TestSuite1) TestHandlers() {
 		s.CheckPlayersStats(),
 		s.CreateUser("user1", "qwerty"),
 		s.SignIn("user1", "qwerty"),
-		s.CheckAccessDenied(s.addr+webpath.ApiNewMatch),
-		s.CheckAccessDenied(s.addr+webpath.ApiNewPlayer),
-		s.CheckAccessGranted(s.addr),
-		s.CheckAccessGranted(s.addr+webpath.Api),
-		s.CheckAccessGranted(s.addr+webpath.ApiMatchesList),
-		s.CheckAccessGranted(s.addr+webpath.Signin),
-		s.CheckAccessGranted(s.addr+webpath.Signup),
-		s.CheckAccessGranted(s.addr+webpath.Signout),
+		s.CheckAccessDenied(webpath.ApiNewMatch),
+		s.CheckAccessDenied(webpath.ApiNewPlayer),
+		s.CheckAccessGranted(webpath.Home),
+		s.CheckAccessGranted(webpath.Api),
+		s.CheckAccessGranted(webpath.ApiMatchesList),
+		s.CheckAccessGranted(webpath.Signin),
+		s.CheckAccessGranted(webpath.Signup),
+		s.CheckAccessGranted(webpath.Signout),
+		s.CheckLink(webpath.ApiHome, sel.NavMatchesLink, webpath.ApiMatchesList),
+		s.CheckLink(webpath.ApiHome, sel.NavPlayersLink, webpath.ApiHome),
+		s.CheckLink(webpath.ApiMatchesList, sel.NavMatchesLink, webpath.ApiMatchesList),
+		s.CheckLink(webpath.ApiMatchesList, sel.NavPlayersLink, webpath.ApiHome),
+		s.CheckLink(webpath.Signup, sel.SignUpToSignInLink, webpath.Signin),
+		s.CheckLink(webpath.Signin, sel.SignInToSignUpLink, webpath.Signup),
 	)
 	if err != nil {
 		s.T().Fatalf(err.Error())
@@ -142,7 +148,7 @@ func (s *TestSuite1) CheckAccessDenied(path string) chromedp.Tasks {
 	return []chromedp.Action{
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			resp, err := chromedp.RunResponse(ctx,
-				chromedp.Navigate(path))
+				chromedp.Navigate(s.addr+path))
 			if err != nil {
 				return err
 			}
@@ -159,7 +165,7 @@ func (s *TestSuite1) CheckAccessGranted(path string) chromedp.Tasks {
 	return []chromedp.Action{
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			resp, err := chromedp.RunResponse(ctx,
-				chromedp.Navigate(path))
+				chromedp.Navigate(s.addr+path))
 			if err != nil {
 				return err
 			}
@@ -361,5 +367,22 @@ func (s *TestSuite1) CreateUser(name, password string) chromedp.Tasks {
 		chromedp.SendKeys(sel.SignUpFormPassword, password),
 		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, password),
 		s.wait200(chromedp.Submit(sel.SignUpFormSubmit)),
+	}
+}
+
+func (s *TestSuite1) CheckLink(from string, selector string, expectTarget string) chromedp.Tasks {
+	s.T().Logf("Проверка ссылки %q на странице %s", selector, from)
+	return []chromedp.Action{
+		s.wait200(chromedp.Navigate(s.addr + from)),
+		chromedp.ActionFunc(func(ctx context.Context) error {
+			resp, err := chromedp.RunResponse(ctx, chromedp.Click(selector))
+			if err != nil {
+				return err
+			}
+			if resp.URL != s.addr+expectTarget {
+				s.T().Errorf("Ссылка %s ведет на %s, ожидалось %s", selector, resp.URL, expectTarget)
+			}
+			return nil
+		}),
 	}
 }
