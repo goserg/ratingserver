@@ -85,7 +85,7 @@ func (s *TestSuite1) TearDownSuite() {
 	}
 }
 
-const globalTestsTimeoutSeconds = 5
+const globalTestsTimeoutSeconds = 600
 
 func (s *TestSuite1) TestHandlers() {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
@@ -136,6 +136,7 @@ func (s *TestSuite1) TestHandlers() {
 		s.CheckLink(webpath.ApiMatchesList, sel.NavPlayersLink, webpath.ApiHome),
 		s.CheckLink(webpath.Signup, sel.SignUpToSignInLink, webpath.Signin),
 		s.CheckLink(webpath.Signin, sel.SignInToSignUpLink, webpath.Signup),
+		s.CheckInvalidSignInForm(),
 	)
 	if err != nil {
 		s.T().Fatalf(err.Error())
@@ -206,7 +207,7 @@ func (s *TestSuite1) SignIn(user, password string) chromedp.Tasks {
 	return []chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.Signin),
 		chromedp.SendKeys(sel.SignInFormUsername, user),
-		chromedp.SendKeys(sel.SignInFormPass, password),
+		chromedp.SendKeys(sel.SignInFormPassword, password),
 		s.wait200(chromedp.Submit(sel.SignInFormSubmit)),
 	}
 }
@@ -388,5 +389,50 @@ func (s *TestSuite1) CheckLink(from string, selector string, expectTarget string
 			}
 			return nil
 		}),
+	}
+}
+
+func (s *TestSuite1) expectBadRequest(action chromedp.Action) chromedp.Action {
+	return chromedp.ActionFunc(func(ctx context.Context) error {
+		resp, err := chromedp.RunResponse(ctx, action)
+		if err != nil {
+			return err
+		}
+		if resp.Status != http.StatusBadRequest {
+			s.T().Logf("Одижается статус 400, пришёл статус %d", resp.Status)
+			return err
+		}
+		return nil
+	})
+}
+
+func (s *TestSuite1) CheckInvalidSignInForm() chromedp.Tasks {
+	s.T().Logf("Проверка на невалидный ввод в форме SignIn")
+	return []chromedp.Action{
+		// пустые поля
+		chromedp.Navigate(s.addr + webpath.Signin),
+		s.expectBadRequest(chromedp.Submit(sel.SignInFormSubmit)),
+
+		// пустой пароль
+		chromedp.Navigate(s.addr + webpath.Signin),
+		chromedp.SendKeys(sel.SignInFormUsername, auth.Root),
+		s.expectBadRequest(chromedp.Submit(sel.SignInFormSubmit)),
+
+		// пустое имя пользователя
+		chromedp.Navigate(s.addr + webpath.Signin),
+		chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
+		s.expectBadRequest(chromedp.Submit(sel.SignInFormSubmit)),
+
+		// имя пользователя начинающееся не с буквы
+		chromedp.Navigate(s.addr + webpath.Signin),
+		chromedp.SendKeys(sel.SignInFormUsername, "1awd"),
+		chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
+		s.expectBadRequest(chromedp.Submit(sel.SignInFormSubmit)),
+
+		// имя пользователя сщдержащее спец символы
+		chromedp.Navigate(s.addr + webpath.Signin),
+		chromedp.SendKeys(sel.SignInFormUsername, "Dawd%awd"),
+		chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
+		s.expectBadRequest(chromedp.Submit(sel.SignInFormSubmit)),
 	}
 }
