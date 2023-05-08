@@ -5,10 +5,6 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
-	"github.com/go-jet/jet/v2/qrm"
-	"github.com/go-jet/jet/v2/sqlite"
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"ratingserver/auth/gen/model"
 	"ratingserver/auth/gen/table"
 	"ratingserver/auth/storage"
@@ -16,6 +12,11 @@ import (
 	"ratingserver/internal/config"
 	sqlite3 "ratingserver/internal/migrate"
 	"time"
+
+	"github.com/go-jet/jet/v2/qrm"
+	"github.com/go-jet/jet/v2/sqlite"
+	"github.com/google/uuid"
+	"github.com/sirupsen/logrus"
 )
 
 type Storage struct {
@@ -24,20 +25,33 @@ type Storage struct {
 }
 
 func (s *Storage) GetUser(ctx context.Context, id uuid.UUID) (users.User, error) {
-	var dbUser model.Users
+	var dest struct {
+		model.Users
+		UserRoles []model.UserRoles
+	}
 	err := table.Users.
 		SELECT(
-			table.Users.AllColumns.
-				Except(table.Users.PasswordHash, table.Users.PasswordSalt),
-		).FROM(table.Users).
-		WHERE(
-			table.Users.DeletedAt.IS_NULL().
-				AND(table.Users.ID.EQ(sqlite.UUID(id))),
-		).QueryContext(ctx, s.db, &dbUser)
+			table.Users.AllColumns.Except(
+				table.Users.PasswordHash,
+				table.Users.PasswordSalt,
+			),
+			table.UserRoles.AllColumns,
+		).
+		FROM(table.Users.INNER_JOIN(table.UserRoles, table.UserRoles.UserID.EQ(table.Users.ID))).
+		WHERE(table.Users.ID.EQ(sqlite.UUID(id)).
+			AND(table.Users.DeletedAt.IS_NULL())).
+		QueryContext(ctx, s.db, &dest)
+	if err != nil {
+		if errors.Is(err, qrm.ErrNoRows) {
+			return users.User{}, sql.ErrNoRows
+		}
+		return users.User{}, err
+	}
+	u, err := convertUserToModel(dest.Users, dest.UserRoles)
 	if err != nil {
 		return users.User{}, err
 	}
-	return convertUserToModel(dbUser, nil)
+	return u, nil
 }
 
 func (s *Storage) GetUserSecret(ctx context.Context, user users.User) (users.Secret, error) {
@@ -137,7 +151,11 @@ func (s *Storage) SignIn(ctx context.Context, name string, passwordHash []byte) 
 		}
 		return users.User{}, err
 	}
-	return convertUserToModel(dest.Users, dest.UserRoles)
+	u, err := convertUserToModel(dest.Users, dest.UserRoles)
+	if err != nil {
+		return users.User{}, err
+	}
+	return u, nil
 }
 
 func convertUserToModel(user model.Users, roles []model.UserRoles) (users.User, error) {
@@ -148,7 +166,7 @@ func convertUserToModel(user model.Users, roles []model.UserRoles) (users.User, 
 	u := users.User{
 		ID:           id,
 		Name:         user.Username,
-		Roles:        []string{"admin"}, // TODO
+		Roles:        []string{},
 		RegisteredAt: user.CreatedAt,
 	}
 
