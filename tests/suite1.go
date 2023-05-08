@@ -85,13 +85,12 @@ func (s *TestSuite1) TearDownSuite() {
 	}
 }
 
-func (s *TestSuite1) TestHandlers() {
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
+const globalTestsTimeoutSeconds = 5
 
-	// create context
+func (s *TestSuite1) TestHandlers() {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
-	// run task list
 	err := chromedp.Run(ctx,
 		s.CheckAccessDenied(webpath.ApiNewMatch),
 		s.CheckAccessDenied(webpath.ApiNewPlayer),
@@ -177,13 +176,16 @@ func (s *TestSuite1) CheckAccessGranted(path string) chromedp.Tasks {
 	}
 }
 
+const screenshotQuality = 80
+const screenshotFilePermission = 0o644
+
 func (s *TestSuite1) Screenshot(filename string) chromedp.ActionFunc {
 	return func(ctx context.Context) error {
 		var screenShot []byte
-		if err := chromedp.FullScreenshot(&screenShot, 80).Do(ctx); err != nil {
+		if err := chromedp.FullScreenshot(&screenShot, screenshotQuality).Do(ctx); err != nil {
 			return err
 		}
-		if err := os.WriteFile(filename, screenShot, 0o644); err != nil {
+		if err := os.WriteFile(filename, screenShot, screenshotFilePermission); err != nil {
 			return err
 		}
 		return nil
@@ -277,7 +279,6 @@ func (s *TestSuite1) wait200(action chromedp.Action) chromedp.Action {
 			return err
 		}
 		if resp.Status != http.StatusOK {
-			s.Screenshot("err.png")
 			return fmt.Errorf("ожидалось 200, результат %d", resp.Status)
 		}
 		return nil
