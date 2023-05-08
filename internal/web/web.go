@@ -12,6 +12,7 @@ import (
 	"ratingserver/internal/normalize"
 	"ratingserver/internal/service"
 	"ratingserver/internal/web/webpath"
+	"regexp"
 	"strconv"
 	"time"
 
@@ -176,21 +177,67 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 
 func (s *Server) HandleGetSignIn(ctx *fiber.Ctx) error {
 	return ctx.Render("signin", fiber.Map{
-		"Title": "Войти",
-		"Path":  webpath.Path(),
+		"Title":  "Войти",
+		"Path":   webpath.Path(),
+		"Errors": []string{},
 	}, "layouts/main")
 }
 
-func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
+type signInRequest struct {
+	name     string
+	password string
+}
+
+func parseSignInRequest(ctx *fiber.Ctx) (signInRequest, []error) {
+	var errs []error
 	name := ctx.FormValue("username", "")
+	if name == "" {
+		errs = append(errs, errors.New("имя пользователя не должно быть пустое"))
+	}
+	nameRegexp := regexp.MustCompile("^[A-Za-z]\\w+$")
+	if !nameRegexp.MatchString(name) {
+		errs = append(errs, errors.New("имя пользователя должно начинаться с латинской буквы и содержать только латинские буквы, цифры и знаки подчеркивания"))
+	}
 	password := ctx.FormValue("password", "")
-	user, err := s.auth.Login(ctx.Context(), name, password)
+	if password == "" {
+		errs = append(errs, errors.New("пароль пользователя не должн быть пустым"))
+	}
+	if errs != nil {
+		return signInRequest{}, errs
+	}
+	return signInRequest{
+		name:     name,
+		password: password,
+	}, nil
+}
+
+func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
+	req, errs := parseSignInRequest(ctx)
+	if errs != nil {
+		ctx.Status(fiber.StatusBadRequest)
+		return ctx.Render("signin", fiber.Map{
+			"Title":  "Войти",
+			"Path":   webpath.Path(),
+			"Errors": errs,
+		}, "layouts/main")
+	}
+	user, err := s.auth.Login(ctx.Context(), req.name, req.password)
 	if err != nil {
-		return err
+		ctx.Status(fiber.StatusUnauthorized)
+		return ctx.Render("signin", fiber.Map{
+			"Title":  "Войти",
+			"Path":   webpath.Path(),
+			"Errors": []string{err.Error()},
+		}, "layouts/main")
 	}
 	cookie, err := s.auth.GenerateJWTCookie(user.ID, s.cfg.Host)
 	if err != nil {
-		return err
+		ctx.Status(fiber.StatusUnauthorized)
+		return ctx.Render("signin", fiber.Map{
+			"Title":  "Войти",
+			"Path":   webpath.Path(),
+			"Errors": []string{err.Error()},
+		}, "layouts/main")
 	}
 	ctx.Cookie(cookie)
 	return ctx.Redirect(webpath.ApiHome)
