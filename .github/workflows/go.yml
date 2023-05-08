@@ -25,16 +25,27 @@ jobs:
     - name: Test
       run: make test
 
-  auto-test:
-    runs-on: chromedp/headless-shell
+  test:
+    runs-on: ubuntu-latest
+    container:
+      image: chromedp/headless-shell
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v4
-        with:
-          go-version-file: go.mod
-          cache-dependency-path: go.sum
-
-      - name: test
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Install dependencies
+        run: |
+          apt-get update && apt-get install -y \
+            chromium-browser \
+            libglib2.0-0 \
+            libnss3 \
+            libx11-xcb1 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxi6 \
+            libxtst6 \
+            fonts-liberation \
+            libasound2 \
+            libatk-bridge2.0-0 \
+            libgtk-3-0
+      - name: Run tests
         run: make auto-test
