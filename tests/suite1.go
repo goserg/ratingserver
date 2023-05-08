@@ -262,16 +262,13 @@ func (s *TestSuite1) NewGame(winner string, loser string, draw bool) chromedp.Ta
 		chromedp.SendKeys(sel.NewMatchFormWinner, winner),
 		chromedp.SendKeys(sel.NewMatchFormLoser, loser),
 		chromedp.ActionFunc(func(ctx context.Context) error {
-			if draw {
-				err := chromedp.Click(sel.NewMatchFormDraw).Do(ctx)
-				if err != nil {
-					return err
-				}
+			if !draw {
+				return nil
 			}
-			return nil
+			return chromedp.Click(sel.NewMatchFormDraw).Do(ctx)
 		}),
 		chromedp.Submit(sel.NewMatchFormSubmit),
-		chromedp.WaitVisible(sel.Logo),
+		chromedp.WaitReady(sel.Logo), // ждём пока матч создастся
 	}
 }
 
