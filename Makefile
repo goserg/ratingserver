@@ -18,7 +18,7 @@ run: build
 	${SERVER_BIN}
 
 test:
-	go test ./...
+	go list ./... | grep -v tests | xargs go test
 
 TEST_SERVER_CONFIG_PATH = test_configs/server.toml
 TEST_BOT_CONFIG_PATH = test_configs/bot.toml
