@@ -9,6 +9,7 @@ import (
 	auth "ratingserver/auth/service"
 	"ratingserver/internal/config"
 	"ratingserver/internal/web/webpath"
+	sel "ratingserver/tests/selectors"
 	"strconv"
 	"strings"
 	"time"
@@ -101,7 +102,7 @@ func (s *TestSuite1) TestHandlers() {
 		s.CheckAccessGranted(s.addr+webpath.Signin),
 		s.CheckAccessGranted(s.addr+webpath.Signup),
 		s.CheckAccessGranted(s.addr+webpath.Signout),
-		s.Login(auth.Root, s.config.Server.Auth.RootPassword),
+		s.SignIn(auth.Root, s.config.Server.Auth.RootPassword),
 		s.CheckAccessGranted(s.addr+webpath.ApiNewMatch),
 		s.CheckAccessGranted(s.addr+webpath.ApiNewPlayer),
 		s.CheckAccessGranted(s.addr),
@@ -110,7 +111,7 @@ func (s *TestSuite1) TestHandlers() {
 		s.CheckAccessGranted(s.addr+webpath.Signin),
 		s.CheckAccessGranted(s.addr+webpath.Signup),
 		s.CheckAccessGranted(s.addr+webpath.Signout),
-		s.Login(auth.Root, s.config.Server.Auth.RootPassword),
+		s.SignIn(auth.Root, s.config.Server.Auth.RootPassword),
 		s.NewPlayer("Иван"),
 		s.NewPlayer("Артём"),
 		s.NewPlayer("Мария"),
@@ -122,18 +123,13 @@ func (s *TestSuite1) TestHandlers() {
 		s.NewGame("Мария", "Артём", false),
 		s.CheckPlayersStats(),
 		chromedp.Navigate(s.addr),
-		chromedp.Text(`.brand-logo`, &logo),
+		chromedp.Text(sel.Logo, &logo),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			if logo != "Эш-рейтинг" {
-				err := errors.New("invalid logo text: " + logo)
-				var screenShot []byte
-				if errS := chromedp.FullScreenshot(&screenShot, 80).Do(ctx); errS != nil {
-					return errors.Join(errS, err)
-				}
-				if errW := os.WriteFile("invalid_logo.png", screenShot, 0o644); errW != nil {
-					return errors.Join(errW, err)
-				}
-				return err
+				return errors.Join(
+					errors.New("invalid logo text: "+logo),
+					s.Screenshot("invalid_logo.png").Do(ctx),
+				)
 			}
 			return nil
 		}),
@@ -196,20 +192,20 @@ func (s *TestSuite1) NewPlayer(name string) chromedp.Tasks {
 	s.T().Logf("Создание игрока %s", name)
 	return []chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiNewPlayer),
-		chromedp.SendKeys("#new-player-form-name", name),
-		chromedp.Submit("#new-player-form-submit"),
-		chromedp.WaitVisible(`.brand-logo`),
+		chromedp.SendKeys(sel.NewPlayerFormName, name),
+		chromedp.Submit(sel.NewPlayerFormSubmit),
+		chromedp.WaitVisible(sel.Logo),
 	}
 }
 
-func (s *TestSuite1) Login(user, password string) chromedp.Tasks {
+func (s *TestSuite1) SignIn(user, password string) chromedp.Tasks {
 	s.T().Logf("Логин как %s", user)
 	return []chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.Signin),
-		chromedp.SendKeys("#username-field", user),
-		chromedp.SendKeys("#password-field", password),
-		chromedp.Submit("#signin-form-submit"),
-		chromedp.WaitVisible(`.brand-logo`),
+		chromedp.SendKeys(sel.SignInFormUsername, user),
+		chromedp.SendKeys(sel.SignInFormPass, password),
+		chromedp.Submit(sel.SignIngFormSubmit),
+		chromedp.WaitVisible(sel.Logo),
 	}
 }
 
@@ -229,10 +225,10 @@ func (s *TestSuite1) CheckPlayersExist(names ...string) chromedp.Tasks {
 	s.T().Log("Проверяем, что игроки создались")
 	return []chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiHome),
-		chromedp.WaitVisible(`.brand-logo`),
+		chromedp.WaitVisible(sel.Logo),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var nodes []*cdp.Node
-			err := chromedp.Nodes("#player-list-row-name", &nodes, chromedp.NodeVisible).Do(ctx)
+			err := chromedp.Nodes(sel.PlayerListRowName, &nodes, chromedp.NodeVisible).Do(ctx)
 			if err != nil {
 				return err
 			}
@@ -263,19 +259,19 @@ func (s *TestSuite1) NewGame(winner string, loser string, draw bool) chromedp.Ta
 	s.T().Logf("Создание новой игры: %s %.1f:%.1f %s", winner, winnerPoints, loserPoints, loser)
 	return []chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiNewMatch),
-		chromedp.SendKeys("#new-match-form-winner", winner),
-		chromedp.SendKeys("#new-match-form-loser", loser),
+		chromedp.SendKeys(sel.NewMatchFormWinner, winner),
+		chromedp.SendKeys(sel.NewMatchFormLoser, loser),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			if draw {
-				err := chromedp.Click("#new-match-form-draw").Do(ctx)
+				err := chromedp.Click(sel.NewMatchFormDraw).Do(ctx)
 				if err != nil {
 					return err
 				}
 			}
 			return nil
 		}),
-		chromedp.Submit("#new-match-form-submit"),
-		chromedp.WaitVisible(`.brand-logo`),
+		chromedp.Submit(sel.NewMatchFormSubmit),
+		chromedp.WaitVisible(sel.Logo),
 	}
 }
 
@@ -329,7 +325,7 @@ func (s *TestSuite1) CheckPlayersStats() chromedp.Tasks {
 		chromedp.Navigate(s.addr),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var nodes []*cdp.Node
-			err := chromedp.Nodes("#player-list-row", &nodes, chromedp.NodeVisible).Do(ctx)
+			err := chromedp.Nodes(sel.PlayerListRow, &nodes, chromedp.NodeVisible).Do(ctx)
 			if err != nil {
 				return err
 			}
