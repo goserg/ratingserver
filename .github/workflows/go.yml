@@ -42,18 +42,11 @@ jobs:
           apt-get update && apt-get install -y \
             build-essential \
             make \
-            chromium \
-            libglib2.0-0 \
+            libnspr4 \
             libnss3 \
-            libx11-xcb1 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxi6 \
-            libxtst6 \
-            fonts-liberation \
-            libasound2 \
-            libatk-bridge2.0-0 \
-            libgtk-3-0
+            libexpat1 \
+            libfontconfig1 \
+            libuuid1
 
       - name: Build bin
         run: make build
