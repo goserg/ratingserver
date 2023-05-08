@@ -19,8 +19,13 @@ const (
 	SignUpFormPassword       = "#signup-form-password"
 	SignUpFormPasswordRepeat = "#signup-form-password-repeat"
 	SignUpFormSubmit         = "#signup-form-submit"
+	SignUpToSignInLink       = "a#signup-signin"
 
 	SignInFormUsername = "#username-field"
 	SignInFormPass     = "#password-field"
 	SignIngFormSubmit  = "#signin-form-submit"
+	SignInToSignUpLink = "a#signin-signup"
+
+	NavPlayersLink = "#nav-players a"
+	NavMatchesLink = "#nav-matches a"
 )
