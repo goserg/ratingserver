@@ -6,19 +6,18 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	auth "ratingserver/auth/service"
-	"ratingserver/internal/config"
-	"ratingserver/internal/web/webpath"
-	sel "ratingserver/tests/selectors"
 	"strconv"
 	"strings"
 	"time"
 
-	mapset "github.com/deckarep/golang-set/v2"
+	auth "ratingserver/auth/service"
+	"ratingserver/internal/config"
+	"ratingserver/internal/web/webpath"
+	sel "ratingserver/tests/selectors"
 
 	"github.com/chromedp/cdproto/cdp"
-
 	"github.com/chromedp/chromedp"
+	mapset "github.com/deckarep/golang-set/v2"
 	"github.com/stretchr/testify/suite"
 )
 
