@@ -17,6 +17,7 @@ func Data(title string) data {
 	return data{
 		Title: title,
 		Path:  webpath.Path(),
+		Data:  make(map[string]any),
 	}
 }
 
