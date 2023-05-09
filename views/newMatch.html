@@ -1,13 +1,31 @@
 {{template "partials/header" .}}
-<div class="container">
-    <form id="new-match-form" method="post">
-        <input id="new-match-form-winner" name="winner" placeholder="winner" required type="text">
-        <input id="new-match-form-loser" name="loser" placeholder="loser" required type="text"><br>
-        <label>
-            <input id="new-match-form-draw" name="draw" type="checkbox" />
-            <span>Draw</span>
-        </label><br>
-        <button class="btn waves-effect waves-light" id="new-match-form-submit" name="create" type="submit">Create</button>
-    </form>
+<div id="main">
+    <div class="header">
+        <h1>Создать матч</h1>
+    </div>
+
+    <div class="content">
+        <form class="pure-form pure-form-aligned" id="new-match-form" method="post">
+            <fieldset>
+                <div class="pure-control-group">
+                    <label for="new-match-form-winner">Победитель</label>
+                    <input id="new-match-form-winner" name="winner" placeholder="Победитель" type="text">
+                </div>
+                <div class="pure-control-group">
+                    <label for="new-match-form-loser">Проигравший</label>
+                    <input id="new-match-form-loser" name="loser" placeholder="Проигравший" type="text">
+                </div>
+                <div class="pure-controls">
+                    <label>
+                        <input id="new-match-form-draw" name="draw" type="checkbox" />
+                        <span>Ничья</span>
+                    </label>
+                </div>
+                <div class="pure-controls">
+                    <button class="pure-button pure-button-primary" id="new-match-form-submit" name="create" type="submit">Создать матч</button>
+                </div>
+            </fieldset>
+        </form>
+    </div>
 </div>
 {{template "partials/footer" .}}

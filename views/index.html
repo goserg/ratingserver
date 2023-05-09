@@ -1,20 +1,30 @@
 {{template "partials/header" .}}
-<div class="container">
-    <table class="striped">
-        <tr>
-            <th>Имя</th>
-            <th>Всего игр</th>
-            <th>Рейтинг</th>
-        </tr>
 
-        {{ range .Players }}
-        <tr id="player-list-row">
-            <td id="player-list-row-name"><a href="/api/players/{{ .ID }}">{{.Name}}</a></td>
-            <td>{{.GamesPlayed}}</td>
-            <td>{{.EloRating}}</td>
-        </tr>
-        {{ end }}
-    </table>
+<div id="main">
+    <div class="header">
+        <h1>Рейтинг игроков</h1>
+        <h2>Elo рейтинг</h2>
+    </div>
 
+    <div class="content">
+        <table class="pure-table pure-table-horizontal">
+            <thead>
+            <tr>
+                <th>Имя</th>
+                <th>Всего игр</th>
+                <th>Рейтинг</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{ range .Players }}
+                <tr id="player-list-row">
+                    <td id="player-list-row-name"><a href="/api/players/{{ .ID }}">{{.Name}}</a></td>
+                    <td>{{.GamesPlayed}}</td>
+                    <td>{{.EloRating}}</td>
+                </tr>
+            {{ end }}
+            </tbody>
+        </table>
+    </div>
 </div>
 {{template "partials/footer" .}}

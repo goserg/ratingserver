@@ -1,8 +1,21 @@
 {{template "partials/header" .}}
-<div class="container">
-    <form id="new-player-form" method="post">
-        <input id="new-player-form-name" name="name" placeholder="name" required type="text">
-        <button class="btn waves-effect waves-light" id="new-player-form-submit" name="create" type="submit">Create</button>
-    </form>
+<div id="main">
+    <div class="header">
+        <h1>Новый игрок</h1>
+    </div>
+
+    <div class="content">
+        <form class="pure-form pure-form-aligned" id="new-player-form" method="post">
+            <fieldset>
+                <div class="pure-control-group">
+                    <label for="new-player-form-name">Имя</label>
+                    <input type="text" name="name" id="new-player-form-name" placeholder="Имя">
+                </div>
+                <div class="pure-controls">
+                    <button class="pure-button pure-button-primary" id="new-player-form-submit" type="submit" name="create">Создать игрока</button>
+                </div>
+            </fieldset>
+        </form>
+    </div>
 </div>
 {{template "partials/footer" .}}

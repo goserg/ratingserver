@@ -1,10 +1,28 @@
-<div class="container">
-
-    <form id="signup-form" method="post">
-        <input type="text" name="name" id="signup-form-username" placeholder="Username" required autocomplete="off">
-        <input type="password" name="password" id="signup-form-password" placeholder="Password" required autocomplete="off"><br>
-        <input type="password" name="password-repeat" id="signup-form-password-repeat" placeholder="Repeat password" required autocomplete="off"><br>
-        <button class="btn waves-effect waves-light" id="signup-form-submit" type="submit" name="create">Sign Up</button>
-        <a id="signup-signin" class="waves-effect waves-teal btn-flat" href={{ .Path.SignIn }}>Sign In</a>
-    </form>
+{{template "partials/header" .}}
+<div id="main">
+    <div class="header">
+        <h1>Регистрация</h1>
+    </div>
+    <div class="content">
+        <form class="pure-form pure-form-aligned" id="signup-form" method="post">
+            <fieldset>
+                <div class="pure-control-group">
+                    <label for="signup-form-username">Имя</label>
+                    <input type="text" name="username" id="signup-form-username" placeholder="Имя пользователя">
+                </div>
+                <div class="pure-control-group">
+                    <label for="signup-form-password">Пароль</label>
+                    <input type="password" name="password" id="signup-form-password" placeholder="Пароль пользователя">
+                </div>
+                <div class="pure-control-group">
+                    <label for="signup-form-password-repeat">Повтор пароля</label>
+                    <input type="password" name="password-repeat" id="signup-form-password-repeat" placeholder="Повторите пароль">
+                </div>
+                <div class="pure-controls">
+                    <button class="pure-button pure-button-primary" id="signup-form-submit" type="submit" name="create">Sign Up</button>
+                    <a class="pure-button" id="signup-signin" href={{ .Path.SignIn }}>Sign In</a>
+                </div>
+            </fieldset>
+        </form>
+    </div>
 </div>

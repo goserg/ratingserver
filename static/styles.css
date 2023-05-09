@@ -1,0 +1,11 @@
+/*
+Таблица на всю ширину
+*/
+table {
+    margin: auto;
+    width: 100%;
+}
+
+.content > table:first-child {
+    margin: 50px auto auto;
+}
