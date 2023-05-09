@@ -20,9 +20,9 @@
                     <a class="pure-button" id="signin-signup" href={{ .Path.SignUp }}>Зарегистрироваться</a>
                     {{ if .Errors }}
                         <p id="error-message">
-                            Ошибка:<br>
+                            <span class="color-red">Ошибка:</span><br>
                             {{ range .Errors }}
-                                {{ . }}<br>
+                                <span class="color-red">{{ . }}</span><br>
                             {{ end }}
                         </p>
                     {{ end }}
