@@ -95,13 +95,12 @@ const userKey = "user"
 func (s *Server) handleMain(ctx *fiber.Ctx) error {
 	user, _ := ctx.Context().UserValue(userKey).(users.User)
 	globalRating := s.playerService.GetRatings()
-	return ctx.Render("index", fiber.Map{
-		"Button":  "rating",
-		"Title":   "Рейтинг",
-		"Players": globalRating,
-		"Path":    webpath.Path(),
-		"User":    user,
-	}, "layouts/main")
+	return ctx.Render("index", fiber.Map(
+		NewData("Рейтинг").
+			User(user).
+			Data("Button", "rating").
+			Data("Players", globalRating),
+	), "layouts/main")
 }
 
 func (s *Server) handleMatches(ctx *fiber.Ctx) error {
@@ -110,22 +109,20 @@ func (s *Server) handleMatches(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return ctx.Render("matches", fiber.Map{
-		"Button":  "matches",
-		"Title":   "Список матчей",
-		"Matches": matches,
-		"Path":    webpath.Path(),
-		"User":    user,
-	}, "layouts/main")
+	return ctx.Render("matches", fiber.Map(
+		NewData("Список матчей").
+			User(user).
+			Data("Button", "matches").
+			Data("Matches", matches),
+	), "layouts/main")
 }
 
 func (s *Server) handleCreateMatchGet(ctx *fiber.Ctx) error {
 	user, _ := ctx.Context().UserValue(userKey).(users.User)
-	return ctx.Render("newMatch", fiber.Map{
-		"Title": "Добавить игру",
-		"Path":  webpath.Path(),
-		"User":  user,
-	}, "layouts/main")
+	return ctx.Render("newMatch", fiber.Map(
+		NewData("Добавить игру").
+			User(user),
+	), "layouts/main")
 }
 
 func (s *Server) handleCreateMatchPost(ctx *fiber.Ctx) error {
@@ -167,21 +164,18 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return ctx.Render("playerCard", fiber.Map{
-		"Button": "playerCard",
-		"Title":  data.Player.Name,
-		"Data":   data,
-		"Path":   webpath.Path(),
-		"User":   user,
-	}, "layouts/main")
+	return ctx.Render("playerCard", fiber.Map(
+		NewData(data.Player.Name).
+			User(user).
+			Data("Data", data).
+			Data("Button", "playerCard"),
+	), "layouts/main")
 }
 
 func (s *Server) HandleGetSignIn(ctx *fiber.Ctx) error {
-	return ctx.Render("signin", fiber.Map{
-		"Title":  "Войти",
-		"Path":   webpath.Path(),
-		"Errors": []string{},
-	}, "layouts/main")
+	return ctx.Render("signin", fiber.Map(
+		NewData("Войти"),
+	), "layouts/main")
 }
 
 type signInRequest struct {
@@ -216,39 +210,35 @@ func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
 	req, errs := parseSignInRequest(ctx)
 	if errs != nil {
 		ctx.Status(fiber.StatusBadRequest)
-		return ctx.Render("signin", fiber.Map{
-			"Title":  "Войти",
-			"Path":   webpath.Path(),
-			"Errors": errs,
-		}, "layouts/main")
+		return ctx.Render("signin", fiber.Map(
+			NewData("Войти").
+				Errors(errs...),
+		), "layouts/main")
 	}
 	user, err := s.auth.Login(ctx.Context(), req.name, req.password)
 	if err != nil {
 		ctx.Status(fiber.StatusUnauthorized)
-		return ctx.Render("signin", fiber.Map{
-			"Title":  "Войти",
-			"Path":   webpath.Path(),
-			"Errors": []string{err.Error()},
-		}, "layouts/main")
+		return ctx.Render("signin", fiber.Map(
+			NewData("Войти").
+				Errors(err),
+		), "layouts/main")
 	}
 	cookie, err := s.auth.GenerateJWTCookie(user.ID, s.cfg.Host)
 	if err != nil {
 		ctx.Status(fiber.StatusUnauthorized)
-		return ctx.Render("signin", fiber.Map{
-			"Title":  "Войти",
-			"Path":   webpath.Path(),
-			"Errors": []string{err.Error()},
-		}, "layouts/main")
+		return ctx.Render("signin", fiber.Map(
+			NewData("Войти").
+				Errors(err),
+		), "layouts/main")
 	}
 	ctx.Cookie(cookie)
 	return ctx.Redirect(webpath.ApiHome)
 }
 
 func (s *Server) HandleGetSignup(ctx *fiber.Ctx) error {
-	return ctx.Render("signup", fiber.Map{
-		"Title": "Зарегистрироваться",
-		"Path":  webpath.Path(),
-	}, "layouts/main")
+	return ctx.Render("signup", fiber.Map(
+		NewData("Зарегистрироваться"),
+	), "layouts/main")
 }
 
 func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
@@ -271,10 +261,9 @@ func (s *Server) HandleSignOut(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) handleNewPlayerGet(ctx *fiber.Ctx) error {
-	return ctx.Render("newPlayer", fiber.Map{
-		"Title": "Добавить игрока",
-		"Path":  webpath.Path(),
-	}, "layouts/main")
+	return ctx.Render("newPlayer", fiber.Map(
+		NewData("Добавить игрока"),
+	), "layouts/main")
 }
 
 func (s *Server) handleNewPlayerPost(ctx *fiber.Ctx) error {
