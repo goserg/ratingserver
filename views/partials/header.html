@@ -22,11 +22,11 @@
                 </span>
                 {{ end }}
             </li>
-            <li {{ if eq .Button "rating" }} class="menu-item-divided pure-menu-item pure-menu-selected"{{ else }} class="menu-item-divided pure-menu-item" {{end}} >
+            <li {{ if eq .Data.Button "rating" }} class="menu-item-divided pure-menu-item pure-menu-selected"{{ else }} class="menu-item-divided pure-menu-item" {{end}} >
                 <a class="pure-menu-link" href={{ .Path.ApiHome }}>Рейтинг</a>
             </li>
 
-            <li {{ if eq .Button "matches" }}class="pure-menu-item pure-menu-selected"{{ else }} class="pure-menu-item" {{end}} >
+            <li {{ if eq .Data.Button "matches" }}class="pure-menu-item pure-menu-selected"{{ else }} class="pure-menu-item" {{end}} >
                 <a class="pure-menu-link" href={{ .Path.ApiMatches }}>Матчи</a>
             </li>
         </ul>

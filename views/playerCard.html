@@ -1,15 +1,15 @@
 {{template "partials/header" .}}
 <div id="main">
     <div class="header">
-        <h1>{{ .Data.Player.Name }}</h1>
+        <h1>{{ .Data.PlayerCard.Player.Name }}</h1>
         <h2>Карточка игрока</h2>
     </div>
 
     <div class="content">
         <p>
-            Рейтинг: {{ .Data.Player.EloRating }}<br>
-            Зарегистрирован: {{ FormatDate .Data.Player.RegisteredAt }}<br>
-            Всего игр: {{ .Data.Player.GamesPlayed }}<br>
+            Рейтинг: {{ .Data.PlayerCard.Player.EloRating }}<br>
+            Зарегистрирован: {{ FormatDate .Data.PlayerCard.Player.RegisteredAt }}<br>
+            Всего игр: {{ .Data.PlayerCard.Player.GamesPlayed }}<br>
         </p>
         <p>Игры:</p>
         <table class="pure-table pure-table-striped pure-table-horizontal">
@@ -22,7 +22,7 @@
                 </tr>
             </thead>
             <tbody>
-                {{ range $key, $value := .Data.Results }}
+                {{ range $key, $value := .Data.PlayerCard.Results }}
                     <tr>
                         <td><a href="/api/players/{{ $key }}">{{$value.Player.Name}}</a></td>
                         <td>{{$value.Player.EloRating}}</td>
