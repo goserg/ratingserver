@@ -9,3 +9,7 @@ table {
 .content > table:first-child {
     margin: 50px auto auto;
 }
+
+.color-red {
+    color: red;
+}
