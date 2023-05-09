@@ -1,19 +1,33 @@
-<div class="container">
+{{template "partials/header" .}}
+<div id="main">
+    <div class="header">
+        <h1>Войти</h1>
+    </div>
 
-    <form id="signin-form" method="post">
-        <input type="text" name="username" id="username-field" class="signin-form-field" placeholder="Username">
-        <input type="password" name="password" id="password-field" class="signin-form-field" placeholder="Password">
-        <button class="btn waves-effect waves-light" id="signin-form-submit" type="submit" name="create">Sign In</button>
-        <a id="signin-signup" class="waves-effect waves-teal btn-flat" href={{ .Path.SignUp }}>Sign Up</a>
-        {{ if .Errors }}
-        <p id="error-message" class="border-red red-text text-darken-2">
-            Ошибка:<br>
-        {{ range .Errors }}
-        {{ . }}<br>
-        {{ end }}
-        </p>
-        {{ end }}
-
-    </form>
-
+    <div class="content">
+        <form class="pure-form pure-form-aligned" id="signin-form" method="post">
+            <fieldset>
+                <div class="pure-control-group">
+                    <label for="signin-form-username">Имя</label>
+                    <input type="text" name="username" id="signin-form-username" placeholder="Имя пользователя">
+                </div>
+                <div class="pure-control-group">
+                    <label for="signin-form-password">Пароль</label>
+                    <input type="password" name="password" id="signin-form-password" placeholder="Пароль пользователя">
+                </div>
+                <div class="pure-controls">
+                    <button class="pure-button pure-button-primary" id="signin-form-submit" type="submit" name="create">Sign In</button>
+                    <a class="pure-button" id="signin-signup" href={{ .Path.SignUp }}>Зарегистрироваться</a>
+                    {{ if .Errors }}
+                        <p id="error-message">
+                            Ошибка:<br>
+                            {{ range .Errors }}
+                                {{ . }}<br>
+                            {{ end }}
+                        </p>
+                    {{ end }}
+                </div>
+            </fieldset>
+        </form>
+    </div>
 </div>

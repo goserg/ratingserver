@@ -48,6 +48,7 @@ func New(ps *service.PlayerService, cfg config.Server, authService *authservice.
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
+	app.Static("/", "./static")
 	app.Use(webpath.Api, func(c *fiber.Ctx) error {
 		tokenCookie := c.Cookies("token")
 		user, err := authService.Auth(c.Context(), tokenCookie, c.Method(), c.OriginalURL())

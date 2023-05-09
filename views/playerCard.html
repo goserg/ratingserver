@@ -1,34 +1,37 @@
 {{template "partials/header" .}}
-<div class="container">
+<div id="main">
+    <div class="header">
+        <h1>{{ .Data.Player.Name }}</h1>
+        <h2>Карточка игрока</h2>
+    </div>
 
-    <div class="container">
-        <h4>{{ .Data.Player.Name }}</h4>
+    <div class="content">
         <p>
             Рейтинг: {{ .Data.Player.EloRating }}<br>
             Зарегистрирован: {{ FormatDate .Data.Player.RegisteredAt }}<br>
-            Игр сыграно: {{ .Data.Player.GamesPlayed }}<br>
+            Всего игр: {{ .Data.Player.GamesPlayed }}<br>
         </p>
-        <h5>Игры:</h5>
-    </div>
-
-    <div class="container">
-        <table class="striped">
-            <tr>
-                <th>Имя</th>
-                <th>Рейтинг</th>
-                <th>Побед</th>
-                <th>Поражений</th>
-            </tr>
-            {{ range $key, $value := .Data.Results }}
-            <tr>
-                <td><a href="/api/players/{{ $key }}">{{$value.Player.Name}}</a></td>
-                <td>{{$value.Player.EloRating}}</td>
-                <td>{{$value.Wins}}</td>
-                <td>{{$value.Loses}}</td>
-            </tr>
-            {{ end }}
+        <p>Игры:</p>
+        <table class="pure-table pure-table-horizontal">
+            <thead>
+                <tr>
+                    <th>Имя</th>
+                    <th>Рейтинг</th>
+                    <th>Побед</th>
+                    <th>Поражений</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{ range $key, $value := .Data.Results }}
+                    <tr>
+                        <td><a href="/api/players/{{ $key }}">{{$value.Player.Name}}</a></td>
+                        <td>{{$value.Player.EloRating}}</td>
+                        <td>{{$value.Wins}}</td>
+                        <td>{{$value.Loses}}</td>
+                    </tr>
+                {{ end }}
+            </tbody>
         </table>
     </div>
-
 </div>
 {{template "partials/footer" .}}
