@@ -95,12 +95,11 @@ const userKey = "user"
 func (s *Server) handleMain(ctx *fiber.Ctx) error {
 	user, _ := ctx.Context().UserValue(userKey).(users.User)
 	globalRating := s.playerService.GetRatings()
-	return ctx.Render("index", fiber.Map(
-		NewData("Рейтинг").
-			User(user).
-			Data("Button", "rating").
-			Data("Players", globalRating),
-	), "layouts/main")
+	return ctx.Render("index", Data("Рейтинг").
+		WithUser(user).
+		With("Button", "rating").
+		With("Players", globalRating),
+		"layouts/main")
 }
 
 func (s *Server) handleMatches(ctx *fiber.Ctx) error {
@@ -109,20 +108,17 @@ func (s *Server) handleMatches(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return ctx.Render("matches", fiber.Map(
-		NewData("Список матчей").
-			User(user).
-			Data("Button", "matches").
-			Data("Matches", matches),
-	), "layouts/main")
+	return ctx.Render("matches",
+		Data("Список матчей").
+			WithUser(user).
+			With("Button", "matches").
+			With("Matches", matches),
+		"layouts/main")
 }
 
 func (s *Server) handleCreateMatchGet(ctx *fiber.Ctx) error {
 	user, _ := ctx.Context().UserValue(userKey).(users.User)
-	return ctx.Render("newMatch", fiber.Map(
-		NewData("Добавить игру").
-			User(user),
-	), "layouts/main")
+	return ctx.Render("newMatch", Data("Добавить игру").WithUser(user), "layouts/main")
 }
 
 func (s *Server) handleCreateMatchPost(ctx *fiber.Ctx) error {
@@ -160,22 +156,20 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	data, err := s.playerService.GetPlayerData(id)
+	card, err := s.playerService.GetPlayerData(id)
 	if err != nil {
 		return err
 	}
-	return ctx.Render("playerCard", fiber.Map(
-		NewData(data.Player.Name).
-			User(user).
-			Data("Data", data).
-			Data("Button", "playerCard"),
-	), "layouts/main")
+	return ctx.Render("playerCard",
+		Data(card.Player.Name).
+			WithUser(user).
+			With("PlayerCard", card).
+			With("Button", "playerCard"),
+		"layouts/main")
 }
 
 func (s *Server) HandleGetSignIn(ctx *fiber.Ctx) error {
-	return ctx.Render("signin", fiber.Map(
-		NewData("Войти"),
-	), "layouts/main")
+	return ctx.Render("signin", Data("Войти"), "layouts/main")
 }
 
 type signInRequest struct {
@@ -183,19 +177,19 @@ type signInRequest struct {
 	password string
 }
 
-func parseSignInRequest(ctx *fiber.Ctx) (signInRequest, []error) {
-	var errs []error
+func parseSignInRequest(ctx *fiber.Ctx) (signInRequest, []string) {
+	var errs []string
 	name := ctx.FormValue("username", "")
 	if name == "" {
-		errs = append(errs, errors.New("имя пользователя не должно быть пустое"))
+		errs = append(errs, "имя пользователя не должно быть пустое")
 	}
 	nameRegexp := regexp.MustCompile("^[A-Za-z]\\w+$")
 	if !nameRegexp.MatchString(name) {
-		errs = append(errs, errors.New("имя пользователя должно начинаться с латинской буквы и содержать только латинские буквы, цифры и знаки подчеркивания"))
+		errs = append(errs, "имя пользователя должно начинаться с латинской буквы и содержать только латинские буквы, цифры и знаки подчеркивания")
 	}
 	password := ctx.FormValue("password", "")
 	if password == "" {
-		errs = append(errs, errors.New("пароль пользователя не должн быть пустым"))
+		errs = append(errs, "пароль пользователя не должн быть пустым")
 	}
 	if errs != nil {
 		return signInRequest{}, errs
@@ -210,35 +204,30 @@ func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
 	req, errs := parseSignInRequest(ctx)
 	if errs != nil {
 		ctx.Status(fiber.StatusBadRequest)
-		return ctx.Render("signin", fiber.Map(
-			NewData("Войти").
-				Errors(errs...),
-		), "layouts/main")
+		return ctx.Render("signin", Data("Войти").WithErrors(errs...), "layouts/main")
 	}
 	user, err := s.auth.Login(ctx.Context(), req.name, req.password)
 	if err != nil {
 		ctx.Status(fiber.StatusUnauthorized)
-		return ctx.Render("signin", fiber.Map(
-			NewData("Войти").
-				Errors(err),
-		), "layouts/main")
+		return ctx.Render("signin",
+			Data("Войти").
+				WithErrors(err.Error()),
+			"layouts/main")
 	}
 	cookie, err := s.auth.GenerateJWTCookie(user.ID, s.cfg.Host)
 	if err != nil {
 		ctx.Status(fiber.StatusUnauthorized)
-		return ctx.Render("signin", fiber.Map(
-			NewData("Войти").
-				Errors(err),
-		), "layouts/main")
+		return ctx.Render("signin",
+			Data("Войти").
+				WithErrors(err.Error()),
+			"layouts/main")
 	}
 	ctx.Cookie(cookie)
 	return ctx.Redirect(webpath.ApiHome)
 }
 
 func (s *Server) HandleGetSignup(ctx *fiber.Ctx) error {
-	return ctx.Render("signup", fiber.Map(
-		NewData("Зарегистрироваться"),
-	), "layouts/main")
+	return ctx.Render("signup", Data("Зарегистрироваться"), "layouts/main")
 }
 
 func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
@@ -261,9 +250,7 @@ func (s *Server) HandleSignOut(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) handleNewPlayerGet(ctx *fiber.Ctx) error {
-	return ctx.Render("newPlayer", fiber.Map(
-		NewData("Добавить игрока"),
-	), "layouts/main")
+	return ctx.Render("newPlayer", Data("Добавить игрока"), "layouts/main")
 }
 
 func (s *Server) handleNewPlayerPost(ctx *fiber.Ctx) error {

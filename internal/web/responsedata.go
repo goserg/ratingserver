@@ -5,34 +5,35 @@ import (
 	"ratingserver/internal/web/webpath"
 )
 
-type Data map[string]any
+type data struct {
+	Title  string
+	Path   map[string]string
+	User   users.User
+	Errors []string
+	Data   map[string]any
+}
 
-func NewData(title string) Data {
-	return Data{
-		"Title": title,
-		"Path":  webpath.Path(),
+func Data(title string) data {
+	return data{
+		Title: title,
+		Path:  webpath.Path(),
 	}
 }
 
-func (m Data) User(user users.User) Data {
-	m["User"] = user
+func (m data) WithUser(user users.User) data {
+	m.User = user
 	return m
 }
 
-func (m Data) Data(key string, value any) Data {
-	m[key] = value
+func (m data) With(key string, value any) data {
+	if m.Data == nil {
+		m.Data = make(map[string]any)
+	}
+	m.Data[key] = value
 	return m
 }
 
-func (m Data) Errors(errs ...error) Data {
-	e, ok := m["Erorrs"]
-	if !ok {
-	}
-	ers, ok := e.([]error)
-	if !ok {
-		m["Errors"] = errs
-		return m
-	}
-	m["Errors"] = append(ers, errs...)
+func (m data) WithErrors(errs ...string) data {
+	m.Errors = append(m.Errors, errs...)
 	return m
 }
