@@ -12,5 +12,5 @@ func TestMain(m *testing.M) {
 }
 
 func Test1(t *testing.T) {
-	suite.Run(t, &TestSuite1{})
+	suite.Run(t, &Suite{})
 }
