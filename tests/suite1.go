@@ -84,7 +84,7 @@ func (s *TestSuite1) TearDownSuite() {
 	}
 }
 
-const globalTestsTimeoutSeconds = 600
+const globalTestsTimeoutSeconds = 5
 
 func (s *TestSuite1) TestHandlers() {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
