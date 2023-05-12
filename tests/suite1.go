@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type TestSuite1 struct {
+type Suite struct {
 	suite.Suite
 	process *Process
 
@@ -30,7 +30,7 @@ type TestSuite1 struct {
 }
 
 // SetupSuite подготавливает необходимые зависимости
-func (s *TestSuite1) SetupSuite() {
+func (s *Suite) SetupSuite() {
 	cfg, err := config.New()
 	if err != nil {
 		s.T().Fatalf("can't get configs")
@@ -52,7 +52,7 @@ func (s *TestSuite1) SetupSuite() {
 	}
 }
 
-func (s *TestSuite1) waitForStartup(duration time.Duration) error {
+func (s *Suite) waitForStartup(duration time.Duration) error {
 	ctx, cancel := context.WithTimeout(context.Background(), duration)
 	defer cancel()
 
@@ -71,7 +71,7 @@ func (s *TestSuite1) waitForStartup(duration time.Duration) error {
 }
 
 // TearDownSuite высвобождает имеющиеся зависимости
-func (s *TestSuite1) TearDownSuite() {
+func (s *Suite) TearDownSuite() {
 	exitCode, err := s.process.Stop()
 	if err != nil {
 		s.T().Logf("cant stop process: %v", err)
@@ -86,100 +86,134 @@ func (s *TestSuite1) TearDownSuite() {
 
 const globalTestsTimeoutSeconds = 5
 
-func (s *TestSuite1) TestHandlers() {
+func (s *Suite) TestRatings() {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
-	err := chromedp.Run(ctx,
-		s.CheckAccessDenied(webpath.ApiNewMatch),
-		s.CheckAccessDenied(webpath.ApiNewPlayer),
-		s.CheckAccessGranted(webpath.Home),
-		s.CheckAccessGranted(webpath.Api),
-		s.CheckAccessGranted(webpath.ApiMatchesList),
-		s.CheckAccessGranted(webpath.Signin),
-		s.CheckAccessGranted(webpath.Signup),
-		s.CheckAccessGranted(webpath.Signout),
-		s.SignIn(auth.Root, s.config.Server.Auth.RootPassword),
-		s.CheckAccessGranted(webpath.ApiNewMatch),
-		s.CheckAccessGranted(webpath.ApiNewPlayer),
-		s.CheckAccessGranted(webpath.Home),
-		s.CheckAccessGranted(webpath.Api),
-		s.CheckAccessGranted(webpath.ApiMatchesList),
-		s.CheckAccessGranted(webpath.Signin),
-		s.CheckAccessGranted(webpath.Signup),
-		s.CheckAccessGranted(webpath.Signout),
-		s.SignIn(auth.Root, s.config.Server.Auth.RootPassword),
-		s.NewPlayer("Иван"),
-		s.NewPlayer("Артём"),
-		s.NewPlayer("Мария"),
-		s.CheckPlayersExist("Иван", "Артём", "Мария"),
-		s.NewGame("Иван", "Артём", false),
-		s.NewGame("Иван", "Мария", false),
-		s.NewGame("Иван", "Мария", true),
-		s.NewGame("Артём", "Иван", false),
-		s.NewGame("Мария", "Артём", false),
-		s.CheckPlayersStats(),
-		s.CreateUser("user1", "qwerty"),
-		s.SignIn("user1", "qwerty"),
-		s.CheckAccessDenied(webpath.ApiNewMatch),
-		s.CheckAccessDenied(webpath.ApiNewPlayer),
-		s.CheckAccessGranted(webpath.Home),
-		s.CheckAccessGranted(webpath.Api),
-		s.CheckAccessGranted(webpath.ApiMatchesList),
-		s.CheckAccessGranted(webpath.Signin),
-		s.CheckAccessGranted(webpath.Signup),
-		s.CheckAccessGranted(webpath.Signout),
-		s.CheckLink(webpath.ApiHome, sel.NavMatchesLink, webpath.ApiMatchesList),
-		s.CheckLink(webpath.ApiHome, sel.NavPlayersLink, webpath.ApiHome),
-		s.CheckLink(webpath.ApiMatchesList, sel.NavMatchesLink, webpath.ApiMatchesList),
-		s.CheckLink(webpath.ApiMatchesList, sel.NavPlayersLink, webpath.ApiHome),
-		s.CheckLink(webpath.Signup, sel.SignUpToSignInLink, webpath.Signin),
-		s.CheckLink(webpath.Signin, sel.SignInToSignUpLink, webpath.Signup),
-		s.CheckInvalidSignInForm(),
-	)
-	if err != nil {
-		s.T().Fatalf(err.Error())
-	}
+
+	s.SignIn(ctx, auth.Root, s.config.Server.Auth.RootPassword)
+	s.Run("creating players", func() {
+		s.NewPlayer(ctx, "Иван")
+		s.NewPlayer(ctx, "Артём")
+		s.NewPlayer(ctx, "Мария")
+		s.CheckPlayersExist(ctx, "Иван", "Артём", "Мария")
+	})
+	s.Run("creating games", func() {
+		s.NewGame(ctx, "Иван", "Артём", false)
+		s.NewGame(ctx, "Иван", "Мария", false)
+		s.NewGame(ctx, "Иван", "Мария", true)
+		s.NewGame(ctx, "Артём", "Иван", false)
+		s.NewGame(ctx, "Мария", "Артём", false)
+	})
+	s.Run("check ratings", func() {
+		s.CheckPlayersStats(ctx)
+	})
 }
 
-func (s *TestSuite1) CheckAccessDenied(path string) chromedp.Tasks {
-	s.T().Logf("Проверка на закрытый доступ к %s", path)
-	return []chromedp.Action{
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			resp, err := chromedp.RunResponse(ctx,
-				chromedp.Navigate(s.addr+path))
-			if err != nil {
-				return err
-			}
-			if resp.Status != http.StatusForbidden {
-				s.T().Errorf("Доступ к %s должен быть запрещен (статус 403), сервер ответил статуом %d", path, resp.Status)
-			}
-			return nil
-		}),
-	}
+func (s *Suite) TestInvalidFormInput() {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+
+	s.Run("signin form", func() {
+		s.CheckInvalidSignInForm(ctx)
+	})
 }
 
-func (s *TestSuite1) CheckAccessGranted(path string) chromedp.Tasks {
-	s.T().Logf("Проверка на разрешенный доступ к %s", path)
-	return []chromedp.Action{
-		chromedp.ActionFunc(func(ctx context.Context) error {
-			resp, err := chromedp.RunResponse(ctx,
-				chromedp.Navigate(s.addr+path))
-			if err != nil {
-				return err
-			}
-			if resp.Status != http.StatusOK {
-				s.T().Errorf("Доступ к %s должен быть разрешен (статус 200), сервер ответил статуом %d", path, resp.Status)
-			}
-			return nil
-		}),
-	}
+func (s *Suite) TestRootAccess() {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+
+	s.SignIn(ctx, auth.Root, s.config.Server.Auth.RootPassword)
+	s.CheckAccessGranted(ctx, webpath.ApiNewMatch)
+	s.CheckAccessGranted(ctx, webpath.ApiNewPlayer)
+	s.CheckAccessGranted(ctx, webpath.Home)
+	s.CheckAccessGranted(ctx, webpath.Api)
+	s.CheckAccessGranted(ctx, webpath.ApiMatchesList)
+	s.CheckAccessGranted(ctx, webpath.Signin)
+	s.CheckAccessGranted(ctx, webpath.Signup)
+	s.CheckAccessGranted(ctx, webpath.Signout)
+}
+
+func (s *Suite) TestGuestAccess() {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+	// TODO прверить что это действительно гость
+	s.CheckAccessDenied(ctx, webpath.ApiNewMatch)
+	s.CheckAccessDenied(ctx, webpath.ApiNewPlayer)
+	s.CheckAccessGranted(ctx, webpath.Home)
+	s.CheckAccessGranted(ctx, webpath.Api)
+	s.CheckAccessGranted(ctx, webpath.ApiMatchesList)
+	s.CheckAccessGranted(ctx, webpath.Signin)
+	s.CheckAccessGranted(ctx, webpath.Signup)
+	s.CheckAccessGranted(ctx, webpath.Signout)
+}
+
+func (s *Suite) TestNewUser() {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+
+	s.CreateUser(ctx, "user1", "qwerty")
+	s.SignIn(ctx, "user1", "qwerty")
+	s.CheckAccessDenied(ctx, webpath.ApiNewMatch)
+	s.CheckAccessDenied(ctx, webpath.ApiNewPlayer)
+	s.CheckAccessGranted(ctx, webpath.Home)
+	s.CheckAccessGranted(ctx, webpath.Api)
+	s.CheckAccessGranted(ctx, webpath.ApiMatchesList)
+	s.CheckAccessGranted(ctx, webpath.Signin)
+	s.CheckAccessGranted(ctx, webpath.Signup)
+	s.CheckAccessGranted(ctx, webpath.Signout)
+}
+
+func (s *Suite) TestLinks() {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+	s.Run("main to matches", func() {
+		s.CheckLink(ctx, webpath.ApiHome, sel.NavMatchesLink, webpath.ApiMatchesList)
+	})
+
+	s.Run("main to players", func() {
+		s.CheckLink(ctx, webpath.ApiHome, sel.NavPlayersLink, webpath.ApiHome)
+	})
+
+	s.Run("matches to matches", func() {
+		s.CheckLink(ctx, webpath.ApiMatchesList, sel.NavMatchesLink, webpath.ApiMatchesList)
+	})
+	s.Run("matches to players", func() {
+		s.CheckLink(ctx, webpath.ApiMatchesList, sel.NavPlayersLink, webpath.ApiHome)
+	})
+	s.Run("signup to signin", func() {
+		s.CheckLink(ctx, webpath.Signup, sel.SignUpToSignInLink, webpath.Signin)
+	})
+	s.Run("signin to signup", func() {
+		s.CheckLink(ctx, webpath.Signin, sel.SignInToSignUpLink, webpath.Signup)
+	})
+}
+
+func (s *Suite) CheckAccessDenied(ctx context.Context, path string) {
+	s.T().Helper()
+	resp, err := chromedp.RunResponse(ctx,
+		chromedp.Navigate(s.addr+path))
+	s.Require().NoError(err)
+	s.Require().EqualValues(http.StatusForbidden, resp.Status)
+}
+
+func (s *Suite) CheckAccessGranted(ctx context.Context, path string) {
+	s.T().Helper()
+	resp, err := chromedp.RunResponse(ctx,
+		chromedp.Navigate(s.addr+path))
+	s.Require().NoError(err)
+	s.Require().EqualValues(http.StatusOK, resp.Status)
 }
 
 const screenshotQuality = 80
 const screenshotFilePermission = 0o644
 
-func (s *TestSuite1) Screenshot(filename string) chromedp.ActionFunc {
+func (s *Suite) Screenshot(filename string) chromedp.ActionFunc {
 	return func(ctx context.Context) error {
 		var screenShot []byte
 		if err := chromedp.FullScreenshot(&screenShot, screenshotQuality).Do(ctx); err != nil {
@@ -192,26 +226,28 @@ func (s *TestSuite1) Screenshot(filename string) chromedp.ActionFunc {
 	}
 }
 
-func (s *TestSuite1) NewPlayer(name string) chromedp.Tasks {
-	s.T().Logf("Создание игрока %s", name)
-	return []chromedp.Action{
+func (s *Suite) NewPlayer(ctx context.Context, name string) {
+	s.T().Helper()
+	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiNewPlayer),
 		chromedp.SendKeys(sel.NewPlayerFormName, name),
 		s.wait200(chromedp.Submit(sel.NewPlayerFormSubmit)),
-	}
+	}))
+	s.Require().NoError(err)
 }
 
-func (s *TestSuite1) SignIn(user, password string) chromedp.Tasks {
-	s.T().Logf("Логин как %q", user)
-	return []chromedp.Action{
+func (s *Suite) SignIn(ctx context.Context, user, password string) {
+	s.T().Helper()
+	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.Signin),
 		chromedp.SendKeys(sel.SignInFormUsername, user),
 		chromedp.SendKeys(sel.SignInFormPassword, password),
 		s.wait200(chromedp.Submit(sel.SignInFormSubmit)),
-	}
+	}))
+	s.Require().NoError(err)
 }
 
-func (s *TestSuite1) cleanupDB() error {
+func (s *Suite) cleanupDB() error {
 	err := errors.Join(
 		os.Remove(s.config.Server.SqliteFile),
 		os.Remove(s.config.Server.Auth.SqliteFile),
@@ -222,10 +258,10 @@ func (s *TestSuite1) cleanupDB() error {
 	return err
 }
 
-func (s *TestSuite1) CheckPlayersExist(names ...string) chromedp.Tasks {
+func (s *Suite) CheckPlayersExist(ctx context.Context, names ...string) {
+	s.T().Helper()
 	expectedNames := mapset.NewSet(names...)
-	s.T().Log("Проверяем, что игроки создались")
-	return []chromedp.Action{
+	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiHome),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var nodes []*cdp.Node
@@ -247,18 +283,13 @@ func (s *TestSuite1) CheckPlayersExist(names ...string) chromedp.Tasks {
 			}
 			return nil
 		}),
-	}
+	}))
+	s.Require().NoError(err)
 }
 
-func (s *TestSuite1) NewGame(winner string, loser string, draw bool) chromedp.Tasks {
-	winnerPoints := 1.0
-	loserPoints := 0.0
-	if draw {
-		winnerPoints = 0.5
-		loserPoints = 0.5
-	}
-	s.T().Logf("Создание новой игры: %s %.1f:%.1f %s", winner, winnerPoints, loserPoints, loser)
-	return []chromedp.Action{
+func (s *Suite) NewGame(ctx context.Context, winner string, loser string, draw bool) {
+	s.T().Helper()
+	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiNewMatch),
 		chromedp.SendKeys(sel.NewMatchFormWinner, winner),
 		chromedp.SendKeys(sel.NewMatchFormLoser, loser),
@@ -269,10 +300,11 @@ func (s *TestSuite1) NewGame(winner string, loser string, draw bool) chromedp.Ta
 			return chromedp.Click(sel.NewMatchFormDraw).Do(ctx)
 		}),
 		s.wait200(chromedp.Submit(sel.NewMatchFormSubmit)),
-	}
+	}))
+	s.Require().NoError(err)
 }
 
-func (s *TestSuite1) wait200(action chromedp.Action) chromedp.Action {
+func (s *Suite) wait200(action chromedp.Action) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		resp, err := chromedp.RunResponse(ctx, action)
 		if err != nil {
@@ -312,8 +344,8 @@ func PlayerStatsFromString(str string) (PlayerStats, error) {
 	}, nil
 }
 
-func (s *TestSuite1) CheckPlayersStats() chromedp.Tasks {
-	s.T().Logf("Проверка правильности содания игр")
+func (s *Suite) CheckPlayersStats(ctx context.Context) {
+	s.T().Helper()
 	expectedStats := mapset.NewSet[PlayerStats](
 		PlayerStats{
 			Name:        "Иван",
@@ -331,7 +363,7 @@ func (s *TestSuite1) CheckPlayersStats() chromedp.Tasks {
 			EloRating:   1005,
 		},
 	)
-	return []chromedp.Action{
+	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		chromedp.Navigate(s.addr),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			var nodes []*cdp.Node
@@ -357,23 +389,25 @@ func (s *TestSuite1) CheckPlayersStats() chromedp.Tasks {
 			}
 			return nil
 		}),
-	}
+	}))
+	s.Require().NoError(err)
 }
 
-func (s *TestSuite1) CreateUser(name, password string) chromedp.Tasks {
-	s.T().Logf("Создание нового пользователя %q", name)
-	return []chromedp.Action{
+func (s *Suite) CreateUser(ctx context.Context, name, password string) {
+	s.T().Helper()
+	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.Signup),
 		chromedp.SendKeys(sel.SignUpFormUsername, name),
 		chromedp.SendKeys(sel.SignUpFormPassword, password),
 		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, password),
 		s.wait200(chromedp.Submit(sel.SignUpFormSubmit)),
-	}
+	}))
+	s.Require().NoError(err)
 }
 
-func (s *TestSuite1) CheckLink(from string, selector string, expectTarget string) chromedp.Tasks {
-	s.T().Logf("Проверка ссылки %q на странице %s", selector, from)
-	return []chromedp.Action{
+func (s *Suite) CheckLink(ctx context.Context, from string, selector string, expectTarget string) {
+	s.T().Helper()
+	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		s.wait200(chromedp.Navigate(s.addr + from)),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			resp, err := chromedp.RunResponse(ctx, chromedp.Click(selector))
@@ -388,10 +422,13 @@ func (s *TestSuite1) CheckLink(from string, selector string, expectTarget string
 			}
 			return nil
 		}),
+	}))
+	if err != nil {
+		s.T().Fatal(err.Error())
 	}
 }
 
-func (s *TestSuite1) expectBadRequest(action chromedp.Action) chromedp.Action {
+func (s *Suite) expectBadRequest(action chromedp.Action) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		resp, err := chromedp.RunResponse(ctx, action)
 		if err != nil {
@@ -405,9 +442,9 @@ func (s *TestSuite1) expectBadRequest(action chromedp.Action) chromedp.Action {
 	})
 }
 
-func (s *TestSuite1) CheckInvalidSignInForm() chromedp.Tasks {
-	s.T().Logf("Проверка на невалидный ввод в форме SignIn")
-	return []chromedp.Action{
+func (s *Suite) CheckInvalidSignInForm(ctx context.Context) {
+	s.T().Helper()
+	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		// пустые поля
 		chromedp.Navigate(s.addr + webpath.Signin),
 		s.expectBadRequest(chromedp.Submit(sel.SignInFormSubmit)),
@@ -433,5 +470,6 @@ func (s *TestSuite1) CheckInvalidSignInForm() chromedp.Tasks {
 		chromedp.SendKeys(sel.SignInFormUsername, "Dawd%awd"),
 		chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
 		s.expectBadRequest(chromedp.Submit(sel.SignInFormSubmit)),
-	}
+	}))
+	s.Require().NoError(err)
 }
