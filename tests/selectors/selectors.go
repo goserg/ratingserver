@@ -21,11 +21,11 @@ const (
 	SignUpFormSubmit         = "#signup-form-submit"
 	SignUpToSignInLink       = "a#signup-signin"
 
-	SignInFormUsername = "#username-field"
-	SignInFormPassword = "#password-field"
+	SignInFormUsername = "#signin-form-username"
+	SignInFormPassword = "#signin-form-password"
 	SignInFormSubmit   = "#signin-form-submit"
 	SignInToSignUpLink = "a#signin-signup"
 
-	NavPlayersLink = "#nav-players a"
-	NavMatchesLink = "#nav-matches a"
+	NavPlayersLink = "#nav-rating-link"
+	NavMatchesLink = "#nav-matches-link"
 )

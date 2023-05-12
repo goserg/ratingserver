@@ -231,7 +231,7 @@ func (s *Server) HandleGetSignup(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
-	name := ctx.FormValue("name", "")
+	name := ctx.FormValue("username", "")
 	password := ctx.FormValue("password", "")
 	passwordRepeat := ctx.FormValue("password-repeat", "")
 	if password != passwordRepeat {
