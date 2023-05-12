@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -120,7 +121,7 @@ func (s *Suite) TestInvalidFormInput() {
 	})
 }
 
-func (s *Suite) TestRootAccess() {
+func (s *Suite) TestAccessRoot() {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
@@ -136,7 +137,7 @@ func (s *Suite) TestRootAccess() {
 	s.CheckAccessGranted(ctx, webpath.Signout)
 }
 
-func (s *Suite) TestGuestAccess() {
+func (s *Suite) TestAccessGuest() {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
@@ -151,13 +152,14 @@ func (s *Suite) TestGuestAccess() {
 	s.CheckAccessGranted(ctx, webpath.Signout)
 }
 
-func (s *Suite) TestNewUser() {
+func (s *Suite) TestAccessUser() {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
 
-	s.CreateUser(ctx, "user1", "qwerty")
-	s.SignIn(ctx, "user1", "qwerty")
+	u := randomUsername()
+	s.CreateUser(ctx, u, "qwerty")
+	s.SignIn(ctx, u, "qwerty")
 	s.CheckAccessDenied(ctx, webpath.ApiNewMatch)
 	s.CheckAccessDenied(ctx, webpath.ApiNewPlayer)
 	s.CheckAccessGranted(ctx, webpath.Home)
@@ -166,6 +168,36 @@ func (s *Suite) TestNewUser() {
 	s.CheckAccessGranted(ctx, webpath.Signin)
 	s.CheckAccessGranted(ctx, webpath.Signup)
 	s.CheckAccessGranted(ctx, webpath.Signout)
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+func randomUsername() string {
+	b := make([]byte, 15)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
+}
+
+func (s *Suite) TestNewUser() {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+
+	u := randomUsername()
+	s.CreateUser(ctx, u, "qwerty")
+	s.SignIn(ctx, u, "qwerty")
+}
+
+func (s *Suite) TestUserCreateUniqueName() {
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
+	ctx, cancel := chromedp.NewContext(ctx)
+	defer cancel()
+
+	u := randomUsername()
+	s.CreateUser(ctx, u, "qwerty")
+	s.CreateUserMustFail(ctx, u, "qwerty2") // FIXME нет проверки на уникальность
 }
 
 func (s *Suite) TestLinks() {
@@ -231,7 +263,7 @@ func (s *Suite) NewPlayer(ctx context.Context, name string) {
 	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiNewPlayer),
 		chromedp.SendKeys(sel.NewPlayerFormName, name),
-		s.wait200(chromedp.Submit(sel.NewPlayerFormSubmit)),
+		s.waitStatus(chromedp.Submit(sel.NewPlayerFormSubmit), http.StatusOK),
 	}))
 	s.Require().NoError(err)
 }
@@ -242,7 +274,7 @@ func (s *Suite) SignIn(ctx context.Context, user, password string) {
 		chromedp.Navigate(s.addr + webpath.Signin),
 		chromedp.SendKeys(sel.SignInFormUsername, user),
 		chromedp.SendKeys(sel.SignInFormPassword, password),
-		s.wait200(chromedp.Submit(sel.SignInFormSubmit)),
+		s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusOK),
 	}))
 	s.Require().NoError(err)
 }
@@ -299,20 +331,16 @@ func (s *Suite) NewGame(ctx context.Context, winner string, loser string, draw b
 			}
 			return chromedp.Click(sel.NewMatchFormDraw).Do(ctx)
 		}),
-		s.wait200(chromedp.Submit(sel.NewMatchFormSubmit)),
+		s.waitStatus(chromedp.Submit(sel.NewMatchFormSubmit), http.StatusOK),
 	}))
 	s.Require().NoError(err)
 }
 
-func (s *Suite) wait200(action chromedp.Action) chromedp.Action {
+func (s *Suite) waitStatus(action chromedp.Action, status int) chromedp.Action {
 	return chromedp.ActionFunc(func(ctx context.Context) error {
 		resp, err := chromedp.RunResponse(ctx, action)
-		if err != nil {
-			return err
-		}
-		if resp.Status != http.StatusOK {
-			return fmt.Errorf("ожидалось 200, результат %d", resp.Status)
-		}
+		s.Require().NoError(err)
+		s.Require().EqualValues(status, resp.Status)
 		return nil
 	})
 }
@@ -400,7 +428,19 @@ func (s *Suite) CreateUser(ctx context.Context, name, password string) {
 		chromedp.SendKeys(sel.SignUpFormUsername, name),
 		chromedp.SendKeys(sel.SignUpFormPassword, password),
 		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, password),
-		s.wait200(chromedp.Submit(sel.SignUpFormSubmit)),
+		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusOK),
+	}))
+	s.Require().NoError(err)
+}
+
+func (s *Suite) CreateUserMustFail(ctx context.Context, name, password string) {
+	s.T().Helper()
+	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+		chromedp.Navigate(s.addr + webpath.Signup),
+		chromedp.SendKeys(sel.SignUpFormUsername, name),
+		chromedp.SendKeys(sel.SignUpFormPassword, password),
+		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, password),
+		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusForbidden),
 	}))
 	s.Require().NoError(err)
 }
@@ -408,7 +448,7 @@ func (s *Suite) CreateUser(ctx context.Context, name, password string) {
 func (s *Suite) CheckLink(ctx context.Context, from string, selector string, expectTarget string) {
 	s.T().Helper()
 	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
-		s.wait200(chromedp.Navigate(s.addr + from)),
+		s.waitStatus(chromedp.Navigate(s.addr+from), http.StatusOK),
 		chromedp.ActionFunc(func(ctx context.Context) error {
 			resp, err := chromedp.RunResponse(ctx, chromedp.Click(selector))
 			if err != nil {
