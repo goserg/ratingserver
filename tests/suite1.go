@@ -7,14 +7,13 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"strconv"
-	"strings"
-	"time"
-
 	auth "ratingserver/auth/service"
 	"ratingserver/internal/config"
 	"ratingserver/internal/web/webpath"
 	sel "ratingserver/tests/selectors"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"
@@ -30,7 +29,7 @@ type Suite struct {
 	config config.Config
 }
 
-// SetupSuite подготавливает необходимые зависимости
+// SetupSuite подготавливает необходимые зависимости.
 func (s *Suite) SetupSuite() {
 	cfg, err := config.New()
 	if err != nil {
@@ -61,8 +60,16 @@ func (s *Suite) waitForStartup(duration time.Duration) error {
 	for {
 		select {
 		case <-ticker.C:
-			r, _ := http.Get(s.addr)
-			if r != nil && r.StatusCode == http.StatusOK {
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, s.addr, http.NoBody)
+			if err != nil {
+				s.T().Fatal("can not create request", err)
+			}
+			response, err := http.DefaultClient.Do(req)
+			if err != nil {
+				s.T().Log("waiting server to startup", err)
+				continue
+			}
+			if response != nil && response.StatusCode == http.StatusOK {
 				return nil
 			}
 		case <-ctx.Done():
@@ -71,7 +78,7 @@ func (s *Suite) waitForStartup(duration time.Duration) error {
 	}
 }
 
-// TearDownSuite высвобождает имеющиеся зависимости
+// TearDownSuite высвобождает имеющиеся зависимости.
 func (s *Suite) TearDownSuite() {
 	exitCode, err := s.process.Stop()
 	if err != nil {
@@ -242,8 +249,10 @@ func (s *Suite) CheckAccessGranted(ctx context.Context, path string) {
 	s.Require().EqualValues(http.StatusOK, resp.Status)
 }
 
-const screenshotQuality = 80
-const screenshotFilePermission = 0o644
+const (
+	screenshotQuality        = 80
+	screenshotFilePermission = 0o644
+)
 
 func (s *Suite) Screenshot(filename string) chromedp.ActionFunc {
 	return func(ctx context.Context) error {
@@ -319,7 +328,7 @@ func (s *Suite) CheckPlayersExist(ctx context.Context, names ...string) {
 	s.Require().NoError(err)
 }
 
-func (s *Suite) NewGame(ctx context.Context, winner string, loser string, draw bool) {
+func (s *Suite) NewGame(ctx context.Context, winner, loser string, draw bool) {
 	s.T().Helper()
 	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.ApiNewMatch),
@@ -445,7 +454,7 @@ func (s *Suite) CreateUserMustFail(ctx context.Context, name, password string) {
 	s.Require().NoError(err)
 }
 
-func (s *Suite) CheckLink(ctx context.Context, from string, selector string, expectTarget string) {
+func (s *Suite) CheckLink(ctx context.Context, from, selector, expectTarget string) {
 	s.T().Helper()
 	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		s.waitStatus(chromedp.Navigate(s.addr+from), http.StatusOK),
