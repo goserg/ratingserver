@@ -197,7 +197,7 @@ func (s *Suite) TestUserCreateUniqueName() {
 
 	u := randomUsername()
 	s.CreateUser(ctx, u, "qwerty")
-	s.CreateUserMustFail(ctx, u, "qwerty2") // FIXME нет проверки на уникальность
+	s.CreateUserMustFail(ctx, u, "qwerty2")
 }
 
 func (s *Suite) TestLinks() {
@@ -440,7 +440,7 @@ func (s *Suite) CreateUserMustFail(ctx context.Context, name, password string) {
 		chromedp.SendKeys(sel.SignUpFormUsername, name),
 		chromedp.SendKeys(sel.SignUpFormPassword, password),
 		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, password),
-		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusForbidden),
+		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
 	}))
 	s.Require().NoError(err)
 }

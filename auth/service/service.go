@@ -9,6 +9,7 @@ import (
 	"ratingserver/auth/storage"
 	"ratingserver/auth/users"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -26,6 +27,7 @@ const Root = "root"
 var (
 	ErrForbidden     = errors.New("access denied")
 	ErrNotAuthorized = errors.New("unauthorized")
+	ErrAlreadyExists = errors.New("already exists")
 )
 
 func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service, error) {
@@ -180,6 +182,9 @@ func (s *Service) SignUp(ctx context.Context, name string, password string) erro
 		RegisteredAt: time.Now(),
 	}, secret)
 	if err != nil {
+		if strings.HasPrefix(err.Error(), "UNIQUE constraint failed") {
+			return ErrAlreadyExists
+		}
 		return err
 	}
 	return nil
