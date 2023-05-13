@@ -2,12 +2,13 @@ package tgbot
 
 import (
 	"errors"
-	mapset "github.com/deckarep/golang-set/v2"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"ratingserver/bot/model"
-	"ratingserver/internal/service"
 	"strings"
 	"unicode"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/goserg/ratingserver/bot/model"
+	"github.com/goserg/ratingserver/internal/service"
 )
 
 type NewPlayerCommand struct {
@@ -18,10 +19,10 @@ func (c *NewPlayerCommand) Reset() {}
 
 func (c *NewPlayerCommand) Run(_ model.User, args string, resp *tgbotapi.MessageConfig) (bool, error) {
 	resp.ReplyMarkup = tgbotapi.NewRemoveKeyboard(true)
-	if len(args) == 0 {
+	if args == "" {
 		return false, errors.New("имя должно быть не пустое")
 	}
-	if strings.ToLower(args) == draw {
+	if strings.EqualFold(args, draw) {
 		return false, errors.New("имя " + draw + " запрещено")
 	}
 	for i, r := range args {
@@ -50,6 +51,7 @@ func (c *NewPlayerCommand) Help() string {
 func (c *NewPlayerCommand) Permission() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator)
 }
+
 func (c *NewPlayerCommand) Visibility() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator)
 }

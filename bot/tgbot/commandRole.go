@@ -2,11 +2,12 @@ package tgbot
 
 import (
 	"errors"
+	"strings"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"ratingserver/bot/botstorage"
-	"ratingserver/bot/model"
-	"strings"
+	"github.com/goserg/ratingserver/bot/botstorage"
+	"github.com/goserg/ratingserver/bot/model"
 )
 
 type RoleCommand struct {
@@ -62,6 +63,7 @@ func (c *RoleCommand) handleRole(user model.User, args string) (string, error) {
 func (c *RoleCommand) Permission() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator, model.RoleUser)
 }
+
 func (c *RoleCommand) Visibility() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator)
 }

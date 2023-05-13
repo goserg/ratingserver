@@ -2,8 +2,8 @@ package botstorage
 
 import (
 	"github.com/google/uuid"
-	"ratingserver/bot/model"
-	"ratingserver/internal/domain"
+	"github.com/goserg/ratingserver/bot/model"
+	"github.com/goserg/ratingserver/internal/domain"
 )
 
 type BotStorage interface {

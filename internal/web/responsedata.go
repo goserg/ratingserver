@@ -1,8 +1,8 @@
 package web
 
 import (
-	"ratingserver/auth/users"
-	"ratingserver/internal/web/webpath"
+	"github.com/goserg/ratingserver/auth/users"
+	"github.com/goserg/ratingserver/internal/web/webpath"
 )
 
 type data struct {

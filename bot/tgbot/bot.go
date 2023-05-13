@@ -4,13 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"log"
-	"ratingserver/bot/botstorage"
-	botmodel "ratingserver/bot/model"
-	"ratingserver/internal/config"
-	"ratingserver/internal/service"
 	"time"
+
+	"github.com/goserg/ratingserver/bot/botstorage"
+	botmodel "github.com/goserg/ratingserver/bot/model"
+	"github.com/goserg/ratingserver/internal/config"
+	"github.com/goserg/ratingserver/internal/service"
+	"github.com/sirupsen/logrus"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -34,7 +35,7 @@ const draw = "ничья"
 var ErrBadRequest = errors.New("неизвестная команда")
 
 func New(ps *service.PlayerService, bs botstorage.BotStorage, cfg config.Config, log *logrus.Logger) (Bot, error) {
-	bot, err := tgbotapi.NewBotAPI(cfg.TgBot.TelegramApiToken)
+	bot, err := tgbotapi.NewBotAPI(cfg.TgBot.TelegramAPIToken)
 	if err != nil {
 		return Bot{}, fmt.Errorf("env TELEGRAM_APITOKEN: %w", err)
 	}
@@ -96,7 +97,6 @@ func (b *Bot) Run() {
 		case update := <-updates:
 			b.handleMessage(update)
 		}
-
 	}
 }
 

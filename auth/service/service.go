@@ -6,11 +6,12 @@ import (
 	"crypto/sha256"
 	"database/sql"
 	"errors"
-	"ratingserver/auth/storage"
-	"ratingserver/auth/users"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/goserg/ratingserver/auth/storage"
+	"github.com/goserg/ratingserver/auth/users"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt"

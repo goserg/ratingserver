@@ -2,8 +2,9 @@ package storage
 
 import (
 	"context"
+
 	"github.com/google/uuid"
-	"ratingserver/auth/users"
+	"github.com/goserg/ratingserver/auth/users"
 )
 
 type AuthStorage interface {

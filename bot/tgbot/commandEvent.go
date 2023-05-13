@@ -1,14 +1,15 @@
 package tgbot
 
 import (
-	mapset "github.com/deckarep/golang-set/v2"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	"ratingserver/bot/model"
-	"ratingserver/internal/domain"
-	"ratingserver/internal/service"
 	"strings"
 	"time"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/goserg/ratingserver/bot/model"
+	"github.com/goserg/ratingserver/internal/domain"
+	"github.com/goserg/ratingserver/internal/service"
 )
 
 type EventState int
@@ -227,6 +228,7 @@ func (c *EventCommand) Help() string {
 func (c *EventCommand) Permission() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator)
 }
+
 func (c *EventCommand) Visibility() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator)
 }

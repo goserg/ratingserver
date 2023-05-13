@@ -3,12 +3,11 @@ package sqlite3
 import (
 	"database/sql"
 	"errors"
-	embedded "ratingserver"
-
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 
 	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/sqlite3"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
+	embedded "github.com/goserg/ratingserver"
 )
 
 func UpServerDB(db *sql.DB) error {
