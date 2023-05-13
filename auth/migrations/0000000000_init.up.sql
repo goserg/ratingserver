@@ -12,9 +12,9 @@ create table users
     id         text   not null
         constraint users_pk
             primary key,
-    username   text      not null,
-    password_hash text   not null,
-    password_salt text   not null,
+    username text unique not null,
+    password_hash text not null,
+    password_salt text not null,
     created_at timestamp not null,
     updated_at timestamp not null,
     deleted_at timestamp

@@ -177,20 +177,11 @@ type signInRequest struct {
 	password string
 }
 
-func parseSignInRequest(ctx *fiber.Ctx) (signInRequest, []string) {
-	var errs []string
+func parseSignInRequest(ctx *fiber.Ctx) (req signInRequest, errors []string) {
 	name := ctx.FormValue("username", "")
-	if name == "" {
-		errs = append(errs, "имя пользователя не должно быть пустое")
-	}
-	nameRegexp := regexp.MustCompile("^[A-Za-z]\\w+$")
-	if !nameRegexp.MatchString(name) {
-		errs = append(errs, "имя пользователя должно начинаться с латинской буквы и содержать только латинские буквы, цифры и знаки подчеркивания")
-	}
+	errs := validateUserName(name)
 	password := ctx.FormValue("password", "")
-	if password == "" {
-		errs = append(errs, "пароль пользователя не должн быть пустым")
-	}
+	errs = append(errs, validatePassword(password)...)
 	if errs != nil {
 		return signInRequest{}, errs
 	}
@@ -198,6 +189,26 @@ func parseSignInRequest(ctx *fiber.Ctx) (signInRequest, []string) {
 		name:     name,
 		password: password,
 	}, nil
+}
+
+func validatePassword(password string) []string {
+	var errs []string
+	if password == "" {
+		errs = append(errs, "Пароль пользователя не должн быть пустым.")
+	}
+	return errs
+}
+
+func validateUserName(name string) []string {
+	var errs []string
+	if name == "" {
+		errs = append(errs, "Имя пользователя не должно быть пустое.")
+	}
+	nameRegexp := regexp.MustCompile("^[A-Za-z]\\w+$")
+	if !nameRegexp.MatchString(name) {
+		errs = append(errs, "Имя пользователя должно начинаться с латинской буквы и содержать только латинские буквы, цифры и знаки подчеркивания.")
+	}
+	return errs
 }
 
 func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
@@ -231,17 +242,52 @@ func (s *Server) HandleGetSignup(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
-	name := ctx.FormValue("username", "")
-	password := ctx.FormValue("password", "")
-	passwordRepeat := ctx.FormValue("password-repeat", "")
-	if password != passwordRepeat {
-		return errors.New("passwords don't match")
+	req, errs := parseSignUpRequest(ctx)
+	if errs != nil {
+		ctx.Status(fiber.StatusBadRequest)
+		return ctx.Render("signup",
+			Data("Зарегистрироваться").
+				WithErrors(errs...),
+			"layouts/main",
+		)
 	}
-	err := s.auth.SignUp(ctx.Context(), name, password)
+	err := s.auth.SignUp(ctx.Context(), req.name, req.password)
 	if err != nil {
-		return err
+		ctx.Status(fiber.StatusBadRequest)
+		errMsg := "Неизвестная ошибка" // TODO log
+		if errors.Is(err, authservice.ErrAlreadyExists) {
+			errMsg = "Пользователь с таким именем уже существует."
+		}
+		return ctx.Render("signup",
+			Data("Зарегистрироваться").
+				WithErrors(errMsg),
+			"layouts/main",
+		)
 	}
 	return ctx.Redirect(webpath.Signin)
+}
+
+type signupRequest struct {
+	name     string
+	password string
+}
+
+func parseSignUpRequest(ctx *fiber.Ctx) (signupRequest, []string) {
+	name := ctx.FormValue("username", "")
+	errs := validateUserName(name)
+	password := ctx.FormValue("password", "")
+	errs = append(errs, validatePassword(password)...)
+	passwordRepeat := ctx.FormValue("password-repeat", "")
+	if passwordRepeat != password {
+		errs = append(errs, "Пароль не совпадает с подтверждением.")
+	}
+	if errs != nil {
+		return signupRequest{}, errs
+	}
+	return signupRequest{
+		name:     name,
+		password: password,
+	}, nil
 }
 
 func (s *Server) HandleSignOut(ctx *fiber.Ctx) error {
