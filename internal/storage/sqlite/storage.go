@@ -2,10 +2,9 @@ package sqlite
 
 import (
 	"database/sql"
-	"ratingserver/internal/config"
-
 	"ratingserver/gen/model"
 	"ratingserver/gen/table"
+	"ratingserver/internal/config"
 	"ratingserver/internal/domain"
 	mig "ratingserver/internal/migrate"
 	"ratingserver/internal/storage"
@@ -20,8 +19,10 @@ type Storage struct {
 	log *logrus.Entry
 }
 
-var _ storage.PlayerStorage = (*Storage)(nil)
-var _ storage.MatchStorage = (*Storage)(nil)
+var (
+	_ storage.PlayerStorage = (*Storage)(nil)
+	_ storage.MatchStorage  = (*Storage)(nil)
+)
 
 func New(l *logrus.Logger, cfg config.Server) (*Storage, error) {
 	log := l.WithFields(map[string]interface{}{
@@ -156,12 +157,12 @@ func (s *Storage) Create(match domain.Match) (domain.Match, error) {
 	return convertMatchToDomain(dMatch)
 }
 
-func (s *Storage) Get(uuid uuid.UUID) (domain.Player, error) {
+func (s *Storage) Get(id uuid.UUID) (domain.Player, error) {
 	var p model.Players
 	err := table.Players.
 		SELECT(table.Players.AllColumns).
 		FROM(table.Players).
-		WHERE(table.Players.ID.EQ(sqlite.String(uuid.String()))).
+		WHERE(table.Players.ID.EQ(sqlite.String(id.String()))).
 		Query(s.db, &p)
 	if err != nil {
 		return domain.Player{}, err
