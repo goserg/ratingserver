@@ -3,9 +3,9 @@ package tgbot
 import (
 	mapset "github.com/deckarep/golang-set/v2"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"ratingserver/bot/botstorage"
-	"ratingserver/bot/model"
-	"ratingserver/internal/service"
+	"github.com/goserg/ratingserver/bot/botstorage"
+	"github.com/goserg/ratingserver/bot/model"
+	"github.com/goserg/ratingserver/internal/service"
 )
 
 type Command interface {

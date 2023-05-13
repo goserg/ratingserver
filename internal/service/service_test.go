@@ -1,9 +1,10 @@
 package service
 
 import (
-	"ratingserver/internal/domain"
 	"reflect"
 	"testing"
+
+	"github.com/goserg/ratingserver/internal/domain"
 
 	"github.com/google/uuid"
 )

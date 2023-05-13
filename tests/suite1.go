@@ -7,13 +7,15 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	auth "ratingserver/auth/service"
-	"ratingserver/internal/config"
-	"ratingserver/internal/web/webpath"
-	sel "ratingserver/tests/selectors"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/goserg/ratingserver/internal/web/webpath"
+	sel "github.com/goserg/ratingserver/tests/selectors"
+
+	auth "github.com/goserg/ratingserver/auth/service"
+	"github.com/goserg/ratingserver/internal/config"
 
 	"github.com/chromedp/cdproto/cdp"
 	"github.com/chromedp/chromedp"

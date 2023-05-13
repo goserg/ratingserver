@@ -1,7 +1,7 @@
 package tgbot
 
 import (
-	botmodel "ratingserver/bot/model"
+	botmodel "github.com/goserg/ratingserver/bot/model"
 
 	mapset "github.com/deckarep/golang-set/v2"
 )

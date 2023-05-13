@@ -1,10 +1,11 @@
 package tgbot
 
 import (
+	"strings"
+
 	mapset "github.com/deckarep/golang-set/v2"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"ratingserver/bot/model"
-	"strings"
+	"github.com/goserg/ratingserver/bot/model"
 )
 
 type HelpCommand struct {
@@ -46,6 +47,7 @@ func (c *HelpCommand) Help() string {
 func (c *HelpCommand) Permission() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator, model.RoleUser)
 }
+
 func (c *HelpCommand) Visibility() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator, model.RoleUser)
 }

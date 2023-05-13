@@ -5,11 +5,11 @@ import (
 	"flag"
 	"io"
 	"os"
-	embedded "ratingserver"
-	authservice "ratingserver/auth/service"
 	"sort"
 
 	"github.com/BurntSushi/toml"
+	embedded "github.com/goserg/ratingserver"
+	authservice "github.com/goserg/ratingserver/auth/service"
 )
 
 const (
@@ -20,7 +20,7 @@ const (
 )
 
 type TgBot struct {
-	TelegramApiToken string `toml:"telegram_apitoken"`
+	TelegramAPIToken string `toml:"telegram_apitoken"`
 	SqliteFile       string `toml:"sqlite_file"`
 	AdminPass        string `toml:"admin_pass"`
 }
@@ -39,8 +39,10 @@ type Config struct {
 	Server Server
 }
 
-var ServerConfigPath string
-var BotConfigPath string
+var (
+	ServerConfigPath string
+	BotConfigPath    string
+)
 
 func init() {
 	flag.StringVar(&ServerConfigPath, "server-config", cfgFolder+serverCfgName, "server config path")
@@ -81,7 +83,7 @@ func createCfgFolderIfNotExists() error {
 	if !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
-	return os.Mkdir(cfgFolder, 0750)
+	return os.Mkdir(cfgFolder, 0o750)
 }
 
 func serverConfig(path string) (Server, error) {
@@ -120,7 +122,7 @@ func tgBotConfig(path string) (TgBot, error) {
 		}
 		token := os.Getenv("TELEGRAM_APITOKEN")
 		if token != "" {
-			tgBotCfg.TelegramApiToken = token
+			tgBotCfg.TelegramAPIToken = token
 		}
 		return tgBotCfg, err
 	}
@@ -135,7 +137,7 @@ func tgBotConfig(path string) (TgBot, error) {
 	}
 	token := os.Getenv("TELEGRAM_APITOKEN")
 	if token != "" {
-		tgBotCfg.TelegramApiToken = token
+		tgBotCfg.TelegramAPIToken = token
 	}
 	return tgBotCfg, err
 }

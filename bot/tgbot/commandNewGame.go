@@ -2,16 +2,17 @@ package tgbot
 
 import (
 	"errors"
-	mapset "github.com/deckarep/golang-set/v2"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"log"
-	"ratingserver/bot/model"
-	"ratingserver/internal/domain"
-	"ratingserver/internal/normalize"
-	"ratingserver/internal/service"
 	"strconv"
 	"strings"
 	"time"
+
+	mapset "github.com/deckarep/golang-set/v2"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/goserg/ratingserver/bot/model"
+	"github.com/goserg/ratingserver/internal/domain"
+	"github.com/goserg/ratingserver/internal/normalize"
+	"github.com/goserg/ratingserver/internal/service"
 )
 
 type NewGameCommand struct {
@@ -39,6 +40,7 @@ func (c *NewGameCommand) Help() string {
 func (c *NewGameCommand) Permission() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator)
 }
+
 func (c *NewGameCommand) Visibility() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator)
 }

@@ -2,12 +2,13 @@ package sqlite
 
 import (
 	"database/sql"
-	"ratingserver/gen/model"
-	"ratingserver/gen/table"
-	"ratingserver/internal/config"
-	"ratingserver/internal/domain"
-	mig "ratingserver/internal/migrate"
-	"ratingserver/internal/storage"
+
+	"github.com/goserg/ratingserver/gen/model"
+	"github.com/goserg/ratingserver/gen/table"
+	"github.com/goserg/ratingserver/internal/config"
+	"github.com/goserg/ratingserver/internal/domain"
+	mig "github.com/goserg/ratingserver/internal/migrate"
+	"github.com/goserg/ratingserver/internal/storage"
 
 	"github.com/go-jet/jet/v2/sqlite"
 	"github.com/google/uuid"

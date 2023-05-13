@@ -1,10 +1,11 @@
 package mem
 
 import (
-	"ratingserver/internal/domain"
-	"ratingserver/internal/normalize"
 	"sort"
 	"sync"
+
+	"github.com/goserg/ratingserver/internal/domain"
+	"github.com/goserg/ratingserver/internal/normalize"
 )
 
 type Cache struct {

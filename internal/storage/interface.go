@@ -1,7 +1,7 @@
 package storage
 
 import (
-	"ratingserver/internal/domain"
+	"github.com/goserg/ratingserver/internal/domain"
 
 	"github.com/google/uuid"
 )

@@ -1,4 +1,4 @@
-module ratingserver
+module github.com/goserg/ratingserver
 
 go 1.20
 

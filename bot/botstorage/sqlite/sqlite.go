@@ -2,16 +2,17 @@ package sqlite
 
 import (
 	"database/sql"
-	"github.com/google/uuid"
-	"ratingserver/bot/botstorage"
-	dbmodel "ratingserver/bot/gen/model"
-	"ratingserver/bot/gen/table"
-	"ratingserver/bot/model"
-	"ratingserver/internal/config"
-	"ratingserver/internal/domain"
-	sqlite3 "ratingserver/internal/migrate"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/goserg/ratingserver/bot/botstorage"
+	dbmodel "github.com/goserg/ratingserver/bot/gen/model"
+	"github.com/goserg/ratingserver/bot/gen/table"
+	"github.com/goserg/ratingserver/bot/model"
+	"github.com/goserg/ratingserver/internal/config"
+	"github.com/goserg/ratingserver/internal/domain"
+	sqlite3 "github.com/goserg/ratingserver/internal/migrate"
 
 	"github.com/sirupsen/logrus"
 

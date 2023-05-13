@@ -3,9 +3,9 @@ package tgbot
 import (
 	mapset "github.com/deckarep/golang-set/v2"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
-	"ratingserver/bot/botstorage"
-	"ratingserver/bot/model"
-	"ratingserver/internal/service"
+	"github.com/goserg/ratingserver/bot/botstorage"
+	"github.com/goserg/ratingserver/bot/model"
+	"github.com/goserg/ratingserver/internal/service"
 )
 
 type MeCommand struct {
@@ -52,6 +52,7 @@ func (c *MeCommand) processMe(user model.User) (string, error) {
 func (c *MeCommand) Permission() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator, model.RoleUser)
 }
+
 func (c *MeCommand) Visibility() mapset.Set[model.UserRole] {
 	return mapset.NewSet[model.UserRole](model.RoleAdmin, model.RoleModerator, model.RoleUser)
 }

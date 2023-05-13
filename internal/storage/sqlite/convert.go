@@ -1,8 +1,8 @@
 package sqlite
 
 import (
-	"ratingserver/gen/model"
-	"ratingserver/internal/domain"
+	"github.com/goserg/ratingserver/gen/model"
+	"github.com/goserg/ratingserver/internal/domain"
 
 	"github.com/google/uuid"
 )

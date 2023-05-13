@@ -2,13 +2,14 @@ package service
 
 import (
 	"errors"
-	"ratingserver/internal/cache/mem"
-	"ratingserver/internal/domain"
-	"ratingserver/internal/elo"
-	"ratingserver/internal/normalize"
-	"ratingserver/internal/storage"
 	"sort"
 	"time"
+
+	"github.com/goserg/ratingserver/internal/cache/mem"
+	"github.com/goserg/ratingserver/internal/domain"
+	"github.com/goserg/ratingserver/internal/elo"
+	"github.com/goserg/ratingserver/internal/normalize"
+	"github.com/goserg/ratingserver/internal/storage"
 
 	glicko "github.com/zelenin/go-glicko2"
 

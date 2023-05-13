@@ -4,20 +4,20 @@ import (
 	"errors"
 	"io/fs"
 	"net/http"
-	embedded "ratingserver"
-	authservice "ratingserver/auth/service"
-	"ratingserver/auth/users"
-	"ratingserver/internal/config"
-	"ratingserver/internal/domain"
-	"ratingserver/internal/normalize"
-	"ratingserver/internal/service"
-	"ratingserver/internal/web/webpath"
 	"strconv"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html"
 	"github.com/google/uuid"
+	embedded "github.com/goserg/ratingserver"
+	authservice "github.com/goserg/ratingserver/auth/service"
+	"github.com/goserg/ratingserver/auth/users"
+	"github.com/goserg/ratingserver/internal/config"
+	"github.com/goserg/ratingserver/internal/domain"
+	"github.com/goserg/ratingserver/internal/normalize"
+	"github.com/goserg/ratingserver/internal/service"
+	"github.com/goserg/ratingserver/internal/web/webpath"
 )
 
 type Server struct {
