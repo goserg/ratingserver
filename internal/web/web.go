@@ -16,10 +16,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/google/uuid"
-
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html"
+	"github.com/google/uuid"
 )
 
 type Server struct {
@@ -93,23 +92,30 @@ func (s *Server) Serve() error {
 const userKey = "user"
 
 func (s *Server) handleMain(ctx *fiber.Ctx) error {
-	user, _ := ctx.Context().UserValue(userKey).(users.User)
+	user, ok := ctx.Context().UserValue(userKey).(users.User)
+	if !ok {
+		return errors.New("assertion failed")
+	}
 	globalRating := s.playerService.GetRatings()
-	return ctx.Render("index", Data("Рейтинг").
+	return ctx.Render("index", newData("Рейтинг").
 		WithUser(user).
 		With("Button", "rating").
 		With("Players", globalRating),
-		"layouts/main")
+		"layouts/main",
+	)
 }
 
 func (s *Server) handleMatches(ctx *fiber.Ctx) error {
-	user, _ := ctx.Context().UserValue(userKey).(users.User)
+	user, ok := ctx.Context().UserValue(userKey).(users.User)
+	if !ok {
+		return errors.New("assertion failed")
+	}
 	matches, err := s.playerService.GetMatches()
 	if err != nil {
 		return err
 	}
 	return ctx.Render("matches",
-		Data("Список матчей").
+		newData("Список матчей").
 			WithUser(user).
 			With("Button", "matches").
 			With("Matches", matches),
@@ -117,8 +123,11 @@ func (s *Server) handleMatches(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) handleCreateMatchGet(ctx *fiber.Ctx) error {
-	user, _ := ctx.Context().UserValue(userKey).(users.User)
-	return ctx.Render("newMatch", Data("Добавить игру").WithUser(user), "layouts/main")
+	user, ok := ctx.Context().UserValue(userKey).(users.User)
+	if !ok {
+		return errors.New("assertion failed")
+	}
+	return ctx.Render("newMatch", newData("Добавить игру").WithUser(user), "layouts/main")
 }
 
 func (s *Server) handleCreateMatchPost(ctx *fiber.Ctx) error {
@@ -150,7 +159,10 @@ func (s *Server) handleCreateMatchPost(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
-	user, _ := ctx.Context().UserValue(userKey).(users.User)
+	user, ok := ctx.Context().UserValue(userKey).(users.User)
+	if !ok {
+		return errors.New("assertion failed")
+	}
 	strID := ctx.Params("id")
 	id, err := uuid.Parse(strID)
 	if err != nil {
@@ -161,7 +173,7 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 		return err
 	}
 	return ctx.Render("playerCard",
-		Data(card.Player.Name).
+		newData(card.Player.Name).
 			WithUser(user).
 			With("PlayerCard", card).
 			With("Button", "playerCard"),
@@ -169,7 +181,7 @@ func (s *Server) HandlePlayerInfo(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) HandleGetSignIn(ctx *fiber.Ctx) error {
-	return ctx.Render("signin", Data("Войти"), "layouts/main")
+	return ctx.Render("signin", newData("Войти"), "layouts/main")
 }
 
 type signInRequest struct {
@@ -177,9 +189,9 @@ type signInRequest struct {
 	password string
 }
 
-func parseSignInRequest(ctx *fiber.Ctx) (req signInRequest, errors []string) {
+func parseSignInRequest(ctx *fiber.Ctx) (req signInRequest, errs []string) {
 	name := ctx.FormValue("username", "")
-	errs := validateUserName(name)
+	errs = validateUserName(name)
 	password := ctx.FormValue("password", "")
 	errs = append(errs, validatePassword(password)...)
 	if errs != nil {
@@ -204,7 +216,7 @@ func validateUserName(name string) []string {
 	if name == "" {
 		errs = append(errs, "Имя пользователя не должно быть пустое.")
 	}
-	nameRegexp := regexp.MustCompile("^[A-Za-z]\\w+$")
+	nameRegexp := regexp.MustCompile(`^[A-Za-z]\w+$`)
 	if !nameRegexp.MatchString(name) {
 		errs = append(errs, "Имя пользователя должно начинаться с латинской буквы и содержать только латинские буквы, цифры и знаки подчеркивания.")
 	}
@@ -215,13 +227,13 @@ func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
 	req, errs := parseSignInRequest(ctx)
 	if errs != nil {
 		ctx.Status(fiber.StatusBadRequest)
-		return ctx.Render("signin", Data("Войти").WithErrors(errs...), "layouts/main")
+		return ctx.Render("signin", newData("Войти").WithErrors(errs...), "layouts/main")
 	}
 	user, err := s.auth.Login(ctx.Context(), req.name, req.password)
 	if err != nil {
 		ctx.Status(fiber.StatusUnauthorized)
 		return ctx.Render("signin",
-			Data("Войти").
+			newData("Войти").
 				WithErrors(err.Error()),
 			"layouts/main")
 	}
@@ -229,7 +241,7 @@ func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
 	if err != nil {
 		ctx.Status(fiber.StatusUnauthorized)
 		return ctx.Render("signin",
-			Data("Войти").
+			newData("Войти").
 				WithErrors(err.Error()),
 			"layouts/main")
 	}
@@ -238,7 +250,7 @@ func (s *Server) HandlePostSignIn(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) HandleGetSignup(ctx *fiber.Ctx) error {
-	return ctx.Render("signup", Data("Зарегистрироваться"), "layouts/main")
+	return ctx.Render("signup", newData("Зарегистрироваться"), "layouts/main")
 }
 
 func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
@@ -246,7 +258,7 @@ func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
 	if errs != nil {
 		ctx.Status(fiber.StatusBadRequest)
 		return ctx.Render("signup",
-			Data("Зарегистрироваться").
+			newData("Зарегистрироваться").
 				WithErrors(errs...),
 			"layouts/main",
 		)
@@ -259,7 +271,7 @@ func (s *Server) HandlePostSignup(ctx *fiber.Ctx) error {
 			errMsg = "Пользователь с таким именем уже существует."
 		}
 		return ctx.Render("signup",
-			Data("Зарегистрироваться").
+			newData("Зарегистрироваться").
 				WithErrors(errMsg),
 			"layouts/main",
 		)
@@ -272,9 +284,9 @@ type signupRequest struct {
 	password string
 }
 
-func parseSignUpRequest(ctx *fiber.Ctx) (signupRequest, []string) {
+func parseSignUpRequest(ctx *fiber.Ctx) (req signupRequest, errs []string) {
 	name := ctx.FormValue("username", "")
-	errs := validateUserName(name)
+	errs = validateUserName(name)
 	password := ctx.FormValue("password", "")
 	errs = append(errs, validatePassword(password)...)
 	passwordRepeat := ctx.FormValue("password-repeat", "")
@@ -296,7 +308,7 @@ func (s *Server) HandleSignOut(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) handleNewPlayerGet(ctx *fiber.Ctx) error {
-	return ctx.Render("newPlayer", Data("Добавить игрока"), "layouts/main")
+	return ctx.Render("newPlayer", newData("Добавить игрока"), "layouts/main")
 }
 
 func (s *Server) handleNewPlayerPost(ctx *fiber.Ctx) error {

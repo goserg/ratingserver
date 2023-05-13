@@ -13,7 +13,7 @@ type data struct {
 	Data   map[string]any
 }
 
-func Data(title string) data {
+func newData(title string) data {
 	return data{
 		Title: title,
 		Path:  webpath.Path(),
