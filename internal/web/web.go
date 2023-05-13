@@ -226,7 +226,7 @@ func (s *Server) handlePostSignup(ctx *fiber.Ctx) error {
 	err := s.auth.SignUp(ctx.Context(), req.name, req.password)
 	if err != nil {
 		ctx.Status(fiber.StatusBadRequest)
-		errMsg := "Неизвестная ошибка" // TODO log
+		errMsg := err.Error() // TODO log
 		if errors.Is(err, authservice.ErrAlreadyExists) {
 			errMsg = "Пользователь с таким именем уже существует."
 		}
