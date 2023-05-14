@@ -7,6 +7,8 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
+	"flag"
 	"fmt"
 	"math/big"
 	"net"
@@ -22,6 +24,14 @@ func main() {
 }
 
 func run() error {
+	if !isCertMissing() {
+		return errors.New("cert exists")
+	}
+
+	var ipFlag string
+	flag.StringVar(&ipFlag, "ip", "", "ip")
+	flag.Parse()
+
 	ca := &x509.Certificate{
 		SerialNumber: randomInt(),
 		Subject: pkix.Name{
@@ -68,6 +78,11 @@ func run() error {
 		return err
 	}
 
+	ips := []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback}
+	if ipFlag != "" {
+		ips = []net.IP{net.ParseIP(ipFlag)}
+	}
+
 	cert := &x509.Certificate{
 		SerialNumber: randomInt(),
 		Subject: pkix.Name{
@@ -78,7 +93,7 @@ func run() error {
 			StreetAddress: []string{""},
 			PostalCode:    []string{""},
 		},
-		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
+		IPAddresses:  ips,
 		NotBefore:    time.Now(),
 		NotAfter:     time.Now().AddDate(10, 0, 0),
 		SubjectKeyId: []byte{1, 2, 3, 4, 6},
@@ -121,6 +136,18 @@ func run() error {
 		return err
 	}
 	return nil
+}
+
+func isCertMissing() bool {
+	_, err := os.Stat("cert.pem")
+	if errors.Is(err, os.ErrNotExist) {
+		return true
+	}
+	_, err = os.Stat("key.pem")
+	if errors.Is(err, os.ErrNotExist) {
+		return true
+	}
+	return false
 }
 
 func randomInt() *big.Int {
