@@ -29,6 +29,8 @@ jobs:
             libexpat1 \
             libfontconfig1 \
             libuuid1
+      - name: Install certificates
+        run: apt install -y ca-certificates && update-ca-certificates
       - name: Build bin
         run: make build
 
