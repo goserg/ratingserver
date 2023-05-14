@@ -9,8 +9,8 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    container:
-      image: chromedp/headless-shell:dev
+#    container:
+#      image: chromedp/headless-shell:dev
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
