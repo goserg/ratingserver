@@ -1,6 +1,8 @@
 package web
 
 import (
+	"errors"
+
 	"github.com/goserg/ratingserver/auth/users"
 	"github.com/goserg/ratingserver/internal/web/webpath"
 )
@@ -39,9 +41,10 @@ type multierr interface {
 }
 
 func unwrap(err error) []error {
-	if me, ok := err.(multierr); ok {
+	var merr multierr
+	if errors.As(err, &merr) {
 		var errs []error
-		for _, err := range me.Unwrap() {
+		for _, err := range merr.Unwrap() {
 			errs = append(errs, unwrap(err)...)
 		}
 		return errs
