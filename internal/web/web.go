@@ -89,6 +89,9 @@ func New(ps *service.PlayerService, cfg config.Server, authService *authservice.
 }
 
 func (s *Server) Serve() error {
+	if s.cfg.TLS {
+		return s.app.ListenTLS(s.cfg.Host+":"+strconv.Itoa(s.cfg.Port), "cert.pem", "key.pem")
+	}
 	return s.app.Listen(s.cfg.Host + ":" + strconv.Itoa(s.cfg.Port))
 }
 

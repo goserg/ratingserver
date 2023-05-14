@@ -31,6 +31,7 @@ type Server struct {
 	SqliteFile   string             `toml:"sqlite_file"`
 	Host         string             `toml:"host"`
 	Port         int                `toml:"port"`
+	TLS          bool               `toml"tls"`
 	Auth         authservice.Config `toml:"auth"`
 }
 
