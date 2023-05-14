@@ -188,17 +188,17 @@ func (s *Server) handleGetSignIn(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) handlePostSignIn(ctx *fiber.Ctx) error {
-	req, errs := parseSignInRequest(ctx)
-	if errs != nil {
+	req, err := parseSignInRequest(ctx)
+	if err != nil {
 		ctx.Status(fiber.StatusBadRequest)
-		return ctx.Render("signin", newData("Войти").WithErrors(errs...), "layouts/main")
+		return ctx.Render("signin", newData("Войти").WithErrors(err), "layouts/main")
 	}
 	user, err := s.auth.Login(ctx.Context(), req.name, req.password)
 	if err != nil {
 		ctx.Status(fiber.StatusUnauthorized)
 		return ctx.Render("signin",
 			newData("Войти").
-				WithErrors(err.Error()),
+				WithErrors(err),
 			"layouts/main")
 	}
 	cookie, err := s.auth.GenerateJWTCookie(user.ID, s.cfg.Host)
@@ -206,7 +206,7 @@ func (s *Server) handlePostSignIn(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusUnauthorized)
 		return ctx.Render("signin",
 			newData("Войти").
-				WithErrors(err.Error()),
+				WithErrors(err),
 			"layouts/main")
 	}
 	ctx.Cookie(cookie)
@@ -218,21 +218,21 @@ func (s *Server) handleGetSignup(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) handlePostSignup(ctx *fiber.Ctx) error {
-	req, errs := parseSignUpRequest(ctx)
-	if errs != nil {
+	req, err := parseSignUpRequest(ctx)
+	if err != nil {
 		ctx.Status(fiber.StatusBadRequest)
 		return ctx.Render("signup",
 			newData("Зарегистрироваться").
-				WithErrors(errs...),
+				WithErrors(err),
 			"layouts/main",
 		)
 	}
-	err := s.auth.SignUp(ctx.Context(), req.name, req.password)
+	err = s.auth.SignUp(ctx.Context(), req.name, req.password)
 	if err != nil {
 		ctx.Status(fiber.StatusBadRequest)
-		errMsg := err.Error() // TODO log
+		var errMsg error
 		if errors.Is(err, authservice.ErrAlreadyExists) {
-			errMsg = "Пользователь с таким именем уже существует."
+			errMsg = errors.New("пользователь с таким именем уже существует")
 		}
 		return ctx.Render("signup",
 			newData("Зарегистрироваться").
