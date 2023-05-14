@@ -41,4 +41,4 @@ lint: build-tools-lint
 	$(LINT_TOOL) run ./...
 
 build-tools-jet:
-	CGO_ENABLED=1 go build -modfile $(TOOLS_MODFILE) -o $(JET_TOOL) github.com/go-jet/jet/v2/cmd/jet
+	CGO_ENABLED=1 go build -x -modfile $(TOOLS_MODFILE) -o $(JET_TOOL) github.com/go-jet/jet/v2/cmd/jet
