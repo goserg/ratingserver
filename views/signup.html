@@ -21,14 +21,7 @@
                 <div class="pure-controls">
                     <button class="pure-button pure-button-primary" id="signup-form-submit" type="submit" name="create">Sign Up</button>
                     <a class="pure-button" id="signup-signin" href={{ .Path.SignIn }}>Sign In</a>
-                    {{ if .Errors }}
-                        <p id="error-message">
-                            <span class="color-red">Ошибка:</span><br>
-                            {{ range .Errors }}
-                                <span class="color-red">{{ . }}</span><br>
-                            {{ end }}
-                        </p>
-                    {{ end }}
+                    {{template "partials/errors" .Errors}}
                 </div>
             </fieldset>
         </form>

@@ -1,0 +1,11 @@
+{{ if . }}
+    <p id="error-message">
+        <span class="color-red">Ошибка:</span>
+        <ul>
+        {{ range . }}
+            <li class="color-red">{{ . }}</li>
+        {{ end }}
+        </ul>
+
+    </p>
+{{ end }}
