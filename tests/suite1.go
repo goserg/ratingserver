@@ -94,7 +94,7 @@ func (s *Suite) TearDownSuite() {
 	}
 }
 
-const globalTestsTimeoutSeconds = 5000
+const globalTestsTimeoutSeconds = 5
 
 func (s *Suite) TestRatings() {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
@@ -127,6 +127,9 @@ func (s *Suite) TestInvalidFormInput() {
 
 	s.Run("signin form", func() {
 		s.CheckInvalidSignInForm(ctx)
+	})
+	s.Run("signup form", func() {
+		s.CheckInvalidSignUpForm(ctx)
 	})
 }
 
@@ -513,6 +516,44 @@ func (s *Suite) CheckInvalidSignInForm(ctx context.Context) {
 		chromedp.SendKeys(sel.SignInFormUsername, "Dawd%awd"),
 		chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
 		s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
+	}))
+	s.Require().NoError(err)
+}
+
+func (s *Suite) CheckInvalidSignUpForm(ctx context.Context) {
+	s.T().Helper()
+	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+		// валидные поля
+		chromedp.Navigate(s.addr + webpath.Signup),
+		chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
+		chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
+		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa"),
+		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusOK),
+
+		// Пустое имя пользователя
+		chromedp.Navigate(s.addr + webpath.Signup),
+		chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
+		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa"),
+		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
+
+		// Пустой пароль
+		chromedp.Navigate(s.addr + webpath.Signup),
+		chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
+		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa"),
+		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
+
+		// Пустой повтор пароля
+		chromedp.Navigate(s.addr + webpath.Signup),
+		chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
+		chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
+		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
+
+		// Пароли не совпадают
+		chromedp.Navigate(s.addr + webpath.Signup),
+		chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
+		chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
+		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa2"),
+		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
 	}))
 	s.Require().NoError(err)
 }
