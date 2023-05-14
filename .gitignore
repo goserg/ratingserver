@@ -5,3 +5,7 @@ configs/
 
 *.sqlite
 export.json
+
+cert.pem
+key.pem
+certs/
