@@ -1,6 +1,7 @@
 package web
 
 import (
+	"errors"
 	"regexp"
 
 	"github.com/gofiber/fiber/v2"
@@ -11,17 +12,18 @@ type signupRequest struct {
 	password string
 }
 
-func parseSignUpRequest(ctx *fiber.Ctx) (req signupRequest, errs []string) {
+func parseSignUpRequest(ctx *fiber.Ctx) (signupRequest, error) {
+	var err error
 	name := ctx.FormValue("username", "")
-	errs = validateUserName(name)
+	err = errors.Join(err, validateUserName(name))
 	password := ctx.FormValue("password", "")
-	errs = append(errs, validatePassword(password)...)
+	err = errors.Join(err, validatePassword(password))
 	passwordRepeat := ctx.FormValue("password-repeat", "")
 	if passwordRepeat != password {
-		errs = append(errs, "Пароль не совпадает с подтверждением.")
+		err = errors.Join(errors.New("пароль не совпадает с подтверждением"))
 	}
-	if errs != nil {
-		return signupRequest{}, errs
+	if err != nil {
+		return signupRequest{}, err
 	}
 	return signupRequest{
 		name:     name,
@@ -34,13 +36,13 @@ type signInRequest struct {
 	password string
 }
 
-func parseSignInRequest(ctx *fiber.Ctx) (req signInRequest, errs []string) {
+func parseSignInRequest(ctx *fiber.Ctx) (req signInRequest, err error) {
 	name := ctx.FormValue("username", "")
-	errs = validateUserName(name)
+	err = errors.Join(err, validateUserName(name))
 	password := ctx.FormValue("password", "")
-	errs = append(errs, validatePassword(password)...)
-	if errs != nil {
-		return signInRequest{}, errs
+	err = errors.Join(err, validatePassword(password))
+	if err != nil {
+		return signInRequest{}, err
 	}
 	return signInRequest{
 		name:     name,
@@ -48,22 +50,21 @@ func parseSignInRequest(ctx *fiber.Ctx) (req signInRequest, errs []string) {
 	}, nil
 }
 
-func validatePassword(password string) []string {
-	var errs []string
+func validatePassword(password string) error {
 	if password == "" {
-		errs = append(errs, "Пароль пользователя не должн быть пустым.")
+		return errors.New("пароль пользователя не должн быть пустым")
 	}
-	return errs
+	return nil
 }
 
-func validateUserName(name string) []string {
-	var errs []string
+func validateUserName(name string) error {
+	var err error
 	if name == "" {
-		errs = append(errs, "Имя пользователя не должно быть пустое.")
+		err = errors.Join(err, errors.New("имя пользователя не должно быть пустое"))
 	}
 	nameRegexp := regexp.MustCompile(`^[A-Za-z]\w+$`)
 	if !nameRegexp.MatchString(name) {
-		errs = append(errs, "Имя пользователя должно начинаться с латинской буквы и содержать только латинские буквы, цифры и знаки подчеркивания.")
+		err = errors.Join(err, errors.New("имя пользователя должно начинаться с латинской буквы и содержать только латинские буквы, цифры и знаки подчеркивания"))
 	}
-	return errs
+	return err
 }

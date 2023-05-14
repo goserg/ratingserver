@@ -34,7 +34,24 @@ func (m data) With(key string, value any) data {
 	return m
 }
 
-func (m data) WithErrors(errs ...string) data {
-	m.Errors = append(m.Errors, errs...)
+type multierr interface {
+	Unwrap() []error
+}
+
+func unwrap(err error) []error {
+	if me, ok := err.(multierr); ok {
+		var errs []error
+		for _, err := range me.Unwrap() {
+			errs = append(errs, unwrap(err)...)
+		}
+		return errs
+	}
+	return []error{err}
+}
+
+func (m data) WithErrors(err error) data {
+	for _, err := range unwrap(err) {
+		m.Errors = append(m.Errors, err.Error())
+	}
 	return m
 }
