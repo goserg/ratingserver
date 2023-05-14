@@ -18,7 +18,7 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version-file: go.mod
-#          cache-dependency-path: go.sum
+          cache-dependency-path: go.sum
       - name: Install dependencies
         run: |
           apt-get update && apt-get install -y \
@@ -29,7 +29,6 @@ jobs:
             libexpat1 \
             libfontconfig1 \
             libuuid1
-
       - name: Build bin
         run: make build
 
