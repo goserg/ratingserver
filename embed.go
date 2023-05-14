@@ -16,3 +16,6 @@ var AuthMigrations embed.FS
 
 //go:embed "configs_default"
 var DefaultConfigs embed.FS
+
+//go:embed "static"
+var WebStatic embed.FS

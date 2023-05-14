@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/filesystem"
 	"github.com/gofiber/template/html"
 	"github.com/google/uuid"
 	embedded "github.com/goserg/ratingserver"
@@ -46,7 +47,10 @@ func New(ps *service.PlayerService, cfg config.Server, authService *authservice.
 	app := fiber.New(fiber.Config{
 		Views: engine,
 	})
-	app.Static("/", "./static")
+	app.Use("/static", filesystem.New(filesystem.Config{
+		Root:       http.FS(embedded.WebStatic),
+		PathPrefix: "static",
+	}))
 	app.Use(webpath.Api, func(c *fiber.Ctx) error {
 		tokenCookie := c.Cookies("token")
 		user, err := authService.Auth(c.Context(), tokenCookie, c.Method(), c.OriginalURL())
