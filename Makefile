@@ -12,7 +12,7 @@ gen-jet: build-tools-jet
 	$(JET_TOOL) -source=sqlite -dsn=${SQLITE_BOT_FILE_LOCATION} -path=${JET_BOT_OUTPUT}
 
 build: gen-jet
-	go build -o ${SERVER_BIN} cmd/main.go
+	go build -x -o ${SERVER_BIN} cmd/main.go
 
 run: build
 	${SERVER_BIN}
@@ -35,7 +35,7 @@ LINT_TOOL = $(TOOLS_BIN_DIR)golangci-lint
 JET_TOOL = $(TOOLS_BIN_DIR)jet
 
 build-tools-lint:
-	go build -modfile $(TOOLS_MODFILE) -o $(LINT_TOOL) github.com/golangci/golangci-lint/cmd/golangci-lint
+	go build -x -modfile $(TOOLS_MODFILE) -o $(LINT_TOOL) github.com/golangci/golangci-lint/cmd/golangci-lint
 
 lint: build-tools-lint
 	$(LINT_TOOL) run ./...
