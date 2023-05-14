@@ -120,7 +120,7 @@ func (s *Suite) TestRatings() {
 	})
 }
 
-func (s *Suite) TestInvalidFormInput() {
+func (s *Suite) TestFormInput() {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
 	ctx, cancel := chromedp.NewContext(ctx)
 	defer cancel()
@@ -484,76 +484,112 @@ func (s *Suite) CheckLink(ctx context.Context, from, selector, expectTarget stri
 
 func (s *Suite) CheckInvalidSignInForm(ctx context.Context) {
 	s.T().Helper()
-	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
-		// валидные поля
-		chromedp.Navigate(s.addr + webpath.Signin),
-		chromedp.SendKeys(sel.SignInFormUsername, "root"),
-		chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
-		s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusOK),
-
-		// пустые поля
-		chromedp.Navigate(s.addr + webpath.Signin),
-		s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
-
-		// пустой пароль
-		chromedp.Navigate(s.addr + webpath.Signin),
-		chromedp.SendKeys(sel.SignInFormUsername, auth.Root),
-		s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
-
-		// пустое имя пользователя
-		chromedp.Navigate(s.addr + webpath.Signin),
-		chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
-		s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
-
-		// имя пользователя начинающееся не с буквы
-		chromedp.Navigate(s.addr + webpath.Signin),
-		chromedp.SendKeys(sel.SignInFormUsername, "1awd"),
-		chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
-		s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
-
-		// имя пользователя сщдержащее спец символы
-		chromedp.Navigate(s.addr + webpath.Signin),
-		chromedp.SendKeys(sel.SignInFormUsername, "Dawd%awd"),
-		chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
-		s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
-	}))
-	s.Require().NoError(err)
+	s.Run("ok form", func() {
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			// валидные поля
+			chromedp.Navigate(s.addr + webpath.Signin),
+			chromedp.SendKeys(sel.SignInFormUsername, "root"),
+			chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
+			s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusOK),
+		}))
+		s.Assert().NoError(err)
+	})
+	s.Run("empty form", func() {
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			chromedp.Navigate(s.addr + webpath.Signin),
+			s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
+		}))
+		s.Assert().NoError(err)
+	})
+	s.Run("empty pass", func() {
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			chromedp.Navigate(s.addr + webpath.Signin),
+			chromedp.SendKeys(sel.SignInFormUsername, auth.Root),
+			s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
+		}))
+		s.Assert().NoError(err)
+	})
+	s.Run("empty username", func() {
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			chromedp.Navigate(s.addr + webpath.Signin),
+			chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
+			s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
+		}))
+		s.Assert().NoError(err)
+	})
+	s.Run("username starts with number", func() {
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			chromedp.Navigate(s.addr + webpath.Signin),
+			chromedp.SendKeys(sel.SignInFormUsername, "1awd"),
+			chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
+			s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
+		}))
+		s.Assert().NoError(err)
+	})
+	s.Run("username with special characters", func() {
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			chromedp.Navigate(s.addr + webpath.Signin),
+			chromedp.SendKeys(sel.SignInFormUsername, "Dawd%awd"),
+			chromedp.SendKeys(sel.SignInFormPassword, s.config.Server.Auth.RootPassword),
+			s.waitStatus(chromedp.Submit(sel.SignInFormSubmit), http.StatusBadRequest),
+		}))
+		s.Assert().NoError(err)
+	})
 }
 
 func (s *Suite) CheckInvalidSignUpForm(ctx context.Context) {
 	s.T().Helper()
-	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
-		// валидные поля
-		chromedp.Navigate(s.addr + webpath.Signup),
-		chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
-		chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
-		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa"),
-		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusOK),
-
-		// Пустое имя пользователя
-		chromedp.Navigate(s.addr + webpath.Signup),
-		chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
-		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa"),
-		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
-
-		// Пустой пароль
-		chromedp.Navigate(s.addr + webpath.Signup),
-		chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
-		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa"),
-		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
-
-		// Пустой повтор пароля
-		chromedp.Navigate(s.addr + webpath.Signup),
-		chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
-		chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
-		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
-
-		// Пароли не совпадают
-		chromedp.Navigate(s.addr + webpath.Signup),
-		chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
-		chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
-		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa2"),
-		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
-	}))
-	s.Require().NoError(err)
+	s.Run("ok form", func() {
+		s.T().Helper()
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			// валидные поля
+			chromedp.Navigate(s.addr + webpath.Signup),
+			chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
+			chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
+			chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa"),
+			s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusOK),
+		}))
+		s.Require().NoError(err)
+	})
+	s.Run("empty username", func() {
+		s.T().Helper()
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			chromedp.Navigate(s.addr + webpath.Signup),
+			chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
+			chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa"),
+			s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
+		}))
+		s.Require().NoError(err)
+	})
+	s.Run("empty pass", func() {
+		s.T().Helper()
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			chromedp.Navigate(s.addr + webpath.Signup),
+			chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
+			chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa"),
+			s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
+		}))
+		s.Require().NoError(err)
+	})
+	s.Run("empty pass confirm", func() {
+		s.T().Helper()
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			chromedp.Navigate(s.addr + webpath.Signup),
+			chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
+			chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
+			s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
+		}))
+		s.Require().NoError(err)
+	})
+	s.Run("passwords dont match", func() {
+		s.T().Helper()
+		err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
+			chromedp.Navigate(s.addr + webpath.Signup),
+			chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
+			chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
+			chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa2"),
+			s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusBadRequest),
+		}))
+		s.Require().NoError(err)
+	})
 }
