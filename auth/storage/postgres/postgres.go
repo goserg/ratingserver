@@ -5,13 +5,15 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"net/url"
+	"strconv"
 	"time"
 
 	"github.com/go-jet/jet/v2/sqlite"
 
 	"github.com/go-jet/jet/v2/postgres"
 	"github.com/go-jet/jet/v2/qrm"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	_ "github.com/jackc/pgx/v5/stdlib" // postgresql driver
 
 	"github.com/google/uuid"
 	"github.com/goserg/ratingserver/auth/service"
@@ -30,7 +32,13 @@ type Storage struct {
 var _ storage.AuthStorage = (*Storage)(nil)
 
 func New(config service.StorageConfig) (*Storage, error) {
-	db, err := sql.Open("pgx", "postgres://postgres:postgres@localhost:5431/auth")
+	db, err := sql.Open("pgx", NewURLConnectionString(
+		"postgres",
+		config.Host+":"+strconv.Itoa(config.Port),
+		config.DBName,
+		config.Username,
+		config.Password,
+	))
 	if err != nil {
 		return nil, err
 	}
@@ -244,4 +252,16 @@ func inTx[T any](ctx context.Context, db *sql.DB, fn func(tx *sql.Tx) (T, error)
 func inTxSimple(ctx context.Context, db *sql.DB, fn func(tx *sql.Tx) error) error {
 	_, err := inTx(ctx, db, func(tx *sql.Tx) (struct{}, error) { return struct{}{}, fn(tx) })
 	return err
+}
+
+func NewURLConnectionString(protocol, host, dbName, username, password string) string {
+	v := make(url.Values)
+	u := url.URL{
+		Scheme:   protocol,
+		Host:     host,
+		Path:     dbName,
+		User:     url.UserPassword(username, password),
+		RawQuery: v.Encode(),
+	}
+	return u.String()
 }

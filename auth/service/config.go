@@ -18,5 +18,9 @@ type Config struct {
 }
 
 type StorageConfig struct {
-	Host string `toml:"host"`
+	Host     string `toml:"host"`
+	Port     int    `toml:"port"`
+	DBName   string `toml:"dbname"`
+	Username string `toml:"username"`
+	Password string `toml:"password"`
 }
