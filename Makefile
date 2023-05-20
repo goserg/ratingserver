@@ -10,6 +10,7 @@ gen-jet: build-tools-jet
 	$(JET_TOOL) -source=sqlite -dsn=${SQLITE_RATINGS_FILE_LOCATION} -path=${JET_OUTPUT}
 	$(JET_TOOL) -source=sqlite -dsn=${SQLITE_AUTH_FILE_LOCATION} -path=${JET_AUTH_OUTPUT}
 	$(JET_TOOL) -source=sqlite -dsn=${SQLITE_BOT_FILE_LOCATION} -path=${JET_BOT_OUTPUT}
+	$(JET_TOOL) -source=postgres -dsn="postgres://postgres:postgres@localhost:5431/auth?sslmode=disable" -path="gen"
 
 build: gen-jet
 	go build -o ${SERVER_BIN} cmd/main.go

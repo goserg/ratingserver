@@ -5,8 +5,9 @@ import (
 	"log"
 	"os"
 
+	"github.com/goserg/ratingserver/auth/storage/postgres"
+
 	authservice "github.com/goserg/ratingserver/auth/service"
-	authstorage "github.com/goserg/ratingserver/auth/storage/sqlite"
 	botstorage "github.com/goserg/ratingserver/bot/botstorage/sqlite"
 	"github.com/goserg/ratingserver/bot/tgbot"
 	"github.com/goserg/ratingserver/internal/cache/mem"
@@ -58,7 +59,7 @@ func run() error {
 		defer bot.Stop()
 	}
 
-	authStorage, err := authstorage.New(log, cfg.Server)
+	authStorage, err := postgres.New(cfg.Server.Auth.Storage)
 	if err != nil {
 		return err
 	}

@@ -196,7 +196,7 @@ func (s *Server) handlePostSignIn(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusBadRequest)
 		return ctx.Render("signin", newData("Войти").WithErrors(err), "layouts/main")
 	}
-	user, err := s.auth.Login(ctx.Context(), req.name, req.password)
+	token, err := s.auth.Login(ctx.Context(), req.name, req.password)
 	if err != nil {
 		ctx.Status(fiber.StatusUnauthorized)
 		return ctx.Render("signin",
@@ -204,15 +204,12 @@ func (s *Server) handlePostSignIn(ctx *fiber.Ctx) error {
 				WithErrors(err),
 			"layouts/main")
 	}
-	cookie, err := s.auth.GenerateJWTCookie(user.ID, s.cfg.Host)
-	if err != nil {
-		ctx.Status(fiber.StatusUnauthorized)
-		return ctx.Render("signin",
-			newData("Войти").
-				WithErrors(err),
-			"layouts/main")
-	}
-	ctx.Cookie(cookie)
+	ctx.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Value:    token.String(),
+		Expires:  time.Now().Add(time.Hour * 24),
+		HTTPOnly: true,
+	})
 	return ctx.Redirect(webpath.ApiHome)
 }
 

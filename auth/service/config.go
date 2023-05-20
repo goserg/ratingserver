@@ -14,4 +14,9 @@ type Config struct {
 		Allow  []string `toml:"allow"`
 		Order  int      `toml:"order"`
 	} `toml:"rules"`
+	Storage StorageConfig `toml:"db"`
+}
+
+type StorageConfig struct {
+	Host string `toml:"host"`
 }

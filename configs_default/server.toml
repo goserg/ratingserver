@@ -12,6 +12,8 @@ root_password = "default password"
 password_pepper = "generate random string"
 sqlite_file = "auth.sqlite"
 roles = ["admin", "user"]
+[auth.db]
+host = "postgres"
 
 [[auth.rules]]
 name = "allow all"
