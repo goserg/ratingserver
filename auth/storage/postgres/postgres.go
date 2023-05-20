@@ -21,12 +21,10 @@ import (
 	"github.com/goserg/ratingserver/auth/users"
 	"github.com/goserg/ratingserver/gen/auth/public/model"
 	"github.com/goserg/ratingserver/gen/auth/public/table"
-	"github.com/sirupsen/logrus"
 )
 
 type Storage struct {
-	db  *sql.DB
-	log *logrus.Entry
+	db *sql.DB
 }
 
 var _ storage.AuthStorage = (*Storage)(nil)
