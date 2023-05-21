@@ -9,6 +9,8 @@ import (
 	"strconv"
 	"time"
 
+	mapset "github.com/deckarep/golang-set/v2"
+
 	"github.com/go-jet/jet/v2/sqlite"
 
 	"github.com/go-jet/jet/v2/postgres"
@@ -30,23 +32,46 @@ type Storage struct {
 
 var _ storage.AuthStorage = (*Storage)(nil)
 
-func New(config service.StorageConfig, tokenTTL time.Duration) (*Storage, error) {
+func New(ctx context.Context, config service.Config) (*Storage, error) {
 	db, err := sql.Open("pgx", NewURLConnectionString(
 		"postgres",
-		config.Host+":"+strconv.Itoa(config.Port),
-		config.DBName,
-		config.Username,
-		config.Password,
+		config.Storage.Host+":"+strconv.Itoa(config.Storage.Port),
+		config.Storage.DBName,
+		config.Storage.Username,
+		config.Storage.Password,
 	))
 	if err != nil {
 		return nil, err
 	}
-	if err := db.PingContext(context.Background()); err != nil {
+	if err := db.PingContext(ctx); err != nil {
 		return nil, err
 	}
+
+	var dbRoles []model.Roles
+	err = table.Roles.SELECT(table.Roles.AllColumns).QueryContext(ctx, db, &dbRoles)
+	if err != nil {
+		return nil, err
+	}
+	dbRoleMap := mapset.NewSet[string]()
+	for _, role := range dbRoles {
+		dbRoleMap.Add(role.ID)
+	}
+	for _, role := range config.Roles {
+		if dbRoleMap.Contains(role) {
+			continue
+		}
+		dbRole := model.Roles{
+			ID: role,
+		}
+		_, err := table.Roles.INSERT(table.Roles.AllColumns).MODEL(dbRole).ExecContext(ctx, db)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &Storage{
 		db:       db,
-		tokenTTL: tokenTTL,
+		tokenTTL: config.TokenTTL,
 	}, nil
 }
 
