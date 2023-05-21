@@ -139,6 +139,14 @@ table "users" {
   primary_key {
     columns = [column.id]
   }
+  index "users_unique_email" {
+    unique  = true
+    columns = [column.email]
+  }
+  index "users_unique_username" {
+    unique  = true
+    columns = [column.username]
+  }
 }
 schema "public" {
 }
