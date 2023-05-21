@@ -24,7 +24,10 @@ test:
 TEST_SERVER_CONFIG_PATH = test_configs/server.toml
 TEST_BOT_CONFIG_PATH = test_configs/bot.toml
 
-auto-test:
+auto-test: build
+	psql postgres://postgres:postgres@localhost:5431 -c 'drop database if exists "auth-test";'
+	psql postgres://postgres:postgres@localhost:5431 -c 'create database "auth-test";'
+	$(ATLAS_TOOL) schema apply --auto-approve -u "postgres://postgres:postgres@localhost:5431/auth-test?sslmode=disable" --to file://auth/migrations/init.hcl
 	cd tests && go test -v -server-config $(TEST_SERVER_CONFIG_PATH) -bot-config $(TEST_BOT_CONFIG_PATH) ./...
 
 # TOOLS
