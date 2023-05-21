@@ -1,8 +1,8 @@
 disable_tg_bot = true
 debug_mode = false
 sqlite_file = "rating.sqlite"
-host = "0.0.0.0"
-port = 3000
+host = "127.0.0.1"
+port = 9865
 tls = false
 
 [auth]
@@ -12,8 +12,13 @@ root_password = "default password"
 password_pepper = "generate random string"
 sqlite_file = "auth.sqlite"
 roles = ["admin", "user"]
+tokenTTL = "24h"
 [auth.db]
-host = "postgres"
+host = "localhost"
+port = 5431
+dbname = "auth-test"
+username = "postgres"
+password = "postgres"
 
 [[auth.rules]]
 name = "allow all"
