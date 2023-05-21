@@ -14,4 +14,5 @@ type AuthStorage interface {
 	GetUser(ctx context.Context, id uuid.UUID) (users.User, error)
 
 	Me(ctx context.Context, token uuid.UUID) (users.User, error)
+	LogOut(ctx context.Context, token uuid.UUID) error
 }

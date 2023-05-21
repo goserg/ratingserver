@@ -59,7 +59,7 @@ func run() error {
 		defer bot.Stop()
 	}
 
-	authStorage, err := postgres.New(cfg.Server.Auth.Storage)
+	authStorage, err := postgres.New(cfg.Server.Auth.Storage, cfg.Server.Auth.TokenTTL)
 	if err != nil {
 		return err
 	}

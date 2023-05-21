@@ -103,7 +103,7 @@ func (s *Service) Auth(ctx context.Context, cookie string, method string, url st
 
 func (s *Service) getUserFromToken(ctx context.Context, cookie string) (users.User, error) {
 	if cookie == "" {
-		return users.User{}, nil
+		return users.User{}, ErrNotAuthorized
 	}
 	token, err := uuid.Parse(cookie)
 	if err != nil {
@@ -112,6 +112,9 @@ func (s *Service) getUserFromToken(ctx context.Context, cookie string) (users.Us
 	user, err := s.storage.Me(ctx, token)
 	if err != nil {
 		return users.User{}, err
+	}
+	if user.ID == uuid.Nil {
+		return user, ErrNotAuthorized
 	}
 	return user, nil
 }
@@ -135,6 +138,10 @@ func (s *Service) SignUp(ctx context.Context, name string, password string) erro
 		return err
 	}
 	return nil
+}
+
+func (s *Service) Logout(ctx context.Context, token uuid.UUID) error {
+	return s.storage.LogOut(ctx, token)
 }
 
 func randomSalt() ([]byte, error) {

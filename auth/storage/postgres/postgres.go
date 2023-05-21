@@ -24,12 +24,13 @@ import (
 )
 
 type Storage struct {
-	db *sql.DB
+	db       *sql.DB
+	tokenTTL time.Duration
 }
 
 var _ storage.AuthStorage = (*Storage)(nil)
 
-func New(config service.StorageConfig) (*Storage, error) {
+func New(config service.StorageConfig, tokenTTL time.Duration) (*Storage, error) {
 	db, err := sql.Open("pgx", NewURLConnectionString(
 		"postgres",
 		config.Host+":"+strconv.Itoa(config.Port),
@@ -44,7 +45,8 @@ func New(config service.StorageConfig) (*Storage, error) {
 		return nil, err
 	}
 	return &Storage{
-		db: db,
+		db:       db,
+		tokenTTL: tokenTTL,
 	}, nil
 }
 
@@ -188,6 +190,7 @@ func (s Storage) Me(ctx context.Context, token uuid.UUID) (users.User, error) {
 		var dest struct {
 			model.Users
 			UserRoles []model.UserRoles
+			Token     model.Tokens
 		}
 		err := table.Users.
 			SELECT(
@@ -195,7 +198,8 @@ func (s Storage) Me(ctx context.Context, token uuid.UUID) (users.User, error) {
 					table.Users.PasswordHash,
 					table.Users.PasswordSalt,
 				),
-				table.UserRoles.AllColumns).
+				table.UserRoles.AllColumns,
+				table.Tokens.AllColumns).
 			FROM(
 				table.Users.
 					INNER_JOIN(table.UserRoles, table.UserRoles.UserID.EQ(table.Users.ID)).
@@ -208,7 +212,46 @@ func (s Storage) Me(ctx context.Context, token uuid.UUID) (users.User, error) {
 		if err != nil {
 			return users.User{}, err
 		}
+		if err := checkTokenExpiration(tx, dest.Token, s.tokenTTL); err != nil {
+			if errors.Is(err, service.ErrNotAuthorized) {
+				return users.User{}, nil
+			}
+			return users.User{}, err
+		}
 		return convertDBUserToModel(dest.Users, dest.UserRoles), nil
+	})
+}
+
+func checkTokenExpiration(tx *sql.Tx, token model.Tokens, ttl time.Duration) error {
+	if token.LastActiveAt.Add(ttl).Before(time.Now()) {
+		if err := deleteToken(tx, token); err != nil {
+			return err
+		}
+		return service.ErrNotAuthorized
+	}
+	return nil
+}
+
+func deleteToken(tx *sql.Tx, token model.Tokens) error {
+	_, err := table.Tokens.
+		UPDATE(table.Tokens.DeletedAt).
+		SET(postgres.CURRENT_TIMESTAMP()).
+		WHERE(table.Tokens.ID.EQ(postgres.Int(token.ID))).
+		Exec(tx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s Storage) LogOut(ctx context.Context, token uuid.UUID) error {
+	return inTxSimple(ctx, s.db, func(tx *sql.Tx) error {
+		_, err := table.Tokens.
+			UPDATE(table.Tokens.DeletedAt).
+			SET(postgres.CURRENT_TIMESTAMP()).
+			WHERE(table.Tokens.Token.EQ(postgres.UUID(token))).
+			ExecContext(ctx, s.db)
+		return err
 	})
 }
 

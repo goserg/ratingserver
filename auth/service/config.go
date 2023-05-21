@@ -1,5 +1,7 @@
 package service
 
+import "time"
+
 type Config struct {
 	SqliteFile     string   `toml:"sqlite_file"`
 	Token          string   `toml:"token"`
@@ -14,7 +16,8 @@ type Config struct {
 		Allow  []string `toml:"allow"`
 		Order  int      `toml:"order"`
 	} `toml:"rules"`
-	Storage StorageConfig `toml:"db"`
+	TokenTTL time.Duration `toml:"tokenTTL"`
+	Storage  StorageConfig `toml:"db"`
 }
 
 type StorageConfig struct {
