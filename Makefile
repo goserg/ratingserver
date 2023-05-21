@@ -15,7 +15,7 @@ gen-jet: build-tools-jet
 build: gen-jet
 	go build -o ${SERVER_BIN} cmd/main.go
 
-run: build
+run: build atlas-apply
 	${SERVER_BIN}
 
 test:
@@ -43,3 +43,14 @@ lint: build-tools-lint
 
 build-tools-jet:
 	CGO_ENABLED=1 go build -modfile $(TOOLS_MODFILE) -o $(JET_TOOL) github.com/go-jet/jet/v2/cmd/jet
+
+ATLAS_TOOL = $(TOOLS_BIN_DIR)atlas
+
+build-tools-atlas:
+	go build -modfile $(TOOLS_MODFILE) -o $(ATLAS_TOOL) ariga.io/atlas/cmd/atlas
+
+atlas-inspect: build-tools-atlas
+	$(ATLAS_TOOL) schema inspect -u "postgres://postgres:postgres@localhost:5431/auth?sslmode=disable" > auth/migrations/init.hcl
+
+atlas-apply: build-tools-atlas
+	$(ATLAS_TOOL) schema apply --auto-approve -u "postgres://postgres:postgres@localhost:5431/auth?sslmode=disable" --to file://auth/migrations/init.hcl
