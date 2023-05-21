@@ -88,7 +88,7 @@ func (s *Service) Auth(ctx context.Context, cookie string, method string, url st
 							return user, nil
 						}
 						for _, userRole := range user.Roles {
-							if role == userRole {
+							if role == strings.TrimSpace(userRole) { // "admin     " ??
 								return user, nil
 							}
 						}
@@ -103,7 +103,9 @@ func (s *Service) Auth(ctx context.Context, cookie string, method string, url st
 
 func (s *Service) getUserFromToken(ctx context.Context, cookie string) (users.User, error) {
 	if cookie == "" {
-		return users.User{}, ErrNotAuthorized
+		return users.User{
+			Roles: []string{"user"},
+		}, nil
 	}
 	token, err := uuid.Parse(cookie)
 	if err != nil {
