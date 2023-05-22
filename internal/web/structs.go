@@ -9,6 +9,7 @@ import (
 
 type signupRequest struct {
 	name     string
+	email    string
 	password string
 }
 
@@ -16,6 +17,8 @@ func parseSignUpRequest(ctx *fiber.Ctx) (signupRequest, error) {
 	var err error
 	name := ctx.FormValue("username", "")
 	err = errors.Join(err, validateUserName(name))
+	email := ctx.FormValue("email", "")
+	err = errors.Join(err, validateEmail(email))
 	password := ctx.FormValue("password", "")
 	err = errors.Join(err, validatePassword(password))
 	passwordRepeat := ctx.FormValue("password-repeat", "")
@@ -27,6 +30,7 @@ func parseSignUpRequest(ctx *fiber.Ctx) (signupRequest, error) {
 	}
 	return signupRequest{
 		name:     name,
+		email:    email,
 		password: password,
 	}, nil
 }
@@ -67,4 +71,12 @@ func validateUserName(name string) error {
 		err = errors.Join(err, errors.New("имя пользователя должно начинаться с латинской буквы и содержать только латинские буквы, цифры и знаки подчеркивания"))
 	}
 	return err
+}
+
+func validateEmail(email string) error {
+	emailRegexp := regexp.MustCompile(`^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$`)
+	if !emailRegexp.MatchString(email) {
+		return errors.New("неверный email")
+	}
+	return nil
 }

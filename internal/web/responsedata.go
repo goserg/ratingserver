@@ -54,7 +54,9 @@ func unwrap(err error) []error {
 
 func (m data) WithErrors(err error) data {
 	for _, err := range unwrap(err) {
-		m.Errors = append(m.Errors, err.Error())
+		if err != nil {
+			m.Errors = append(m.Errors, err.Error())
+		}
 	}
 	return m
 }

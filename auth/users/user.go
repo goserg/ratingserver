@@ -1,13 +1,15 @@
 package users
 
 import (
-	"github.com/google/uuid"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 type User struct {
 	ID           uuid.UUID
 	Name         string
+	Email        string
 	Roles        []string // TODO role type
 	RegisteredAt time.Time
 }

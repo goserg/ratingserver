@@ -46,6 +46,14 @@ func New(ps *service.PlayerService, cfg config.Server, authService *authservice.
 
 	app := fiber.New(fiber.Config{
 		Views: engine,
+		ErrorHandler: func(c *fiber.Ctx, err error) error {
+			switch {
+			case errors.Is(err, authservice.ErrNotAuthorized):
+				c.Status(fiber.StatusUnauthorized)
+				return c.Redirect(webpath.Signin)
+			}
+			return c.JSON(map[string]string{"error": err.Error()})
+		},
 	})
 	app.Use("/static", filesystem.New(filesystem.Config{
 		Root:       http.FS(embedded.WebStatic),
@@ -59,11 +67,17 @@ func New(ps *service.PlayerService, cfg config.Server, authService *authservice.
 			case errors.Is(err, authservice.ErrForbidden):
 				c.Status(fiber.StatusForbidden)
 			case errors.Is(err, authservice.ErrNotAuthorized):
+				c.Cookie(&fiber.Cookie{
+					Name:     "token",
+					Value:    "",
+					Expires:  time.Now().Add(-time.Hour),
+					HTTPOnly: true,
+				})
 				c.Status(fiber.StatusUnauthorized)
 			default:
 				c.Status(fiber.StatusInternalServerError)
 			}
-			return nil
+			return err
 		}
 		c.Context().SetUserValue(userKey, user)
 		return c.Next()
@@ -98,42 +112,39 @@ func (s *Server) Serve() error {
 const userKey = "user"
 
 func (s *Server) handleMain(ctx *fiber.Ctx) error {
-	user, ok := ctx.Context().UserValue(userKey).(users.User)
-	if !ok {
-		return errors.New("assertion failed")
-	}
 	globalRating := s.playerService.GetRatings()
-	return ctx.Render("index", newData("Рейтинг").
-		WithUser(user).
+	data := newData("Рейтинг").
 		With("Button", "rating").
-		With("Players", globalRating),
-		"layouts/main",
-	)
+		With("Players", globalRating)
+	user, ok := ctx.Context().UserValue(userKey).(users.User)
+	if ok {
+		data = data.WithUser(user)
+	}
+	return ctx.Render("index", data, "layouts/main")
 }
 
 func (s *Server) handleMatches(ctx *fiber.Ctx) error {
-	user, ok := ctx.Context().UserValue(userKey).(users.User)
-	if !ok {
-		return errors.New("assertion failed")
-	}
 	matches, err := s.playerService.GetMatches()
 	if err != nil {
 		return err
 	}
-	return ctx.Render("matches",
-		newData("Список матчей").
-			WithUser(user).
-			With("Button", "matches").
-			With("Matches", matches),
-		"layouts/main")
+	data := newData("Список матчей").
+		With("Button", "matches").
+		With("Matches", matches)
+	user, ok := ctx.Context().UserValue(userKey).(users.User)
+	if ok {
+		data = data.WithUser(user)
+	}
+	return ctx.Render("matches", data, "layouts/main")
 }
 
 func (s *Server) handleCreateMatchGet(ctx *fiber.Ctx) error {
+	data := newData("Добавить игру")
 	user, ok := ctx.Context().UserValue(userKey).(users.User)
-	if !ok {
-		return errors.New("assertion failed")
+	if ok {
+		data = data.WithUser(user)
 	}
-	return ctx.Render("newMatch", newData("Добавить игру").WithUser(user), "layouts/main")
+	return ctx.Render("newMatch", data, "layouts/main")
 }
 
 func (s *Server) handleCreateMatchPost(ctx *fiber.Ctx) error {
@@ -165,10 +176,6 @@ func (s *Server) handleCreateMatchPost(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) handlePlayerInfo(ctx *fiber.Ctx) error {
-	user, ok := ctx.Context().UserValue(userKey).(users.User)
-	if !ok {
-		return errors.New("assertion failed")
-	}
 	strID := ctx.Params("id")
 	id, err := uuid.Parse(strID)
 	if err != nil {
@@ -178,12 +185,15 @@ func (s *Server) handlePlayerInfo(ctx *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	return ctx.Render("playerCard",
-		newData(card.Player.Name).
-			WithUser(user).
-			With("PlayerCard", card).
-			With("Button", "playerCard"),
-		"layouts/main")
+	data := newData(card.Player.Name).
+		With("PlayerCard", card).
+		With("Button", "playerCard")
+	user, ok := ctx.Context().UserValue(userKey).(users.User)
+	if ok {
+		data = data.WithUser(user)
+	}
+
+	return ctx.Render("playerCard", data, "layouts/main")
 }
 
 func (s *Server) handleGetSignIn(ctx *fiber.Ctx) error {
@@ -196,7 +206,7 @@ func (s *Server) handlePostSignIn(ctx *fiber.Ctx) error {
 		ctx.Status(fiber.StatusBadRequest)
 		return ctx.Render("signin", newData("Войти").WithErrors(err), "layouts/main")
 	}
-	user, err := s.auth.Login(ctx.Context(), req.name, req.password)
+	token, err := s.auth.Login(ctx.Context(), req.name, req.password)
 	if err != nil {
 		ctx.Status(fiber.StatusUnauthorized)
 		return ctx.Render("signin",
@@ -204,15 +214,12 @@ func (s *Server) handlePostSignIn(ctx *fiber.Ctx) error {
 				WithErrors(err),
 			"layouts/main")
 	}
-	cookie, err := s.auth.GenerateJWTCookie(user.ID, s.cfg.Host)
-	if err != nil {
-		ctx.Status(fiber.StatusUnauthorized)
-		return ctx.Render("signin",
-			newData("Войти").
-				WithErrors(err),
-			"layouts/main")
-	}
-	ctx.Cookie(cookie)
+	ctx.Cookie(&fiber.Cookie{
+		Name:     "token",
+		Value:    token.String(),
+		Expires:  time.Now().Add(time.Hour * 24),
+		HTTPOnly: true,
+	})
 	return ctx.Redirect(webpath.ApiHome)
 }
 
@@ -230,7 +237,7 @@ func (s *Server) handlePostSignup(ctx *fiber.Ctx) error {
 			"layouts/main",
 		)
 	}
-	err = s.auth.SignUp(ctx.Context(), req.name, req.password)
+	err = s.auth.SignUp(ctx.Context(), req.name, req.email, req.password)
 	if err != nil {
 		ctx.Status(fiber.StatusBadRequest)
 		var errMsg error
@@ -247,12 +254,25 @@ func (s *Server) handlePostSignup(ctx *fiber.Ctx) error {
 }
 
 func (s *Server) handleSignOut(ctx *fiber.Ctx) error {
+	id, err := uuid.Parse(ctx.Cookies("token"))
+	if err != nil {
+		return err
+	}
+	err = s.auth.Logout(ctx.Context(), id)
+	if err != nil {
+		return err
+	}
 	ctx.ClearCookie("token")
 	return ctx.Redirect(webpath.ApiHome)
 }
 
 func (s *Server) handleNewPlayerGet(ctx *fiber.Ctx) error {
-	return ctx.Render("newPlayer", newData("Добавить игрока"), "layouts/main")
+	data := newData("Добавить игрока")
+	user, ok := ctx.Context().UserValue(userKey).(users.User)
+	if ok {
+		data = data.WithUser(user)
+	}
+	return ctx.Render("newPlayer", data, "layouts/main")
 }
 
 func (s *Server) handleNewPlayerPost(ctx *fiber.Ctx) error {

@@ -6,30 +6,37 @@ port = 3000
 tls = false
 
 [auth]
-token = "generate secret"
-expiration = "5m"
-root_password = "default password"
-password_pepper = "generate random string"
-sqlite_file = "auth.sqlite"
-roles = ["admin", "user"]
+    token = "generate secret"
+    expiration = "5m"
+    root_password = "default password"
+    password_pepper = "generate random string"
+    sqlite_file = "auth.sqlite"
+    roles = ["admin", "user"]
+    tokenTTL = "24h"
+    [auth.db]
+        host = "localhost"
+        port = 5431
+        dbname = "auth"
+        username = "postgres"
+        password = "postgres"
 
 [[auth.rules]]
-name = "allow all"
-path = ".+"
-method = ["*"]
-allow = ["*"]
-order = 100
+    name = "allow all"
+    path = ".+"
+    method = ["*"]
+    allow = ["*"]
+    order = 100
 
 [[auth.rules]]
-name = "create match only admin"
-path = "^/api/matches$"
-method = ["*"]
-allow = ["admin"]
-order = 1
+    name = "create match only admin"
+    path = "^/api/matches$"
+    method = ["*"]
+    allow = ["admin"]
+    order = 1
 
 [[auth.rules]]
-name = "add player only admin"
-path = "^/api/players$"
-method = ["*"]
-allow = ["admin"]
-order = 1
+    name = "add player only admin"
+    path = "^/api/players$"
+    method = ["*"]
+    allow = ["admin"]
+    order = 1

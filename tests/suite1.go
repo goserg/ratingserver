@@ -49,7 +49,7 @@ func (s *Suite) SetupSuite() {
 		s.T().Errorf("cant start process: %v", err)
 	}
 
-	if err := s.waitForStartup(time.Second * 5); err != nil {
+	if err := s.waitForStartup(time.Second * 10); err != nil {
 		s.T().Fatalf("unable to start app: %v", err)
 	}
 }
@@ -94,7 +94,7 @@ func (s *Suite) TearDownSuite() {
 	}
 }
 
-const globalTestsTimeoutSeconds = 5
+const globalTestsTimeoutSeconds = 10
 
 func (s *Suite) TestRatings() {
 	ctx, _ := context.WithTimeout(context.Background(), time.Second*globalTestsTimeoutSeconds)
@@ -170,7 +170,7 @@ func (s *Suite) TestAccessUser() {
 	defer cancel()
 
 	u := randomUsername()
-	s.CreateUser(ctx, u, "qwerty")
+	s.CreateUser(ctx, u, u+"@mail.ru", "qwerty")
 	s.SignIn(ctx, u, "qwerty")
 	s.CheckAccessDenied(ctx, webpath.ApiNewMatch)
 	s.CheckAccessDenied(ctx, webpath.ApiNewPlayer)
@@ -198,7 +198,7 @@ func (s *Suite) TestNewUser() {
 	defer cancel()
 
 	u := randomUsername()
-	s.CreateUser(ctx, u, "qwerty")
+	s.CreateUser(ctx, u, u+"@mail.ru", "qwerty")
 	s.SignIn(ctx, u, "qwerty")
 }
 
@@ -208,7 +208,7 @@ func (s *Suite) TestUserCreateUniqueName() {
 	defer cancel()
 
 	u := randomUsername()
-	s.CreateUser(ctx, u, "qwerty")
+	s.CreateUser(ctx, u, u+"@mail.ru", "qwerty")
 	s.CreateUserMustFail(ctx, u, "qwerty2")
 }
 
@@ -294,14 +294,13 @@ func (s *Suite) SignIn(ctx context.Context, user, password string) {
 }
 
 func (s *Suite) cleanupDB() error {
-	err := errors.Join(
-		os.Remove(s.config.Server.SqliteFile),
-		os.Remove(s.config.Server.Auth.SqliteFile),
-	)
-	if !s.config.Server.TgBotDisable {
-		err = errors.Join(err, os.Remove(s.config.TgBot.SqliteFile))
+	if err := os.Remove(s.config.Server.SqliteFile); err != nil {
+		return err
 	}
-	return err
+	if !s.config.Server.TgBotDisable {
+		return os.Remove(s.config.TgBot.SqliteFile)
+	}
+	return nil
 }
 
 func (s *Suite) CheckPlayersExist(ctx context.Context, names ...string) {
@@ -435,11 +434,12 @@ func (s *Suite) CheckPlayersStats(ctx context.Context) {
 	s.Require().NoError(err)
 }
 
-func (s *Suite) CreateUser(ctx context.Context, name, password string) {
+func (s *Suite) CreateUser(ctx context.Context, name, email, password string) {
 	s.T().Helper()
 	err := chromedp.Run(ctx, chromedp.Tasks([]chromedp.Action{
 		chromedp.Navigate(s.addr + webpath.Signup),
 		chromedp.SendKeys(sel.SignUpFormUsername, name),
+		chromedp.SendKeys(sel.SignUpFormEmail, email),
 		chromedp.SendKeys(sel.SignUpFormPassword, password),
 		chromedp.SendKeys(sel.SignUpFormPasswordRepeat, password),
 		s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusOK),
@@ -545,6 +545,7 @@ func (s *Suite) CheckInvalidSignUpForm(ctx context.Context) {
 			// валидные поля
 			chromedp.Navigate(s.addr + webpath.Signup),
 			chromedp.SendKeys(sel.SignUpFormUsername, randomUsername()),
+			chromedp.SendKeys(sel.SignUpFormEmail, randomUsername()+"@mail.ru"),
 			chromedp.SendKeys(sel.SignUpFormPassword, "aaa"),
 			chromedp.SendKeys(sel.SignUpFormPasswordRepeat, "aaa"),
 			s.waitStatus(chromedp.Submit(sel.SignUpFormSubmit), http.StatusOK),

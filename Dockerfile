@@ -7,7 +7,9 @@ LABEL owner="goserg" \
 WORKDIR /app/server
 
 COPY bin/server /app/server
+COPY cert.pem /app/server
+COPY key.pem /app/server
 
-EXPOSE 3000
+EXPOSE 9865
 
 CMD ["/app/server/server"]

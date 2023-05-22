@@ -13,8 +13,6 @@ import (
 	"github.com/goserg/ratingserver/auth/storage"
 	"github.com/goserg/ratingserver/auth/users"
 
-	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 )
 
@@ -59,44 +57,16 @@ func New(ctx context.Context, cfg Config, storage storage.AuthStorage) (*Service
 	return &s, nil
 }
 
-func (s *Service) Login(ctx context.Context, name string, password string) (users.User, error) {
+func (s *Service) Login(ctx context.Context, name string, password string) (token uuid.UUID, err error) {
 	userSecret, err := s.storage.GetUserSecret(ctx, users.User{Name: name})
 	if err != nil {
-		return users.User{}, err
+		return uuid.Nil, err
 	}
 	secret := generateSecret(password, s.cfg.PasswordPepper, userSecret.Salt)
 	if err != nil {
-		return users.User{}, err
+		return uuid.Nil, err
 	}
 	return s.storage.SignIn(ctx, name, secret.PasswordHash)
-}
-
-func (s *Service) GenerateJWTCookie(userID uuid.UUID, host string) (*fiber.Cookie, error) {
-	expiresIn, err := time.ParseDuration(s.cfg.Expiration)
-	if err != nil {
-		return nil, err
-	}
-	expirationTime := time.Now().Add(expiresIn)
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
-		ExpiresAt: expirationTime.Unix(),
-		IssuedAt:  time.Now().Unix(),
-		Subject:   userID.String(),
-	})
-	tokenString, err := token.SignedString([]byte(s.cfg.Token))
-	if err != nil {
-		return nil, err
-	}
-	return &fiber.Cookie{
-		Name:        "token",
-		Value:       tokenString,
-		Path:        "/",
-		Domain:      host,
-		Expires:     expirationTime,
-		Secure:      false,
-		HTTPOnly:    true,
-		SameSite:    "",
-		SessionOnly: false,
-	}, nil
 }
 
 func (s *Service) Auth(ctx context.Context, cookie string, method string, url string) (users.User, error) {
@@ -118,7 +88,7 @@ func (s *Service) Auth(ctx context.Context, cookie string, method string, url st
 							return user, nil
 						}
 						for _, userRole := range user.Roles {
-							if role == userRole {
+							if role == strings.TrimSpace(userRole) { // "admin     " ??
 								return user, nil
 							}
 						}
@@ -133,44 +103,25 @@ func (s *Service) Auth(ctx context.Context, cookie string, method string, url st
 
 func (s *Service) getUserFromToken(ctx context.Context, cookie string) (users.User, error) {
 	if cookie == "" {
-		return users.User{}, nil
+		return users.User{
+			Roles: []string{"user"},
+		}, nil
 	}
-	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(s.cfg.Token), nil
-	})
+	token, err := uuid.Parse(cookie)
 	if err != nil {
 		return users.User{}, err
 	}
-	if token.Valid {
-		claims, ok := token.Claims.(*jwt.StandardClaims)
-		if !ok {
-			return users.User{}, errors.New("bad request")
-		}
-		userID := claims.Subject
-		id, err := uuid.Parse(userID)
-		if err != nil {
-			return users.User{}, err
-		}
-		user, err := s.storage.GetUser(ctx, id)
-		if err != nil {
-			return users.User{}, err
-		}
-		return user, nil
-	}
-	ve := jwt.ValidationError{}
-	if ok := errors.As(err, &ve); !ok {
+	user, err := s.storage.Me(ctx, token)
+	if err != nil {
 		return users.User{}, err
 	}
-	if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-		return users.User{}, errors.New("bad request")
-	} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-		return users.User{}, errors.New("token expired")
-	} else {
-		return users.User{}, err
+	if user.ID == uuid.Nil {
+		return user, ErrNotAuthorized
 	}
+	return user, nil
 }
 
-func (s *Service) SignUp(ctx context.Context, name string, password string) error {
+func (s *Service) SignUp(ctx context.Context, name string, email string, password string) error {
 	salt, err := randomSalt()
 	if err != nil {
 		return err
@@ -179,6 +130,7 @@ func (s *Service) SignUp(ctx context.Context, name string, password string) erro
 	err = s.storage.CreateUser(ctx, users.User{
 		ID:           uuid.New(),
 		Name:         name,
+		Email:        email,
 		Roles:        []string{"user"},
 		RegisteredAt: time.Now(),
 	}, secret)
@@ -189,6 +141,10 @@ func (s *Service) SignUp(ctx context.Context, name string, password string) erro
 		return err
 	}
 	return nil
+}
+
+func (s *Service) Logout(ctx context.Context, token uuid.UUID) error {
+	return s.storage.LogOut(ctx, token)
 }
 
 func randomSalt() ([]byte, error) {

@@ -7,10 +7,22 @@ services:
       dockerfile: "Dockerfile"
     container_name: server
     ports:
-      - "3000:3000"
+      - "9865:9865"
+    depends_on:
+      - postgres
     restart: always
     volumes:
       - ./configs/:/app/server/configs/
       - ./bot.sqlite:/app/server/bot.sqlite
       - ./rating.sqlite:/app/server/rating.sqlite
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: postgres
+    container_name: rating-postgres
+    restart: always
+    ports:
+      - "5431:5432"
+
+
 
