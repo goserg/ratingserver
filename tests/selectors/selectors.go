@@ -16,6 +16,7 @@ const (
 	PlayerListRowLink = PlayerListRow + " a"
 
 	SignUpFormUsername       = "#signup-form-username"
+	SignUpFormEmail          = "#signup-form-email"
 	SignUpFormPassword       = "#signup-form-password"
 	SignUpFormPasswordRepeat = "#signup-form-password-repeat"
 	SignUpFormSubmit         = "#signup-form-submit"

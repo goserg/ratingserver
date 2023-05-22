@@ -237,7 +237,7 @@ func (s *Server) handlePostSignup(ctx *fiber.Ctx) error {
 			"layouts/main",
 		)
 	}
-	err = s.auth.SignUp(ctx.Context(), req.name, req.password)
+	err = s.auth.SignUp(ctx.Context(), req.name, req.email, req.password)
 	if err != nil {
 		ctx.Status(fiber.StatusBadRequest)
 		var errMsg error

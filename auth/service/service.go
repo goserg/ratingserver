@@ -121,7 +121,7 @@ func (s *Service) getUserFromToken(ctx context.Context, cookie string) (users.Us
 	return user, nil
 }
 
-func (s *Service) SignUp(ctx context.Context, name string, password string) error {
+func (s *Service) SignUp(ctx context.Context, name string, email string, password string) error {
 	salt, err := randomSalt()
 	if err != nil {
 		return err
@@ -130,6 +130,7 @@ func (s *Service) SignUp(ctx context.Context, name string, password string) erro
 	err = s.storage.CreateUser(ctx, users.User{
 		ID:           uuid.New(),
 		Name:         name,
+		Email:        email,
 		Roles:        []string{"user"},
 		RegisteredAt: time.Now(),
 	}, secret)
